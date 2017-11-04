@@ -1,0 +1,82 @@
+###### Documentation projet OptimusPrice ###### 
+##### Outil d optimisation du prix de bout en bout le plus flexible possible
+##### Information sur l arborescence des dossiers
+
+-------------[clt]-----------------[data] |----------[Origin_data]
+                |                         |----------[Modified_data]
+                |                         |----------[temp] -------------[Input] ---- input_id_sub_task
+                |                                           ------------[output] ---- output_id_sub_task
+                |------------------[results]
+                |
+                |------------------[code] |---------[R]----------
+                |                         |---------[Python]-----
+                |                         |---------[SAS]--------
+                |                                   
+                |------------------[mdl] ----------[Modules_name]----------[Method_name]--------[model_name]
+                |
+                |------------------[logs] |---------[error_log]----------  
+                                          |---------[system_log]
+                                          |---------[run_log]
+                                          
+                                          
+-------------[adl]-----------------[data] |----------[Origin_data]
+                |                         |----------[Modified_data]                                                                                                    
+                |                                   
+                |------------------[mdl] ----------[Modules_name]----------[Method_name]--------[model_name]
+                |
+                |------------------[logs] |---------[error_log]----------  
+                                          |---------[system_log]
+                                          |---------[run_log]    
+
+                                          
+-------------[src]-----------------[main] |--------- main.py
+                |                         |----------[logs]                                                                                                    
+                |                         |----------[utils] 
+                | 
+                |
+                |------------------[mdl]|----------[machine_learning]------------------[type_ml]--------[model_name]|--------[model_train]
+                |                       |                                                                |--------[model_test]
+                |                       |----------[image_recognition]------[type_ml]--------[model_name]--------[model_train]
+                |                       |                                                                 --------[model_test]
+                |                       |----------[text_recognition]-------[type_ml]--------[model_name]--------[model_train]
+                |                       |                                                                 --------[model_test]
+                |                       |----------[voice_recognition]------[type_ml]--------[model_name]--------[model_train]
+                |                       |                                                                --------[model_test]
+                |                       |----------[utils]------
+                |
+                |------------------[crawl] |----------[error_log]----------  
+                |                          |----------[utils]------ 
+                |                                   
+                |------------------[visu] ----------[general_plot]----------
+                |                         ----------[model_plot]----------  
+                |                         ----------[report_cration]----------  
+                | 
+                |------------------[optim] |---------[individual]----------  
+                |                          |---------[parametric]
+                |                          |---------[utils]   
+                |
+                |-----------------[data_management]-----[feature_selection]
+                |                                  -----[dimension_reduction]
+                |                                  -----[general_task]
+                |
+                |
+                |------------------[utils]------
+
+                
+-------------[documentation]----------------- src_info
+                            ----------------- general_info
+                            ----------------- arborescence_info
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                          

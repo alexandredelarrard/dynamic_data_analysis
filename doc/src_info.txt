@@ -1,0 +1,63 @@
+###### Documentation projet OptimusPrice ###### 
+##### Outil d optimisation du prix de bout en bout le plus flexible possible
+##### Information sur les fichiers src
+
+1) Main
+#### dictionnary description of dictionnary having all tasks stored
+tasks_table = {"id_main_task" : { 
+                                  "sub_task": {"id_sub_task" : {
+                                                                "id_main_task" :
+                                                                "id_sub_task"  :
+                                                                "inputs" : {"id_input"{
+                                                                                        "type_data" : "",
+                                                                                        "values"    :{}
+                                                                                        }}
+                                                                "output" : {"id_sub_task_name" : {"type_data" : "",
+                                                                                                   "values"    :{}}
+                                                                
+                                                                "mode"   : ["train", "test", "prod"]
+                                                                "module" : ["crawl", "visu", "optim", "mdl", "data_management"]
+                                                                "method" : ["xgb", "knn", "logistic", "linear", "arma", ...]
+                                                                "model"  : [[method]_[date]_[nth]]
+                                                                "parameters": {}
+                                                                
+                                                                "gpu_cpu"  : 
+                                                                "exec_time":
+                                                                "start_time":
+
+                                                                "parents": [ids]
+                                                                "sons"   : [ids]
+                                                                "status" : ["waiting", "error", "completed", "pending", "pause"] 
+                                                                "message" : "" # for errors or warnings
+                                                                }
+                                                }
+                                   "desc_task": {"exec_time" :
+                                                  "nbr_remaining"}
+                                   "company" :
+                                   "account" :
+                                }
+               }
+               
+#### tasks received from front end / local end
+task = {
+        "company"  :
+        "account"  :
+        "input"   : {"id_input"{
+                                "type_data" : "",
+                                "values"    :{}
+                              }
+                    }
+        "id_main_task" : ""
+        "sub_task": {"id_sub_task" : { 
+                                      "module" : ["crawl", "visu", "optim", "mdl", "data_management"]
+                                      "method" : ["xgb", "knn", "logistic", "linear", "arma", ...]
+                                      "model"  : [[method]_[date]_[nth]]
+                                      "parameters": {}
+                                      "parents": []
+                                      }
+        }               
+               
+               
+               
+               
+               

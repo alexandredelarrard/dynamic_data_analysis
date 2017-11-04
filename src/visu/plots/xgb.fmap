@@ -1,0 +1,74 @@
+0	Buildings Sum Insured	q
+1	Building Year	q
+2	Ownership	q
+3	Building Type	q
+4	Owner Age	q
+5	Building Age	q
+6	Flood ARI	q
+7	SEIFA Score	q
+8	Gender	q
+9	Property use	q
+10	Years held insurance	q
+11	Key operated window locks	q
+12	Storeys (if house)	q
+13	Deadlocks	q
+14	census: Aus Birthplace	q
+15	census: Completed Year12	q
+16	census: Currently Studying	q
+17	census: Median Wkly Income	q
+18	census: Median HH Wkly Income	q
+19	census: Avg HH Size	q
+20	census: Median Mortgage Rep Mthly	q
+21	census: Median Rent Wkly	q
+22	census: Married Proportion	q
+23	census: Child Under 15 Proportion	q
+24	census: Avg No Vehicles	q
+25	census; Separate House Proportion	q
+26	census: Own Outright Proportion	q
+27	census: Own with Mortgage Proportion	q
+28	census: Has Broadband Proportion	q
+29	census: Couple with Child Proportion	q
+30	census: One Parent Family Proportion	q
+31	census: Density Popn per SqKm	q
+32	census: Density Veh per SqKm	q
+33	census: Employment Rate	q
+34	census: Occupation Manager Professional Proportion	q
+35	Region Type	q
+36	National Weights - Allianz	q
+37	State_Mod_ACT	q
+38	State_Mod_NSW	q
+39	State_Mod_NT	q
+40	State_Mod_QLD	q
+41	State_Mod_SA	q
+42	State_Mod_TAS	q
+43	State_Mod_VIC	q
+44	State_Mod_WA	q
+45	Alarm_Mod_Local	q
+46	Alarm_Mod_Monitored	q
+47	Alarm_Mod_No	q
+48	Construction Material_Mod_Brick Veneer	q
+49	Construction Material_Mod_Concrete	q
+50	Construction Material_Mod_Double Brick	q
+51	Construction Material_Mod_Fibro	q
+52	Construction Material_Mod_Metal	q
+53	Construction Material_Mod_Stone	q
+54	Construction Material_Mod_Timber	q
+55	Roof type_Mod_Colourbond	q
+56	Roof type_Mod_Fibro	q
+57	Roof type_Mod_Iron	q
+58	Roof type_Mod_Slate	q
+59	Roof type_Mod_Tile	q
+60	Slope_Mod_Flat	q
+61	Slope_Mod_Gentle	q
+62	Slope_Mod_Moderate	q
+63	Slope_Mod_Severe	q
+64	Substate_Mod_ACT	q
+65	Substate_Mod_Gold Coast	q
+66	Substate_Mod_NSW	q
+67	Substate_Mod_NT	q
+68	Substate_Mod_North QLD	q
+69	Substate_Mod_SA	q
+70	Substate_Mod_South QLD	q
+71	Substate_Mod_TAS	q
+72	Substate_Mod_VIC	q
+73	Substate_Mod_WA	q

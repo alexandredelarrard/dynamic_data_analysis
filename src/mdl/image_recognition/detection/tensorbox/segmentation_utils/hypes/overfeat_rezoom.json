@@ -1,0 +1,44 @@
+{
+    "data": {
+        "train_idl": "./data/65010000/train_boxes_new.json",
+        "test_idl": "./data/65010000/eval_boxes_new.json",
+        "truncate_data": false
+    },
+    "logging": {
+        "display_iter": 50,
+        "save_iter": 1000
+    },
+    "solver": {
+        "opt": "RMS",
+        "use_jitter": false,
+        "rnd_seed": 1,
+        "epsilon": 0.00001, 
+        "learning_rate": 0.0001, 
+        "learning_rate_step": 33000, 
+        "hungarian_iou": 0.25,
+        "weights": "",
+        "head_weights": [1.0, 0.1]
+    },
+    "use_lstm": false,
+    "use_rezoom": true,
+    "biggest_box_px": 100000,
+    "rezoom_change_loss": "center",
+    "rezoom_w_coords": [-0.25, 0.25],
+    "rezoom_h_coords": [-0.25, 0.25],
+    "reregress": true,
+    "focus_size": 1.1,
+    "early_feat_channels": 256,
+    "avg_pool_size": 5,
+    "num_lstm_layers": 2,
+    "image_width": 1280, 
+    "image_height": 960,
+    "grid_height": 30, 
+    "grid_width": 40,
+    "batch_size": 10, 
+    "region_size": 32,
+    "clip_norm": 1.0,
+    "lstm_size": 500,
+    "deconv": false,
+    "num_classes": 2,
+    "rnn_len": 1
+}
