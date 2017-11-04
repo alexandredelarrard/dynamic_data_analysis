@@ -35,7 +35,7 @@ class MainClient(object):
                 self.tasks_table[task_i["id_main_task"]]["sub_task"][task_i["id_sub_task"]]["status"]  = task_i["status"]
                 self.tasks_table[task_i["id_main_task"]]["sub_task"][task_i["id_sub_task"]]["message"] = task_i["message"]
                 self.tasks_table[task_i["id_main_task"]]["sub_task"][task_i["id_sub_task"]]["output"]  = task_i["output"]
-                self.tasks_table[task_i["id_main_task"]]["desc_task"]["nbr_remaining"] -=1
+                self.tasks_table[task_i["id_main_task"]]["desc_task"]["nbr_remaining"]-=1
                 
                 if task_i["status"] == "error":
                     for ids_node in self.tasks_table[task_i["id_main_task"]]["sub_task"][task_i["id_sub_task"]]["sons"]:
@@ -73,7 +73,7 @@ class MainClient(object):
                 
             self.tasks_table[task["id_main_task"]]["sub_task"][key] = { "id_main_task" : task["id_main_task"],
                                                                         "id_sub_task" : key,
-                                                                        "input" : task["sub_task"][key]["input"],
+                                                                        "input" : task["sub_task"][key]["input"] if len(task["sub_task"][key]["parents"]) == 0 else {},
                                                                         "output" : {},
                                                                         "mode"   : task["sub_task"][key]["mode"],
                                                                         "module" : task["sub_task"][key]["module"],

@@ -8,7 +8,7 @@ tasks_table = {"id_main_task" : {
                                   "sub_task": {"id_sub_task" : {
                                                                 "id_main_task" :
                                                                 "id_sub_task"  :
-                                                                "inputs" : {"id_input"{
+                                                                "inputs" : {"id_sub_task"{
                                                                                         "type_data" : "",
                                                                                         "values"    :{}
                                                                                         }}
@@ -42,9 +42,9 @@ tasks_table = {"id_main_task" : {
 task = {
         "company"  :
         "account"  :
-        "input"   : {"id_input"{
-                                "type_data" : "",
-                                "values"    :{}
+        "input"   : {"id_sub_task"{
+                                "type_data" : ["image", sound, bdd],
+                                "name"    :[]
                               }
                     }
         "id_main_task" : ""
@@ -57,7 +57,12 @@ task = {
                                       }
         }               
                
-               
-               
+/**************  Information on input dictionnary  *****************/               
+    
+if no parents then id_sub_task = sub _task id from the sub task exectuted
+ else id_sub_task = parent id_sub_ task 
+ 
+ this way input path = Q_path / data/ origin / name_data if no parent
+          else  path = Q_path / data / temp / output / id_sub_task (from the parent id) / name_resource
                
                
