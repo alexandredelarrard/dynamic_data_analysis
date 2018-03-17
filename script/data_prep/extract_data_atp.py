@@ -99,7 +99,13 @@ def merge_origin_atp(data_orig, data_atp, common_key = "ATP_ID"):
 #    print(total_data["bool2"].value_counts())
     
     total_data = total_data.rename(columns = {"Date_x" : "Date", "Surface_x": "Surface", "Tournament_x" : "Tournament"})
-    total_data = total_data[["ATP_ID", "ORIGIN_ID", "Date", "Date_start_tournament", "winner_name", "loser_name", "score", "WRank",  'winner_rank', "LRank", 'loser_rank', "Surface", "Tournament", "City", "tourney_name", "Court", "Comment", 'best_of', 'round', "W1_atp", "W1", "W2_atp", "W2", "L1_atp", "L1", "L2_atp", "L2"]]
+    total_data = total_data[["ATP_ID", "ORIGIN_ID", "Date", "Date_start_tournament", "Winner", "winner_name", "Loser", "loser_name", "score", "WRank",  'winner_rank', "LRank", 'loser_rank', "Surface", "Tournament", "City", "tourney_name", "Court", "Comment", 'best_of', 'round', "W1_atp", "W1", "W2_atp", "W2", "L1_atp", "L1", "L2_atp", "L2"]]
+    
+    ### suppress  as not in both datasets
+    total_data = total_data.loc[total_data["ATP_ID"] != -1] 
+    
+    ### suppress obs with mismatch ranks as wrong infos
+    total_data =  total_data[~((abs(total_data["winner_rank"] - total_data["WRank"]) > 10) &(total_data["winner_rank"] !=0)) | ((abs(total_data["loser_rank"] - total_data["LRank"]) > 10) &(total_data["loser_rank"] !=0))]
     
     return total_data
 
