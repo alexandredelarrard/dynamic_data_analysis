@@ -9,27 +9,32 @@ import pandas as pd
 import os
 from modelling.modelling_lr import modelling_logistic
 from data_prep.create_tournament import merge_with_tournois
-from data_prep.exctract_data1 import import_data
+from data_prep.extract_data_origin import import_data_origin 
+from data_prep.extract_data_atp import import_data_atp
 from data_prep.create_statistics_history import data_prep_history
 from data_prep.create_elo_ranking import merge_data_elo
 from utils.plot_lib import var_vs_target
+
+os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 
 
 if __name__ == "__main__":
     
     ### read data and clean it 
-    path = r"D:\projects\tennis betting\data\brute_info\historical\brute_info_origin"
-    data = import_data(path)
-    
-    ### add elo system ranking
-    data_elo = merge_data_elo(data)
+    data_origin = import_data_origin(os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_origin/")
     
     ### extract statistics and create target variable
-#    data2 = data_prep_history(data_elo)
+    data_origin_tournament = merge_with_tournois(data_origin, os.environ["DATA_PATH"]  + "/clean_datasets/tournament/")
+    
+    ### read atp data and clean it
+    data_atp = import_data_atp(os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/")
+    
+    ### add elo system ranking
+#    data_elo = merge_data_elo(data)
     
 #    ### attatch tournament information
-#    data3 = merge_with_tournois(data2)
+#data2 = data_prep_history(data_origin)
 
 #    #### lr modelling 
-    clf, importance = modelling_logistic(data_elo, "2017-01-01", "2017-06-01", "gbm")
+#    clf, importance = modelling_logistic(data_elo, "2017-01-01", "2017-06-01", "gbm")
  

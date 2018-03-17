@@ -21,7 +21,7 @@ from matplotlib import pyplot as plt
 
 def merge_with_tournois(data_concat, path_tournament):
     
-    tournois = pd.read_csv(path_tournament, encoding = "latin1")[["Tournament", 'Prize', 'Surface', 'Indoor_flag',
+    tournois = pd.read_csv(path_tournament + "tournaments.csv", encoding = "latin1")[["Tournament", 'Prize', 'Surface', 'Indoor_flag',
        'Currency', 'ID', 'pays', 'City', "Date_start_tournament"]]
     tournois["Date_start_tournament"] = pd.to_datetime(tournois["Date_start_tournament"], format = "%d/%m/%Y")
     tournois["year"] = (tournois["Date_start_tournament"] +  timedelta(days=7)).dt.year
