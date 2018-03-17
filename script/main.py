@@ -34,6 +34,12 @@ if __name__ == "__main__":
     #### merge atp origin
     data_merge = merge_origin_atp(data_origin_tournament_ID, data_atp, common_key = "ATP_ID")
     
+    data_merge["bool"] = 0
+    data_merge.loc[(data_merge["W1_atp"] != data_merge["W1"])|(data_merge["W2_atp"] != data_merge["W2"])|(data_merge["L1_atp"] != data_merge["L1"])
+                |(data_merge["L2_atp"] != data_merge["L2"]), "bool"] = 1
+    
+    data_merge.to_csv(r"C:\Users\User\Documents\tennis\data\merged.csv", index= False)
+    
     
     ### add elo system ranking
 #    data_elo = merge_data_elo(data)

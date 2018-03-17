@@ -50,6 +50,7 @@ def round_encoding(x):
         
     return x[0]
 
+
 def fill_missing_rank(data):
     
     ### correct winner ranks
@@ -77,8 +78,9 @@ def fill_missing_rank(data):
         
     data.loc[data["LRank"] == 'NR', "LRank"] = 1800 
     
-    data["WRank"] = data["WRank"].astype(float)
-    data["LRank"] = data["LRank"].astype(float)
+    data["WRank"] = data["WRank"].astype(int)
+    data["LRank"] = data["LRank"].astype(int)
+    data["best_of"] = data["best_of"].astype(int)
         
     return data
 
@@ -123,8 +125,6 @@ def import_data_origin(path):
     
     data.loc[pd.isnull(data["Wsets"]), "Wsets"] = -1
     data["Wsets"] = data["Wsets"].astype(int)
-    
-    data["diff_rank"] = data["WRank"] - data["LRank"]
     
     data["ORIGIN_ID"] = range(len(data))
     
