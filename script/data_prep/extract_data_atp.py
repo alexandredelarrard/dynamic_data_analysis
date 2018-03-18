@@ -12,7 +12,7 @@ from datetime import datetime
 import os
 import re
 import unicodedata
-
+import tqdm
 
 def import_data_atp(path):
     
@@ -61,7 +61,7 @@ def compare_score(x):
     try:
         return  [int(x[0]), int(x[1]), int(x[2]), int(x[3])] == [x[4], x[5], x[6], x[7]]
     except Exception:
-        return False
+        return np.nan
     
 
 def merge_origin_atp(data_orig, data_atp, common_key = "ATP_ID"):
@@ -76,37 +76,37 @@ def merge_origin_atp(data_orig, data_atp, common_key = "ATP_ID"):
     
     total_data["bool"] = total_data[["win_lose_orig","win_lose_atp"]].apply(lambda x : len(set.intersection(set(x[0].split(" ")), set(x[1].split(" ")))), axis=1)
     print("matching results : \n {0}".format(total_data["bool"].value_counts()))
-    
-    total_data["score"] = total_data["score"].fillna("0-0 0-0")
-    total_data["W1_atp"] = total_data["score"].apply(lambda x : score(x, 0, 0))
-    total_data["L1_atp"] = total_data["score"].apply(lambda x : score(x, 0, 1))
-    total_data["W2_atp"] = total_data["score"].apply(lambda x : score(x, 1, 0))
-    total_data["L2_atp"] = total_data["score"].apply(lambda x : score(x, 1, 1))
-    total_data = total_data.fillna(0)
-    
-    total_data.loc[total_data["W1_atp"] == "W/O"] = -1
-    total_data.loc[total_data["W1_atp"] == ""] = -1
-    total_data.loc[total_data["L1_atp"] == "W/O"] = -1
-    total_data.loc[total_data["L1_atp"] == ""] = -1
-    total_data.loc[total_data["W2_atp"] == "W/O"] = -1
-    total_data.loc[total_data["W2_atp"] == ""] = -1
-    total_data.loc[total_data["L2_atp"] == "W/O"] = -1
-    total_data.loc[total_data["L2_atp"] == ""] = -1
-    total_data[["W1","W2","L1","L2"]] = total_data[["W1","W2","L1","L2"]].replace("","0").replace(" ", "0").astype(int)
-    total_data[["W1_atp","W2_atp","L1_atp","L2_atp"]] = total_data[["W1","W2","L1","L2"]].replace("","0").replace(" ", "0").astype(int)
-#    
-#    total_data["bool2"] = total_data[["W1", "W2", "L1","L2", "W1_atp", "W2_atp","L1_atp", "L2_atp"]].apply(lambda x :compare_score(x), axis=1 )
-#    print(total_data["bool2"].value_counts())
-    
+   
     total_data = total_data.rename(columns = {"Date_x" : "Date", "Surface_x": "Surface", "Tournament_x" : "Tournament"})
-    total_data = total_data[["ATP_ID", "ORIGIN_ID", "Date", "Date_start_tournament", "Winner", "winner_name", "Loser", "loser_name", "score", "WRank",  'winner_rank', "LRank", 'loser_rank', "Surface", "Tournament", "City", "tourney_name", "Court", "Comment", 'best_of', 'round', "W1_atp", "W1", "W2_atp", "W2", "L1_atp", "L1", "L2_atp", "L2"]]
-    
+
     ### suppress  as not in both datasets
     total_data = total_data.loc[total_data["ATP_ID"] != -1] 
     
-    ### suppress obs with mismatch ranks as wrong infos
-    total_data =  total_data[~((abs(total_data["winner_rank"] - total_data["WRank"]) > 10) &(total_data["winner_rank"] !=0)) | ((abs(total_data["loser_rank"] - total_data["LRank"]) > 10) &(total_data["loser_rank"] !=0))]
+    #### take care of missing values
+    total_data = fill_in_missing_values(total_data)
+
+    total_data = total_data[["ATP_ID", "ORIGIN_ID", "Date", "Date_start_tournament", "winner_name", "loser_name", "score", "WRank",  "LRank", "Surface", "Tournament", "City", "tourney_name", "Court", "Comment", 'best_of', 'Round', "round", "Prize", "Currency",
+                            "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]]
     
     return total_data
 
+
+def fill_in_missing_values(total_data):
+    
+    total_data.loc[total_data["ATP_ID"] == 23373, "score"] = "6-1 4-6 7-5"
+    
+    ### take care of mismatch ranks atp wrank = atp_rank then keep wrank
+    total_data.loc[pd.isnull(total_data["winner_rank"]), "winner_rank"] = total_data.loc[pd.isnull(total_data["winner_rank"]), "WRank"]
+    total_data.loc[pd.isnull(total_data["loser_rank"]), "loser_rank"] = total_data.loc[pd.isnull(total_data["loser_rank"]), "LRank"]
+    
+    total_data.loc[pd.isnull(total_data["winner_rank_points"]), "winner_rank_points"] = total_data.loc[pd.isnull(total_data["winner_rank_points"]), "WPts"]
+    total_data.loc[pd.isnull(total_data["loser_rank_points"]), "loser_rank_points"] = total_data.loc[pd.isnull(total_data["loser_rank_points"]), "LPts"]
+    
+    missing_stats_match = pd.read_csv(os.environ["DATA_PATH"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv")
+    
+    for i in tqdm.tqdm(missing_stats_match["ATP_ID"]):
+        for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]:
+            total_data.loc[total_data["ATP_ID"] == i, col] = missing_stats_match.loc[missing_stats_match["ATP_ID"] == i, col]
+         
+    return total_data
  

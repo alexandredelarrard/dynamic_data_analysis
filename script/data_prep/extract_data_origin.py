@@ -76,17 +76,18 @@ def fill_missing_rank(data):
     for date, name in np.array(data.loc[pd.isnull(data["LRank"])][["Date", "Loser"]]):
         data.loc[(data["Date"] == date)&(data["Loser"] == name), "LRank"]  = missing_data.loc[(missing_data["Date"] == date) &(missing_data["Loser"] == name), "Rank"]
         
-    data.loc[data["LRank"] == 'NR', "LRank"] = 1800 
+    data.loc[data["LRank"] == 'NR', "LRank"] = 1500 
+    data.loc[pd.isnull(data["LRank"]), "LRank"] = 1500 
     
     data["WRank"] = data["WRank"].astype(int)
     data["LRank"] = data["LRank"].astype(int)
-    data["best_of"] = data["best_of"].astype(int)
         
     return data
 
 
 def import_data_origin(path):
     
+    print("1) Import data origin and pre process data ")
     liste_files = glob.glob(path + "/*.xls") + glob.glob(path + "/*.xlsx")
     
     for i, file in enumerate(liste_files):

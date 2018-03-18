@@ -37,8 +37,7 @@ if __name__ == "__main__":
     ### add elo system ranking
 #    data_elo = merge_data_elo(data)
     
-#    ### attatch tournament information
-#data2 = data_prep_history(data_origin)
+    #data2 = data_prep_history(data_origin)
 
 #    #### lr modelling 
 #    clf, importance = modelling_logistic(data_elo, "2017-01-01", "2017-06-01", "gbm")
