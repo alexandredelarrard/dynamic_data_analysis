@@ -94,7 +94,7 @@ def merge_origin_atp(data_orig, data_atp, common_key = "ATP_ID"):
     total_data = fill_in_missing_values(total_data)
 
     total_data = total_data[["ATP_ID", "ORIGIN_ID",  'winner_id', 'loser_id', "Date", "Date_start_tournament", "winner_name", "loser_name", "score", "WRank",  "LRank", "Surface", "Tournament", 'ATP', "City", "tourney_name", 'draw_size', "Court", "Comment", 'best_of', 'Round', "round", "Prize", "Currency",   #### match macro desc + tournament desc
-                             'winner_hand', 'winner_ht', 'winner_ioc', 'winner_age','loser_hand', 'loser_ht', 'loser_ioc', 'loser_age', #### players desc
+                              #### players desc
                             "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes", #### match micro desc 
                              'SBL', 'SBW', 'SJL', 'SJW', 'UBL', 'UBW', 'MaxL', 'MaxW', 'PSL', 'PSW','IWL', 'IWW', 'EXL', 'EXW', 'GBL', 'GBW', 'CBL', 'CBW', 'AvgL', 'AvgW', 'B&WL', 'B&WW', 'B365L', 'B365W']] #### bets odds 
      

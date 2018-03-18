@@ -70,11 +70,80 @@ def read_json(json_path):
     data = json.load(open(json_path))
     return data
 
+def birthplace(x):
+    
+    if "," in x:
+        return x.split(",")[-1]
+    else:
+        return x
+    
+
+def Plays_strong_hand(x):
+    
+    if "," in x:
+        return x.split(",")[0].replace("Plays","")
+    else:
+        return x.replace("Plays", "")
+    
+def Plays_weak_hand(x):
+    
+    if "," in x:
+        return x.split(",")[1]
+    else:
+        return np.nan
+
+
+
+def clean_players_crawl(data_players):
+    
+    data_players["Country"] = data_players["Country"].apply(lambda x : str(x).rstrip().lstrip())
+    
+    data_players["Birth place"] = data_players["Birth place"].apply(lambda x : x.replace("Birthplace","").lstrip())
+    data_players["Birth place"] = data_players["Birth place"].apply(lambda x : birthplace(x))
+    data_players.loc[(data_players["Birth place"] == ""), "Birth place"] = np.nan
+    
+    data_players["Weight"] = data_players["Weight"].apply(lambda x : x.replace("Weight","").lstrip())
+    data_players["Weight"] = data_players["Weight"].apply(lambda x : x[x.find("(")+1:x.find(")")].replace("kg",""))
+    data_players.loc[(data_players["Weight"] == "0") | (data_players["Weight"] == ""), "Weight"] = np.nan
+    
+    data_players["Height"] = data_players["Height"].apply(lambda x : x.replace("Height","").lstrip())
+    data_players["Height"] = data_players["Height"].apply(lambda x : x[x.find("(")+1:x.find(")")].replace("cm",""))
+    data_players.loc[(data_players["Height"] == "0") | (data_players["Height"] == ""), "Height"] = np.nan
+    
+    data_players["Turned pro"] = data_players["Turned pro"].apply(lambda x : x.replace("Turned Pro","").lstrip())
+    data_players.loc[(data_players["Turned pro"] == "0") | (data_players["Turned pro"] == ""), "Turned pro"] = np.nan
+    
+    data_players["DOB"] = data_players["DOB"].apply(lambda x : x.replace(".","/").replace("(","").replace(")",""))
+    data_players["DOB"] = data_players["DOB"].replace("DOB",np.nan)
+    data_players["DOB"] = pd.to_datetime(data_players["DOB"], format = "%Y/%m/%d")
+    
+    data_players["Strong_hand"] = data_players["Plays"].apply(lambda x : Plays_strong_hand(x))
+    data_players["Weak_hand"] = data_players["Plays"].apply(lambda x : Plays_weak_hand(x))
+    
+    del data_players["Plays"]
+    
+    data_players.to_csv(os.environ["DATA_PATH"] + "/brute_info/players/brute_info_players_dec.csv")
+    
+    return data_players
+
 
 if __name__ == "__main__":
     
     liste_players = glob.glob(os.environ["DATA_PATH"] + "/brute_info/players/brute_info/*.json")
     data_players = loop_over_jsons(liste_players)
-    data_players = data_players[["Name", "Surname", "Country", "DOB", "Turned pro", "Weight", "Height", "Birth place", "Residence place", "Plays"]]
     
-    data_players["key"] = data_players[["Name", "Surname"]].apply(lambda x : , axis=1)
+    data_players = data_players[["Name", "Surname", "Country", "DOB", "Turned pro", "Weight", "Height", "Birth place", "Plays"]]
+    data_players["key"] = data_players[["Name", "Surname"]].apply(lambda x : x[0].lower().replace("-"," ").replace(".","").replace("'","").rstrip() + " " + x[1].lower().replace("-"," ").replace("."," ").replace("'","").rstrip(), axis=1)
+
+    data_players = clean_players_crawl(data_players)
+    
+    players_db = pd.read_csv(os.environ["DATA_PATH"] + "/brute_info/players/players_ID.csv")
+    dd = pd.merge(players_db, data_players, left_on = "Player_Name", right_on ="key", how = "left")
+    
+#    dd.loc[pd.isnull(dd["Name"])].shape
+#    np.array(dd.loc[pd.isnull(dd["Name"])]["Player_Name"].tolist())
+    
+    del dd["Unnamed: 0"]
+    dd.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_description.csv", index= False)
+    
+    
