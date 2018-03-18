@@ -81,7 +81,7 @@ def birthplace(x):
 def Plays_strong_hand(x):
     
     if "," in x:
-        return x.split(",")[0].replace("Plays","")
+        return x.split(",")[0].replace("Plays","").replace("Right Handed","Right-Handed").replace("Left Handed","Left-Handed")
     else:
         return x.replace("Plays", "")
     
@@ -93,10 +93,11 @@ def Plays_weak_hand(x):
         return np.nan
 
 
-
 def clean_players_crawl(data_players):
     
     data_players["Country"] = data_players["Country"].apply(lambda x : str(x).rstrip().lstrip())
+    data_players["Nationality"] = data_players["Country"].replace("nan", np.nan)
+    del data_players["Country"]
     
     data_players["Birth place"] = data_players["Birth place"].apply(lambda x : x.replace("Birthplace","").lstrip())
     data_players["Birth place"] = data_players["Birth place"].apply(lambda x : birthplace(x))
@@ -118,6 +119,8 @@ def clean_players_crawl(data_players):
     data_players["DOB"] = pd.to_datetime(data_players["DOB"], format = "%Y/%m/%d")
     
     data_players["Strong_hand"] = data_players["Plays"].apply(lambda x : Plays_strong_hand(x))
+    data_players["Strong_hand"] = data_players["Strong_hand"].replace("",np.nan)
+    
     data_players["Weak_hand"] = data_players["Plays"].apply(lambda x : Plays_weak_hand(x))
     
     del data_players["Plays"]
@@ -125,7 +128,6 @@ def clean_players_crawl(data_players):
     data_players.to_csv(os.environ["DATA_PATH"] + "/brute_info/players/brute_info_players_dec.csv")
     
     return data_players
-
 
 if __name__ == "__main__":
     
@@ -140,10 +142,12 @@ if __name__ == "__main__":
     players_db = pd.read_csv(os.environ["DATA_PATH"] + "/brute_info/players/players_ID.csv")
     dd = pd.merge(players_db, data_players, left_on = "Player_Name", right_on ="key", how = "left")
     
-#    dd.loc[pd.isnull(dd["Name"])].shape
-#    np.array(dd.loc[pd.isnull(dd["Name"])]["Player_Name"].tolist())
+    dd.loc[pd.isnull(dd["Name"])].shape
+    np.array(dd.loc[pd.isnull(dd["Name"])]["Player_Name"].tolist())
     
     del dd["Unnamed: 0"]
     dd.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_description.csv", index= False)
     
+    pd.isnull(dd).sum()
+    dd.loc[pd.isnull(dd["Nationality"])]
     
