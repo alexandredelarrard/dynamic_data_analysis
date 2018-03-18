@@ -10,6 +10,7 @@ import glob
 import numpy as np
 from datetime import datetime
 import os
+import time
 
 def Number_rounds(data):
 
@@ -87,7 +88,7 @@ def fill_missing_rank(data):
 
 def import_data_origin(path):
     
-    print("1) Import data origin and pre process data ")
+    t0 = time.time()
     liste_files = glob.glob(path + "/*.xls") + glob.glob(path + "/*.xlsx")
     
     for i, file in enumerate(liste_files):
@@ -128,6 +129,8 @@ def import_data_origin(path):
     data["Wsets"] = data["Wsets"].astype(int)
     
     data["ORIGIN_ID"] = range(len(data))
+    
+    print("[{0}s] 1) Import data origin and pre process data ".format(time.time() - t0))
     
     return data.reset_index(drop=True)
 

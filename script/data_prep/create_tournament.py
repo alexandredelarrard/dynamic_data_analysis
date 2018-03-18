@@ -36,7 +36,7 @@ def merge_with_tournois(data_concat, path_tournament):
     data_tournois = pd.merge(data_concat, tournois, on = ["key"], how = "left")
     data_tournois.drop(["Surface_y", "key", "year_x", "year_y", "Tournament_y", "Indoor_flag"], axis= 1, inplace = True)
     
-    print("[{0}s] 2) Merge origin data with tournement data ".format(time.time - t0))
+    print("[{0}s] 2) Merge origin data with tournement data ".format(time.time() - t0))
     
     return data_tournois
 

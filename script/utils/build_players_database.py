@@ -10,6 +10,7 @@ import json
 import pandas as pd
 import glob
 import tqdm
+import os
 
 def loop_over_jsons(liste_jsons):
     first = 0
@@ -72,22 +73,8 @@ def read_json(json_path):
 
 if __name__ == "__main__":
     
-    path = r"D:\projects\tennis betting\data\players\brute_info"
-    liste_players = glob.glob(path + "/*.json")
-    
+    liste_players = glob.glob(os.environ["DATA_PATH"] + "/brute_info/players/brute_info/*.json")
     data_players = loop_over_jsons(liste_players)
+    data_players = data_players[["Name", "Surname", "Country", "DOB", "Turned pro", "Weight", "Height", "Birth place", "Residence place", "Plays"]]
     
-    data_players["matching_name"] = data_players["Surname"] + data_players["Name"].apply(lambda x : " " + x[0:1] + ".")
-#    
-#
-#    sub_data_players = data_players.loc[~data_players["matching_name"].isin(liste_duplicated)][["Name", "Surname", "matching_name"]]
-#
-#    path_players_list = r"D:\projects\tennis betting\data\players\liste_players.csv"
-#    liste_players_need = pd.read_csv(path_players_list)
-#    liste_players_need["players"] =  liste_players_need["players"].apply(lambda x : x.lstrip().rstrip())
-#    liste_players_need["ID"] = liste_players_need.index
-#    
-#    players_merge = pd.merge(liste_players_need, sub_data_players, how = "left", left_on = "players", right_on= "matching_name")
-#    players_merge[["ID", "Name", "Surname", "players", "matching_name"]].fillna("").to_csv(r"D:\projects\tennis betting\data\players\match_players_name.csv")
-#    
-#    missing_names = players_merge.loc[pd.isnull(players_merge["matching_name"]),"players"]
+    data_players["key"] = data_players[["Name", "Surname"]].apply(lambda x : , axis=1)

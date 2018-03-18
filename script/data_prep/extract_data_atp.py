@@ -8,14 +8,15 @@ Created on Sat Mar 17 14:00:49 2018
 import pandas as pd
 import glob
 import numpy as np
-from datetime import datetime
 import os
 import re
 import unicodedata
 import tqdm
+import time
 
 def import_data_atp(path):
     
+    t0 = time.time()
     liste_files = glob.glob(path + "/*.csv")
     
     for i, file in enumerate(liste_files):
@@ -32,16 +33,20 @@ def import_data_atp(path):
     
     data.loc[data["winner_name"] == "joshua goodall", "winner_name"] = "josh goodall"
     data.loc[data["loser_name"] == "joshua goodall", "loser_name"] = "josh goodall"
+    
+    print("[{0}s] 4) Import ATP dataset ".format(time.time() - t0))
             
     return data.reset_index(drop=True)
 
 
 def merge_match_ID(data1, key):
     
+    t0 = time.time()
     matching_IDS = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/match_originID_atpID.csv")
     datamerge = pd.merge(data1, matching_IDS, on =key, how = "left")
     
     print("new data shape is {0}".format(datamerge.shape))
+    print("[{0}s] 3) Merge ATP ID vs Origin ID for origin dataset ".format(time.time() - t0))
     
     return datamerge
 
@@ -66,6 +71,8 @@ def compare_score(x):
 
 def merge_origin_atp(data_orig, data_atp, common_key = "ATP_ID"):
     
+    t0 = time.time()
+    
     total_data = pd.merge(data_orig, data_atp, on = common_key, how= "left")
     
     for col in ["Winner", "Loser" , "winner_name", "loser_name"]:
@@ -81,13 +88,21 @@ def merge_origin_atp(data_orig, data_atp, common_key = "ATP_ID"):
 
     ### suppress  as not in both datasets
     total_data = total_data.loc[total_data["ATP_ID"] != -1] 
+    total_data["best_of"] = total_data["best_of"].astype(int)
     
     #### take care of missing values
     total_data = fill_in_missing_values(total_data)
 
-    total_data = total_data[["ATP_ID", "ORIGIN_ID", "Date", "Date_start_tournament", "winner_name", "loser_name", "score", "WRank",  "LRank", "Surface", "Tournament", "City", "tourney_name", "Court", "Comment", 'best_of', 'Round', "round", "Prize", "Currency",
-                            "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]]
+    total_data = total_data[["ATP_ID", "ORIGIN_ID",  'winner_id', 'loser_id', "Date", "Date_start_tournament", "winner_name", "loser_name", "score", "WRank",  "LRank", "Surface", "Tournament", 'ATP', "City", "tourney_name", 'draw_size', "Court", "Comment", 'best_of', 'Round', "round", "Prize", "Currency",   #### match macro desc + tournament desc
+                             'winner_hand', 'winner_ht', 'winner_ioc', 'winner_age','loser_hand', 'loser_ht', 'loser_ioc', 'loser_age', #### players desc
+                            "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes", #### match micro desc 
+                             'SBL', 'SBW', 'SJL', 'SJW', 'UBL', 'UBW', 'MaxL', 'MaxW', 'PSL', 'PSW','IWL', 'IWW', 'EXL', 'EXW', 'GBL', 'GBW', 'CBL', 'CBW', 'AvgL', 'AvgW', 'B&WL', 'B&WW', 'B365L', 'B365W']] #### bets odds 
+     
+    total_data["winner_id"] = total_data["winner_id"].astype(int) 
+    total_data["loser_id"] = total_data["loser_id"].astype(int) 
     
+    print("[{0}s] 5) Merge ATP with Origin dataset ".format(time.time() - t0))
+           
     return total_data
 
 

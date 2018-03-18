@@ -14,6 +14,8 @@ from data_prep.extract_data_atp import import_data_atp, merge_match_ID, merge_or
 from data_prep.create_statistics_history import data_prep_history
 from data_prep.create_elo_ranking import merge_data_elo
 from utils.plot_lib import var_vs_target
+from utils.create_id_player import players_ID_creation
+
 
 os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 
@@ -33,6 +35,9 @@ if __name__ == "__main__":
     
     #### merge atp origin
     data_merge = merge_origin_atp(data_origin_tournament_ID, data_atp, common_key = "ATP_ID")
+    
+    #### create_ID_players
+    players_ID_creation(data_merge)
     
     ### add elo system ranking
 #    data_elo = merge_data_elo(data)
