@@ -36,8 +36,14 @@ if __name__ == "__main__":
     #### merge atp origin
     data_merge = merge_origin_atp(data_origin_tournament_ID, data_atp, common_key = "ATP_ID")
     
+#    missing_values = data_merge.loc[pd.isnull(data_merge["w_ace"]), ["winner_name", "loser_name", "tourney_name", "Date"]]
+#    missing_values["year"] = missing_values["Date"].dt.year
+#    missing_values["keys"] = missing_values["year"].astype(str) + " "+missing_values["tourney_name"].str.lower() + " "+missing_values["winner_name"] +" "+ missing_values["loser_name"]
+#    
+#    total_data["keys"]
+    
     #### create_ID_players
-    players_ID_creation(data_merge)
+#    players_ID_creation(data_merge)
     
     ### add elo system ranking
 #    data_elo = merge_data_elo(data)
