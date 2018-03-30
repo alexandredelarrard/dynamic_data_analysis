@@ -6,24 +6,18 @@ Created on Fri Mar  9 10:14:40 2018
 """
 
 import pandas as pd
-import glob
-import numpy as np
-from multiprocessing import Pool
-from functools import partial
-from datetime import datetime, timedelta
-from sklearn.model_selection import cross_val_score
-from sklearn import metrics, ensemble, linear_model, svm
-from sklearn.metrics import roc_auc_score, accuracy_score
+from datetime import timedelta
+
 import time
+import os
 
-from matplotlib import pyplot as plt
 
 
-def merge_with_tournois(data_concat, path_tournament):
+def merge_with_tournois(data_concat):
     
     
     t0 = time.time()
-    tournois = pd.read_csv(path_tournament + "tournaments.csv", encoding = "latin1")[["Tournament", 'Prize', 'Surface', 'Indoor_flag',
+    tournois = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/tournament/tournaments.csv", encoding = "latin1")[["Tournament", 'Prize', 'Surface', 'Indoor_flag',
        'Currency', 'ID', 'pays', 'City', "Date_start_tournament"]]
     tournois["Date_start_tournament"] = pd.to_datetime(tournois["Date_start_tournament"], format = "%d/%m/%Y")
     tournois["year"] = (tournois["Date_start_tournament"] +  timedelta(days=7)).dt.year

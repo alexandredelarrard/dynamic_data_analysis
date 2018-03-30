@@ -9,12 +9,14 @@ import pandas as pd
 import glob
 import numpy as np
 import os
-import re
-import unicodedata
-import tqdm
-import time
+from tqdm import tqdm
+import time 
 
-def import_data_atp(path):
+tqdm.pandas(tqdm())
+
+from  utils.build_match_statistics_database import match_stats_main
+
+def import_data_atp(path, redo=False):
     
     t0 = time.time()
     liste_files = glob.glob(path + "/*.csv")
@@ -31,97 +33,135 @@ def import_data_atp(path):
     data = data.sort_values(["Date", "tourney_name"])
     data["ATP_ID"] = range(len(data))
     
+    #### suppress challenger matches
+    data = data.loc[data["tourney_level"] != "C"]
+    
     data.loc[data["winner_name"] == "joshua goodall", "winner_name"] = "josh goodall"
     data.loc[data["loser_name"] == "joshua goodall", "loser_name"] = "josh goodall"
+    data = data.reset_index(drop=True)
+    print("[{0}s] 1) Import ATP dataset ".format(time.time() - t0))
     
-    print("[{0}s] 4) Import ATP dataset ".format(time.time() - t0))
+    total_data = fill_in_missing_values(data, redo)
             
-    return data.reset_index(drop=True)
+    return total_data
 
 
-def merge_match_ID(data1, key):
+def fill_in_missing_values(total_data, redo):
     
+    #### suppress davis cup and JO
+    not_davis_index = total_data["tourney_name"].apply(lambda x : "Davis Cup" not in x and "Olympics" not in x)
+    total_data = total_data.loc[not_davis_index]
+    
+    #### fill in missing scores
+    total_data.loc[(total_data["tourney_id"] == "2007-533")&(pd.isnull(total_data["score"])), "score"] = "6-1 4-6 7-5"
+    total_data.loc[(total_data["tourney_id"] == "1997-319")&(pd.isnull(total_data["score"])), "score"] = "6-4 6-4 6-4"
+    
+    #### fill in missing ranks and points
     t0 = time.time()
-    matching_IDS = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/match_originID_atpID.csv")
-    datamerge = pd.merge(data1, matching_IDS, on =key, how = "left")
+    total_data_wrank = fill_ranks_based_origin(total_data)
+    total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
+    print("[{0}s] 2) fill missing rank based on closest info ".format(time.time() - t0))
     
-    print("new data shape is {0}".format(datamerge.shape))
-    print("[{0}s] 3) Merge ATP ID vs Origin ID for origin dataset ".format(time.time() - t0))
-    
-    return datamerge
-
-
-def strip_accents(s):
-   return ''.join(c for c in unicodedata.normalize('NFD',str(s))
-                  if unicodedata.category(c) != 'Mn')
-
-
-def score(x, i, j):
-    try:
-        return re.sub("[\(\[].*?[\)\]]", "", str(x)).split(" ")[i].split("-")[j]
-    except Exception:
-        return "0"
-    
-def compare_score(x):
-    try:
-        return  [int(x[0]), int(x[1]), int(x[2]), int(x[3])] == [x[4], x[5], x[6], x[7]]
-    except Exception:
-        return np.nan
-    
-
-def merge_origin_atp(data_orig, data_atp, common_key = "ATP_ID"):
-    
+    #### add match stats on service missing
     t0 = time.time()
+    total_data_wrank_stats = merge_atp_missing_stats(total_data_wrank, redo)
+    print("[{0}s] 3) fill missing stats based on atp crawling matching ".format(time.time() - t0))
     
-    total_data = pd.merge(data_orig, data_atp, on = common_key, how= "left")
+    #### merge with tourney ddb
+    t0 = time.time()
+    total_data_wrank_stats_tourney = merge_tourney(total_data_wrank_stats)
+    print("[{0}s] 4) Merge with tourney database ".format(time.time() - t0))
     
-    for col in ["Winner", "Loser" , "winner_name", "loser_name"]:
-        total_data[col] = total_data[col].apply(lambda x : strip_accents(x).replace("'","").replace("-"," ").replace(".","").lstrip().rstrip().lower())
+    return total_data_wrank_stats_tourney
+
+
+def fill_ranks_based_origin(total_data):
+    
+    data = total_data.copy()
+    missing_data_rank = data.loc[(pd.isnull(data["winner_rank"]))|(pd.isnull(data["loser_rank"]))]
+    
+    ### fillin missing ranks and points with closest previous rank and point
+    missing_data_rank["id_rank_pts"]  = missing_data_rank[["Date", "winner_id", "loser_id", "winner_rank", "loser_rank"]].progress_apply(lambda x : deduce_rank_from_past(x, total_data), axis=1)[ "loser_rank"]
+
+    index_w = pd.isnull(data["winner_rank"])
+    data.loc[index_w, "winner_rank"] = list(list(zip(*missing_data_rank.loc[pd.isnull(missing_data_rank["winner_rank"]), "id_rank_pts"]))[0])
+    data.loc[index_w, "winner_rank_points"] = list(list(zip(*missing_data_rank.loc[pd.isnull(missing_data_rank["winner_rank"]), "id_rank_pts"]))[1])
+    index_l = pd.isnull(data["loser_rank"])
+    data.loc[index_l, "loser_rank"] = list(list(zip(*missing_data_rank.loc[pd.isnull(missing_data_rank["loser_rank"]), "id_rank_pts"]))[2])
+    data.loc[index_l, "loser_rank_points"] = list(list(zip(*missing_data_rank.loc[pd.isnull(missing_data_rank["loser_rank"]), "id_rank_pts"]))[3])
+
+    return data
+
+
+def deduce_rank_from_past(x, data):
+
+    id_missing_winner=  True if pd.isnull(x["winner_rank"]) else False
+    id_missing_loser=  True if pd.isnull(x["loser_rank"]) else False
+    
+     ### the missing value comes from the winning player
+    if id_missing_winner:
+        sub_data = data.loc[((data["winner_id"] == x["winner_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["winner_id"]) &(~pd.isnull(data["loser_rank"])))]
+        sub_data["time_dist"] = abs((x["Date"] - sub_data["Date"]).dt.days)
         
-    total_data["win_lose_orig"] = total_data["Winner"] + " " + total_data["Loser"]
-    total_data["win_lose_atp"] = total_data["winner_name"] + " " + total_data["loser_name"]
+        if len(sub_data) ==0:
+             missed =[ int(data["winner_rank"].mean()), int(data["winner_rank_points"].mean())]
+#             print(x["winner_id"])
+        else:
+            elect = sub_data.loc[sub_data["time_dist"] == min(sub_data["time_dist"])].iloc[0]
+            
+            rank = elect["winner_rank"] if elect["winner_id"] == x["winner_id"] else elect["loser_rank"]
+            pts  = elect["winner_rank_points"] if elect["winner_id"] == x["winner_id"] else elect["loser_rank_points"]
+        
+            missed =[rank, pts]
+    else:
+        missed = [np.nan, np.nan]
     
-    total_data["bool"] = total_data[["win_lose_orig","win_lose_atp"]].apply(lambda x : len(set.intersection(set(x[0].split(" ")), set(x[1].split(" ")))), axis=1)
-    print("matching results : \n {0}".format(total_data["bool"].value_counts()))
+    ### the missing value comes from the losing player
+    if id_missing_loser:
+        sub_data = data.loc[((data["winner_id"] == x["loser_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["loser_id"]) &(~pd.isnull(data["loser_rank"])))]
+        sub_data["time_dist"] = abs((x["Date"] - sub_data["Date"]).dt.days)
+        
+        if len(sub_data) ==0:
+             missed +=[ int(data["loser_rank"].mean()), int(data["loser_rank_points"].mean())]
+#             print(x["loser_id"])
+        else:
+            elect = sub_data.loc[sub_data["time_dist"] == min(sub_data["time_dist"])].iloc[0]
+            
+            rank = elect["winner_rank"] if elect["winner_id"] == x["loser_id"] else elect["loser_rank"]
+            pts  = elect["winner_rank_points"] if elect["winner_id"] == x["loser_id"] else elect["loser_rank_points"]
+        
+            missed +=[rank, pts]     
+    else:
+        missed += [np.nan, np.nan]
+        
+    return [missed]
+    
+
+def merge_atp_missing_stats(total_data, redo = False):
+    
+    data = total_data.copy()
+    missing_match_stats= match_stats_main(data, redo = redo)
+    
+    for i in tqdm(missing_match_stats["ATP_ID"].tolist()):
+        if pd.isnull(data.loc[data["ATP_ID"] == i, "w_ace"].values[0]):
+            for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced",\
+                        "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]:
+                data.loc[data["ATP_ID"] == i, col] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, col].values[0]
+        else:
+            data.loc[data["ATP_ID"] == i, "minutes"] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, "minutes"].values[0]
    
-    total_data = total_data.rename(columns = {"Date_x" : "Date", "Surface_x": "Surface", "Tournament_x" : "Tournament"})
+    return data
 
-    ### suppress  as not in both datasets
-    total_data = total_data.loc[total_data["ATP_ID"] != -1] 
-    total_data["best_of"] = total_data["best_of"].astype(int)
+
+def merge_tourney(data):
     
-    #### take care of missing values
-    total_data = fill_in_missing_values(total_data)
-
-    total_data = total_data[["ATP_ID", "ORIGIN_ID",  'winner_id', 'loser_id', "Date", "Date_start_tournament", "winner_name", "loser_name", "score", "WRank",  "LRank", "Surface", "Tournament", 'ATP', "City", "tourney_name", 'draw_size', "Court", "Comment", 'best_of', 'Round', "round", "Prize", "Currency",   #### match macro desc + tournament desc
-                              #### players desc
-                            "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes", #### match micro desc 
-                             'SBL', 'SBW', 'SJL', 'SJW', 'UBL', 'UBW', 'MaxL', 'MaxW', 'PSL', 'PSW','IWL', 'IWW', 'EXL', 'EXW', 'GBL', 'GBW', 'CBL', 'CBW', 'AvgL', 'AvgW', 'B&WL', 'B&WW', 'B365L', 'B365W']] #### bets odds 
+    tournament = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/tournament/tourney.csv", encoding = "latin1")
+    tournament.loc[pd.isnull(tournament["masters"]), "masters"] = "classic"
+    tournament.loc[pd.isnull(tournament["Currency"]), "Currency"] = "$"
+    
+    data_merge = pd.merge(data, tournament, on = "tourney_id", how = "left")
      
-    total_data["winner_id"] = total_data["winner_id"].astype(int) 
-    total_data["loser_id"] = total_data["loser_id"].astype(int) 
+    data_merge = data_merge.drop(["tourney_name", "surface_y", "tourney_id_atp", "tourney_year"], axis=1)
     
-    print("[{0}s] 5) Merge ATP with Origin dataset ".format(time.time() - t0))
-           
-    return total_data
-
-
-def fill_in_missing_values(total_data):
-    
-    total_data.loc[total_data["ATP_ID"] == 23373, "score"] = "6-1 4-6 7-5"
-    
-    ### take care of mismatch ranks atp wrank = atp_rank then keep wrank
-    total_data.loc[pd.isnull(total_data["winner_rank"]), "winner_rank"] = total_data.loc[pd.isnull(total_data["winner_rank"]), "WRank"]
-    total_data.loc[pd.isnull(total_data["loser_rank"]), "loser_rank"] = total_data.loc[pd.isnull(total_data["loser_rank"]), "LRank"]
-    
-    total_data.loc[pd.isnull(total_data["winner_rank_points"]), "winner_rank_points"] = total_data.loc[pd.isnull(total_data["winner_rank_points"]), "WPts"]
-    total_data.loc[pd.isnull(total_data["loser_rank_points"]), "loser_rank_points"] = total_data.loc[pd.isnull(total_data["loser_rank_points"]), "LPts"]
-    
-    missing_stats_match = pd.read_csv(os.environ["DATA_PATH"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv")
-    
-    for i in tqdm.tqdm(missing_stats_match["ATP_ID"]):
-        for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced", "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]:
-            total_data.loc[total_data["ATP_ID"] == i, col] = missing_stats_match.loc[missing_stats_match["ATP_ID"] == i, col]
-         
-    return total_data
+    return data_merge
  

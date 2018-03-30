@@ -147,7 +147,3 @@ if __name__ == "__main__":
     
     del dd["Unnamed: 0"]
     dd.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_description.csv", index= False)
-    
-    pd.isnull(dd).sum()
-    dd.loc[pd.isnull(dd["Nationality"])]
-    

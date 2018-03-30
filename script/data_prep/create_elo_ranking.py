@@ -63,7 +63,7 @@ def update_end_of_season(data, year_ref, mean_elo=1000):
 
 def calculate_elo(data):
     
-    data = data[["Date", "Winner", "Loser", "Surface"]].copy()
+    data = data[["Date", "winner_id", "loser_id", "surface"]].copy()
     
     data["elo1"] = 1500
     data["elo2"] = 1500
@@ -85,46 +85,46 @@ def calculate_elo(data):
         index_filter = data.index <= i
         
         ##### winner elo
-        player = sub_data["Winner"]
-        nbr_seen = data.loc[((data["Winner"] ==  player) | (data["Loser"] ==  player)) & (index_filter)]
+        player = sub_data["winner_id"]
+        nbr_seen = data.loc[((data["winner_id"] ==  player) | (data["loser_id"] ==  player)) & (index_filter)]
         k_winner = calculate_k(nbr_seen.shape[0])
         new_elo = elo(elo_winner, elo_diff(elo_winner, elo_loser), 1, k=k_winner)
         
-        filter_win = (data["Winner"] == player)&(data.index > i)
-        filter_lose = (data["Loser"] == player)&(data.index > i)
+        filter_win = (data["winner_id"] == player)&(data.index > i)
+        filter_lose = (data["loser_id"] == player)&(data.index > i)
         
         data.loc[filter_win, "elo1"] = new_elo
         data.loc[filter_lose, "elo2"] = new_elo
         
         #### winner elo per surface
-        nbr_seen_surface = nbr_seen.loc[(nbr_seen["Surface"] ==  sub_data["Surface"])].shape[0]
+        nbr_seen_surface = nbr_seen.loc[(nbr_seen["surface"] ==  sub_data["surface"])].shape[0]
         k_winner = calculate_k(nbr_seen_surface)
         new_elo = elo(elo_winner_surface, elo_diff(elo_winner_surface, elo_loser_surface), 1, k=k_winner)
         
-        data.loc[(filter_win) & (data["Surface"] ==  sub_data["Surface"]), "elo1_surface"] = new_elo
-        data.loc[(filter_lose) & (data["Surface"] ==  sub_data["Surface"]), "elo2_surface"] = new_elo
+        data.loc[(filter_win) & (data["surface"] ==  sub_data["surface"]), "elo1_surface"] = new_elo
+        data.loc[(filter_lose) & (data["surface"] ==  sub_data["surface"]), "elo2_surface"] = new_elo
         
         ##### loser elo
-        player = sub_data["Loser"]
-        nbr_seen = data.loc[((data["Winner"] ==  player) | (data["Loser"] ==  player))&(index_filter)]
+        player = sub_data["loser_id"]
+        nbr_seen = data.loc[((data["winner_id"] ==  player) | (data["loser_id"] ==  player))&(index_filter)]
         k_loser = calculate_k(nbr_seen.shape[0])
         new_elo = elo(elo_loser, elo_diff(elo_loser, elo_winner), 0, k=k_loser)
         
-        filter_win = (data["Winner"] == player)&(data.index > i)
-        filter_lose = (data["Loser"] == player)&(data.index > i)
+        filter_win = (data["winner_id"] == player)&(data.index > i)
+        filter_lose = (data["loser_id"] == player)&(data.index > i)
         
         data.loc[filter_win, "elo1"] = new_elo
         data.loc[filter_lose, "elo2"] = new_elo
         
         #### loser elo per surface
-        nbr_seen_surface = nbr_seen.loc[(nbr_seen["Surface"] ==  sub_data["Surface"])].shape[0]
+        nbr_seen_surface = nbr_seen.loc[(nbr_seen["surface"] ==  sub_data["surface"])].shape[0]
         k_loser = calculate_k(nbr_seen_surface)
         new_elo = elo(elo_loser_surface, elo_diff(elo_loser_surface, elo_winner_surface), 0, k=k_loser)
         
-        data.loc[(filter_win)&(data["Surface"] ==  sub_data["Surface"]), "elo1_surface"] = new_elo
-        data.loc[(filter_lose)&(data["Surface"] ==  sub_data["Surface"]), "elo2_surface"] = new_elo
+        data.loc[(filter_win)&(data["surface"] ==  sub_data["surface"]), "elo1_surface"] = new_elo
+        data.loc[(filter_lose)&(data["surface"] ==  sub_data["surface"]), "elo2_surface"] = new_elo
         
-    return data[["Date", "Winner", "Loser", "elo1", "elo2", "elo1_surface", "elo2_surface"]]
+    return data[["Date", "winner_id", "loser_id", "elo1", "elo2", "elo1_surface", "elo2_surface"]]
 
 
 def merge_data_elo(data):
