@@ -173,14 +173,12 @@ def data_prep_history(dataset):
     #### nbr de fois deja gagne ce tournois
     #### nbr de fois deja franchis cette etape dans tournois
     
-        
     data1 = data.copy()
     data1["target"] = 1
     
     ### take care of missing rank values
     data2 = data.copy()
     data2["target"] = 0
-    data2.rename(columns = {'B&WW': 'B&WL', 'B&WL': 'B&WW'}, inplace = True)
     data2.rename(columns = {'Winner': 'Loser', 'Loser': 'Winner', "elo1": "elo2", "elo2":"elo1"}, inplace = True)
     
     for col in ['AvgW', 'B365L', 'B365W', 'CBW', 'EXW', 'GBW', 'MaxW', 'PSW', 'SBW', 'SJW', 'UBW', 'W1', 'W2', 'W3', 'W4', 'W5', 'WPts', 'WRank','Wsets']:

@@ -16,7 +16,7 @@ os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 def main_create_data():
     
     ### read atp data and clean it / redo = if redo the matching algo with stats match
-    data_atp = import_data_atp(os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/", redo = True)
+    data_atp = import_data_atp(os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/", redo = False)
     
     ### add elo system ranking
 #    data_merge_player_elo = merge_data_elo(data_atp)
