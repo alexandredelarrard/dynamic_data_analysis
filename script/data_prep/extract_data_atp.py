@@ -12,9 +12,9 @@ import os
 from tqdm import tqdm
 import time 
 
-tqdm.pandas(tqdm())
+from utils.build_match_statistics_database import match_stats_main
+from data_prep.extract_players import  merge_atp_players
 
-from  utils.build_match_statistics_database import match_stats_main
 
 def import_data_atp(path, redo=False):
     
@@ -35,6 +35,9 @@ def import_data_atp(path, redo=False):
     
     #### suppress challenger matches
     data = data.loc[data["tourney_level"] != "C"]
+    
+    ### suppress walkovers
+    data = data.loc[~data["score"].isin(["W/O", " W/O"])]
     
     data.loc[data["winner_name"] == "joshua goodall", "winner_name"] = "josh goodall"
     data.loc[data["loser_name"] == "joshua goodall", "loser_name"] = "josh goodall"
@@ -72,7 +75,13 @@ def fill_in_missing_values(total_data, redo):
     total_data_wrank_stats_tourney = merge_tourney(total_data_wrank_stats)
     print("[{0}s] 4) Merge with tourney database ".format(time.time() - t0))
     
-    return total_data_wrank_stats_tourney
+    #### merge players info and replace missing values
+    t0 = time.time()
+    total_data_wrank_stats_tourney_players = merge_atp_players(total_data_wrank_stats_tourney)
+    print("[{0}s] 5) Merge with players and fillin missing values ".format(time.time() - t0))
+    print(pd.isnull(total_data_wrank_stats_tourney_players).sum())
+    
+    return total_data_wrank_stats_tourney_players
 
 
 def fill_ranks_based_origin(total_data):
@@ -81,7 +90,7 @@ def fill_ranks_based_origin(total_data):
     missing_data_rank = data.loc[(pd.isnull(data["winner_rank"]))|(pd.isnull(data["loser_rank"]))]
     
     ### fillin missing ranks and points with closest previous rank and point
-    missing_data_rank["id_rank_pts"]  = missing_data_rank[["Date", "winner_id", "loser_id", "winner_rank", "loser_rank"]].progress_apply(lambda x : deduce_rank_from_past(x, total_data), axis=1)[ "loser_rank"]
+    missing_data_rank["id_rank_pts"]  = missing_data_rank[["Date", "winner_id", "loser_id", "winner_rank", "loser_rank"]].apply(lambda x : deduce_rank_from_past(x, total_data), axis=1)["loser_rank"]
 
     index_w = pd.isnull(data["winner_rank"])
     data.loc[index_w, "winner_rank"] = list(list(zip(*missing_data_rank.loc[pd.isnull(missing_data_rank["winner_rank"]), "id_rank_pts"]))[0])
@@ -100,7 +109,7 @@ def deduce_rank_from_past(x, data):
     
      ### the missing value comes from the winning player
     if id_missing_winner:
-        sub_data = data.loc[((data["winner_id"] == x["winner_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["winner_id"]) &(~pd.isnull(data["loser_rank"])))]
+        sub_data = data.loc[((data["winner_id"] == x["winner_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["winner_id"]) &(~pd.isnull(data["loser_rank"])))].copy()
         sub_data["time_dist"] = abs((x["Date"] - sub_data["Date"]).dt.days)
         
         if len(sub_data) ==0:
@@ -117,7 +126,7 @@ def deduce_rank_from_past(x, data):
     
     ### the missing value comes from the losing player
     if id_missing_loser:
-        sub_data = data.loc[((data["winner_id"] == x["loser_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["loser_id"]) &(~pd.isnull(data["loser_rank"])))]
+        sub_data = data.loc[((data["winner_id"] == x["loser_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["loser_id"]) &(~pd.isnull(data["loser_rank"])))].copy()
         sub_data["time_dist"] = abs((x["Date"] - sub_data["Date"]).dt.days)
         
         if len(sub_data) ==0:
@@ -140,7 +149,7 @@ def merge_atp_missing_stats(total_data, redo = False):
     data = total_data.copy()
     missing_match_stats= match_stats_main(data, redo = redo)
     
-    for i in tqdm(missing_match_stats["ATP_ID"].tolist()):
+    for i in missing_match_stats["ATP_ID"].tolist():
         if pd.isnull(data.loc[data["ATP_ID"] == i, "w_ace"].values[0]):
             for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced",\
                         "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]:
