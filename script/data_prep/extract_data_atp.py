@@ -73,9 +73,9 @@ def fill_in_missing_values(total_data, redo):
     print("[{0}s] 3) fill missing stats based on atp crawling matching ".format(time.time() - t0))
     
     #### fill in irreductible missingvalues based on history
-    t0 = time.time()
-    total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)
-    print("[{0}s] 4) fill missing stats based on previous matches ".format(time.time() - t0))
+#    t0 = time.time()
+#    total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)
+#    print("[{0}s] 4) fill missing stats based on previous matches ".format(time.time() - t0))
     
     #### merge with tourney ddb
     t0 = time.time()
