@@ -60,14 +60,14 @@ def fill_in_missing_values(total_data, redo):
     total_data.loc[(total_data["tourney_id"] == "1997-319")&(pd.isnull(total_data["score"])), "score"] = "6-4 6-4 6-4"
     
     #### fill in missing ranks and points
-    t0 = time.time()
-    total_data_wrank = fill_ranks_based_origin(total_data)
-    total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
-    print("[{0}s] 2) fill missing rank based on closest info ".format(time.time() - t0))
+#    t0 = time.time()
+#    total_data_wrank = fill_ranks_based_origin(total_data)
+#    total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
+#    print("[{0}s] 2) fill missing rank based on closest info ".format(time.time() - t0))
     
     #### add match stats on service missing
     t0 = time.time()
-    total_data_wrank_stats = merge_atp_missing_stats(total_data_wrank, redo)
+    total_data_wrank_stats = merge_atp_missing_stats(total_data, redo)
     print("[{0}s] 3) fill missing stats based on atp crawling matching ".format(time.time() - t0))
     
     #### merge with tourney ddb
@@ -87,7 +87,7 @@ def fill_in_missing_values(total_data, redo):
 def fill_ranks_based_origin(total_data):
     
     data = total_data.copy()
-    missing_data_rank = data.loc[(pd.isnull(data["winner_rank"]))|(pd.isnull(data["loser_rank"]))]
+    missing_data_rank = data.loc[(pd.isnull(data["winner_rank"]))|(pd.isnull(data["loser_rank"]))].copy()
     
     ### fillin missing ranks and points with closest previous rank and point
     missing_data_rank["id_rank_pts"]  = missing_data_rank[["Date", "winner_id", "loser_id", "winner_rank", "loser_rank"]].apply(lambda x : deduce_rank_from_past(x, total_data), axis=1)["loser_rank"]
