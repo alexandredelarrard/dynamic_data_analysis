@@ -131,7 +131,7 @@ def clean_players_crawl(data_players):
 
 if __name__ == "__main__":
     
-    liste_players = glob.glob(os.environ["DATA_PATH"] + "/brute_info/players/brute_info/*.json")
+    liste_players = glob.glob(os.environ["DATA_PATH"] + "/brute_info/players/brute_info/players_descV2/*.json")
     data_players = loop_over_jsons(liste_players)
     
     data_players = data_players[["Name", "Surname", "Country", "DOB", "Turned pro", "Weight", "Height", "Birth place", "Plays"]]
@@ -139,11 +139,11 @@ if __name__ == "__main__":
 
     data_players = clean_players_crawl(data_players)
     
-    players_db = pd.read_csv(os.environ["DATA_PATH"] + "/brute_info/players/players_ID.csv")
+    players_db = pd.read_csv(os.environ["DATA_PATH"] + "/brute_info/players/players_ID_part2.csv")
+    players_db["Player_Name"] = players_db["Player_Name"].str.lower()
     dd = pd.merge(players_db, data_players, left_on = "Player_Name", right_on ="key", how = "left")
     
-    dd.loc[pd.isnull(dd["Name"])].shape
-    np.array(dd.loc[pd.isnull(dd["Name"])]["Player_Name"].tolist())
+    print(dd.loc[pd.isnull(dd["Name"])].shape)
     
     del dd["Unnamed: 0"]
-    dd.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_description.csv", index= False)
+    dd.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_description_V2.csv", index= False)

@@ -49,7 +49,7 @@ def import_data_atp(path, redo=False):
 def fill_in_missing_values(total_data, redo):
     
     #### suppress davis cup and JO
-    not_davis_index = total_data["tourney_name"].apply(lambda x : "Davis Cup" not in x and "Olympics" not in x)
+    not_davis_index = total_data["tourney_name"].apply(lambda x : "Davis Cup" not in x and "Olympic" not in x)
     total_data = total_data.loc[not_davis_index]
     
     #### fill in missing scores
@@ -105,7 +105,6 @@ def deduce_rank_from_past(x, data):
         
         if len(sub_data) ==0:
              missed =[ int(data["winner_rank"].mean()), int(data["winner_rank_points"].mean())]
-#             print(x["winner_id"])
         else:
             elect = sub_data.loc[sub_data["time_dist"] == min(sub_data["time_dist"])].iloc[0]
             
@@ -123,7 +122,6 @@ def deduce_rank_from_past(x, data):
         
         if len(sub_data) ==0:
              missed +=[ int(data["loser_rank"].mean()), int(data["loser_rank_points"].mean())]
-#             print(x["loser_id"])
         else:
             elect = sub_data.loc[sub_data["time_dist"] == min(sub_data["time_dist"])].iloc[0]
             
