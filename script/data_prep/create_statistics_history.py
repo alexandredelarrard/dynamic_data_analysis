@@ -139,16 +139,10 @@ def data_prep_history(dataset):
     ### integer rounds and calculate number of rounds
     
     ### dummify court
-    data.loc[data["Court"] == "Outdoor", "Court"] = "0"
-    data.loc[data["Court"] == "Indoor", "Court"]  = "1"
+    data.loc[data["indoor_flag"] == "Outdoor", "indoor_flag"] = "0"
+    data.loc[data["indoor_flag"] == "Indoor", "indoor_flag"]  = "1"
     data["Court"] = data["Court"].astype(int)
     
-    ### take care of empty set score
-    for i in range(1,6):
-        for k in ["L", "W"]:
-            data[k + str(i)] = data[k + str(i)].replace(" ",0)
-            data[k + str(i)] = data[k + str(i)].fillna(0) 
-
     #### date into days
     data["day_week"] = data["Date"].dt.dayofweek
     data["month"] = data["Date"].dt.month
@@ -157,6 +151,12 @@ def data_prep_history(dataset):
     data["day_of_year"] = data["Date"].dt.dayofyear
     data["day_of_month"] = data["Date"].dt.day
     
+    ### take care of empty set score
+    for i in range(1,6):
+        for k in ["L", "W"]:
+            data[k + str(i)] = data[k + str(i)].replace(" ",0)
+            data[k + str(i)] = data[k + str(i)].fillna(0) 
+
     columns = []
     columns += []
             
@@ -179,10 +179,8 @@ def data_prep_history(dataset):
     ### take care of missing rank values
     data2 = data.copy()
     data2["target"] = 0
-    data2.rename(columns = {'Winner': 'Loser', 'Loser': 'Winner', "elo1": "elo2", "elo2":"elo1"}, inplace = True)
     
-    for col in ['AvgW', 'B365L', 'B365W', 'CBW', 'EXW', 'GBW', 'MaxW', 'PSW', 'SBW', 'SJW', 'UBW', 'W1', 'W2', 'W3', 'W4', 'W5', 'WPts', 'WRank','Wsets']:
-        data2 = data2.rename(columns = {col: col.replace("W","L"), col.replace("W", "L"): col})
+    data2.rename(columns = {'Winner': 'Loser', 'Loser': 'Winner', "elo1": "elo2", "elo2":"elo1"}, inplace = True)
          
     data2 = data2[data1.columns]
     data_concat = pd.concat([data1, data2], axis=0).sort_index().reset_index(drop=True)

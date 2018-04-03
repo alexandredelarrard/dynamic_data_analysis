@@ -51,7 +51,7 @@ def import_data_atp(path, redo=False):
     data.loc[data["winner_name"] == "joshua goodall", "winner_name"] = "josh goodall"
     data.loc[data["loser_name"] == "joshua goodall", "loser_name"] = "josh goodall"
     data = data.reset_index(drop=True)
-    print("[{0}s] 1) Import ATP dataset ".format(time.time() - t0))
+    print("\n [{0}s] 1) Import ATP dataset ".format(time.time() - t0))
 
     total_data = fill_in_missing_values(data, redo)
             
@@ -69,13 +69,13 @@ def fill_in_missing_values(total_data, redo):
     
     #### add match stats on service missing
     t0 = time.time()
-    total_data_wrank_stats = merge_atp_missing_stats(total_data, redo)
+    total_data_wrank_stats = merge_atp_missing_stats(total_data_wrank, redo)
     print("[{0}s] 3) fill missing stats based on atp crawling matching ".format(time.time() - t0))
     
     #### fill in irreductible missingvalues based on history
-#    t0 = time.time()
-#    total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)
-#    print("[{0}s] 4) fill missing stats based on previous matches ".format(time.time() - t0))
+    t0 = time.time()
+    total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)
+    print("[{0}s] 4) fill missing stats based on previous matches ".format(time.time() - t0))
     
     #### merge with tourney ddb
     t0 = time.time()
@@ -88,7 +88,10 @@ def fill_in_missing_values(total_data, redo):
     print("[{0}s] 6) Merge with players and fillin missing values ".format(time.time() - t0))
     print(pd.isnull(total_data_wrank_stats_tourney_players).sum())
     
-    total_data_wrank_stats_tourney_players.rename(columns = {"surface_x": "surface", "tourney_name_x" : "tourney_name"}, inplace= True)
+    total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.rename(columns = {"surface_x": "surface", "tourney_name_x" : "tourney_name"})
+    
+    ####◙ remaining mvs for time of match
+    total_data_wrank_stats_tourney_players.loc[pd.isnull(total_data_wrank_stats_tourney_players["minutes"]), "minutes"] = 100
     
     return total_data_wrank_stats_tourney_players
 
@@ -120,4 +123,6 @@ def merge_tourney(data):
     data_merge = data_merge.drop(["tourney_name", "surface_y", "tourney_id_atp", "tourney_year"], axis=1)
     
     return data_merge
+
+
  
