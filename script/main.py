@@ -31,6 +31,8 @@ def main_create_data(rebuild):
     data2 = prep_data(data_merge_player_elo)
     
     ### clean dataset and irregularities
+    # 78310  Gilles Muller  Jeremy Chardy       Sydney  2016-M001 time = 90 minutes
+    # Hyeon Chung  Martin Klizan       Munich  2017-0308 = 135 minutes
     
     
     ### create counting past historical data
