@@ -138,19 +138,7 @@ def data_prep_history(dataset):
     data = dataset.copy()
     ### integer rounds and calculate number of rounds
     
-    ### dummify court
-    data.loc[data["indoor_flag"] == "Outdoor", "indoor_flag"] = "0"
-    data.loc[data["indoor_flag"] == "Indoor", "indoor_flag"]  = "1"
-    data["Court"] = data["Court"].astype(int)
-    
-    #### date into days
-    data["day_week"] = data["Date"].dt.dayofweek
-    data["month"] = data["Date"].dt.month
-    data["year"] = data["Date"].dt.year
-    data["week"] = data["Date"].dt.week
-    data["day_of_year"] = data["Date"].dt.dayofyear
-    data["day_of_month"] = data["Date"].dt.day
-    
+   
     ### take care of empty set score
     for i in range(1,6):
         for k in ["L", "W"]:

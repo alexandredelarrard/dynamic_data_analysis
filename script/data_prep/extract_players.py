@@ -30,7 +30,7 @@ def import_players():
     
     ### fillin missing weight and height as average of birth place players without missing values
     aggregate_weight = players.loc[~pd.isnull(players["Weight"]), ["Birth place", "Weight"]].groupby("Birth place").mean().astype(int)
-    aggregate_height = players.loc[~pd.isnull(players["Height"]),["Birth place", "Height"]].groupby("Birth place").mean().astype(int)
+    aggregate_height = players.loc[~pd.isnull(players["Height"]), ["Birth place", "Height"]].groupby("Birth place").mean().astype(int)
     
     players.loc[pd.isnull(players["Weight"]), "Weight"] = players.loc[pd.isnull(players["Weight"]), "Birth place"].map(aggregate_weight["Weight"])
     players.loc[pd.isnull(players["Height"]), "Height"] = players.loc[pd.isnull(players["Height"]), "Birth place"].map(aggregate_height["Height"])
@@ -60,11 +60,14 @@ def fillin_missing_values(data):
     data_merged["age_winner"] = data_merged[["Date", "DOB_w"]].apply(lambda x : dates(x), axis=1)
     data_merged["age_loser"] = data_merged[["Date", "DOB_l"]].apply(lambda x : dates(x), axis=1)
     
-    data_merged["winner_age"] = data_merged["age_winner"]
-    data_merged["loser_age"] = data_merged["age_loser"]
+    data_merged["winner_age"] = data_merged["age_winner"].tolist()
+    data_merged["loser_age"] = data_merged["age_loser"].tolist()
     
-    data_merged.loc[pd.isnull(data["winner_ht"]), "winner_ht"] = data_merged.loc[pd.isnull(data["winner_ht"]), "Height_w"].tolist()
-    data_merged.loc[pd.isnull(data["loser_ht"]), "loser_ht"] = data_merged.loc[pd.isnull(data["loser_ht"]), "Height_l"].tolist()
+    data_merged["winner_ht"] = data_merged["Height_w"].tolist()
+    data_merged["loser_ht"] = data_merged["Height_l"].tolist()
+    
+    data_merged["winner_hand"] = data_merged["Strong_hand_w"].tolist()
+    data_merged["loser_hand"] = data_merged["Strong_hand_l"].tolist()
 
     data_merged = data_merged.drop(["age_winner" , "age_loser", "Height_w", "Height_l", "Strong_hand_l", "Strong_hand_w",
                                     "Birth place_l", "Birth place_w", "Strong_hand_l", "Strong_hand_w"], axis=1)
