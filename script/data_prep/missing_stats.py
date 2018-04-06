@@ -43,7 +43,9 @@ def loop_size_data(x, sub_data):
 def fillin_missing_stats(data_stats):
     
     data = data_stats.copy()
-    missing_data = data.loc[(pd.isnull(data["w_ace"]))|(pd.isnull(data["minutes"]))].copy()
+    
+    ### fill in nans and 0 values for matches not retired or cancelled
+    missing_data = data.loc[(pd.isnull(data["w_ace"]))|(pd.isnull(data["minutes"]))|(((data["l_svpt"] ==0)|(data["w_svpt"] ==0))&(data["status"] == "Completed"))].copy()
     
     for ind, i in enumerate(missing_data["ATP_ID"]):
         x = missing_data.iloc[ind]

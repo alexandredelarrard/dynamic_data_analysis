@@ -27,6 +27,7 @@ def games_extract(x, w_l):
     except Exception:
         print(x)
         
+        
 def win_tb(x):
     count = 0
     for se in x:
@@ -96,15 +97,6 @@ def prep_data(data):
     dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[~pd.isnull(dataset["w_S5"]), "minutes"].mean())
     dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S4"]))&(pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S5"]))&(~pd.isnull(dataset["w_S4"])), "minutes"].mean())
     dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S3"]))&(pd.isnull(dataset["w_S4"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S4"]))&(~pd.isnull(dataset["w_S3"])), "minutes"].mean())
-    
-    
-    dataset["status"] = "Completed"
-    index = dataset["score"].apply(lambda x : "RET" in x)
-    dataset.loc[index, "status"] = "Retired"
-    index = dataset["score"].apply(lambda x : "DEF" in x)
-    dataset.loc[index, "status"] = "Def"
-    index = dataset["score"].apply(lambda x : "W/O" in x or "W/O " in x)
-    dataset.loc[index, "status"] = "Walkover"
     
     ### tie breaks
     dataset["Nbr_tie-breaks"]   = dataset['score'].apply(lambda x : len(re.findall('\((.*?)\)', str(x))))
