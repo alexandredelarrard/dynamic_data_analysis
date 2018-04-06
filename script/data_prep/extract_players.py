@@ -70,7 +70,7 @@ def fillin_missing_values(data):
     data_merged["loser_hand"] = data_merged["Strong_hand_l"].tolist()
 
     data_merged = data_merged.drop(["age_winner" , "age_loser", "Height_w", "Height_l", "Strong_hand_l", "Strong_hand_w",
-                                    "Birth place_l", "Birth place_w", "Strong_hand_l", "Strong_hand_w"], axis=1)
+                                    "Birth place_l", "Birth place_w", "Strong_hand_l", "Strong_hand_w", "Nationality_w", "Nationality_l"], axis=1)
     
     return data_merged
 

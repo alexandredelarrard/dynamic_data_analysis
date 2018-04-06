@@ -27,17 +27,12 @@ def main_create_data(rebuild):
     ### add elo system ranking
     data_merge_player_elo = merge_data_elo(data_atp)
     
-    ### create value added variables
+    ### create value added variables/lean dataset and irregularities
     data2 = prep_data(data_merge_player_elo)
-    
-    ### clean dataset and irregularities
-    # 78310  Gilles Muller  Jeremy Chardy       Sydney  2016-M001 time = 90 minutes
-    # Hyeon Chung  Martin Klizan       Munich  2017-0308 = 135 minutes
-    
-    
+   
     ### create counting past historical data
     
-    
+
     #### save dataset
     data2.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv", index= False)
     
@@ -46,10 +41,6 @@ def main_create_data(rebuild):
 
 if __name__ == "__main__":
     data_atp = main_create_data(rebuild= True)
-    
-    
-    
-    
     
 #    #### lr modelling 
 #    clf, importance = modelling_logistic(data_merge_player_elo, "2017-01-01", "2017-06-01", "gbm")

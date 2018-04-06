@@ -8,7 +8,8 @@ Created on Fri Mar  9 16:05:58 2018
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
-import tqdm
+#import tqdm
+import time
 
 def elo_diff(A, B):
     """
@@ -73,7 +74,7 @@ def calculate_elo(data):
 
     print(" Calculate elo for each player ")
     
-    for i in tqdm.tqdm(range(len(data))):
+    for i in range(len(data)):
         
         sub_data = data.iloc[i]
 
@@ -128,7 +129,8 @@ def calculate_elo(data):
 
 
 def merge_data_elo(data):
-
+    
+    t0 = time.time()
     elos_extracted = calculate_elo(data)
     data["prob_elo"] = 1 / (1 + 10 ** ((elos_extracted["elo2"] - elos_extracted["elo1"]) / 400))
     data["prob_elo_surface"] = 1 / (1 + 10 ** ((elos_extracted["elo2_surface"] - elos_extracted["elo1_surface"]) / 400))
@@ -137,6 +139,8 @@ def merge_data_elo(data):
     data["elo2"] = elos_extracted["elo2"]
     data["elo1_surface"] = elos_extracted["elo1_surface"]
     data["elo2_surface"] = elos_extracted["elo2_surface"]
+    
+    print("[{0}s] 7) Calculate Elo ranking overall/surface ".format(time.time() - t0))
     
     return data
     
