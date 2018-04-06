@@ -36,11 +36,11 @@ def import_data_atp(path, redo=False):
     
     ### create status of match
     data["status"] = "Completed"
-    index = data["score"].apply(lambda x : "RET" in x)
+    index = data["score"].apply(lambda x : "RET" in str(x))
     data.loc[index, "status"] = "Retired"
-    index = data["score"].apply(lambda x : "DEF" in x)
+    index = data["score"].apply(lambda x : "DEF" in str(x))
     data.loc[index, "status"] = "Def"
-    index = data["score"].apply(lambda x : "W/O" in x or "W/O " in x)
+    index = data["score"].apply(lambda x : "W/O" in str(x) or "W/O " in str(x))
     data.loc[index, "status"] = "Walkover"
     
     #### suppress challenger matches
@@ -54,7 +54,7 @@ def import_data_atp(path, redo=False):
     print(" --- Suppress walkovers matches : {0} ".format(sp - data.shape[0]))
     
     ### suppress retired
-    index = data["score"].apply(lambda x: "RET" in x)
+    index = data["score"].apply(lambda x: "RET" in str(x))
     data = data.loc[~index]
     print(" --- Suppress retired matches : {0} ".format(sum(index)))
     
