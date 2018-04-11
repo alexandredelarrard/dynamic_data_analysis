@@ -40,12 +40,13 @@ def main_create_data(rebuild):
     
 
 if __name__ == "__main__":
+    
     data_atp = main_create_data(rebuild= True)
     
 #    #### lr modelling 
 #    clf, importance = modelling_logistic(data_merge_player_elo, "2017-01-01", "2017-06-01", "gbm")
 #    
 #data_atp["elo_answer"] = 0
-#data_atp.loc[data_atp["prob_elo"] >=0.5, "elo_answer"] = 1
+#data_atp.loc[data_atp["prob_elo_surface"] >=0.5, "elo_answer"] = 1
 #
-#1 - sum(1 - data_atp.loc[data_atp["Date"].dt.year >= 2017, "elo_answer"])/len(data_atp.loc[data_atp["Date"].dt.year >= 2017, "elo_answer"])
+#1 - sum(1 - data_atp.loc[data_atp["Date"].dt.year >= 2014, "elo_answer"])/len(data_atp.loc[data_atp["Date"].dt.year >= 2014, "elo_answer"])

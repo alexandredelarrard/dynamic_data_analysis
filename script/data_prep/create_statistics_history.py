@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Feb 24 11:35:39 2018
+Created on Wed Apr  4 13:38:19 2018
 
-@author: User
+@author: JARD
 """
 
-### data come from http://www.tennis-data.co.uk/alldata.php
 import pandas as pd
 import numpy as np
+from scipy.optimize import curve_fit
 from multiprocessing import Pool
 from functools import partial
 from datetime import  timedelta
@@ -25,157 +25,143 @@ def parallelize_dataframe(df, function, dictionnary, njobs):
     
     return df2
 
-def create_stats(dico, data): 
-    count =  data[["Winner", "Loser", "Surface", "Series", "ATP", "Date", 'Court']].apply(lambda x : basic_history_statistics(x, dico), axis= 1)
-    return count["Winner"]
-
-
-def basic_history_statistics(x, dico):
-    """
-    x : 0 = Winner 
-        1 = Loser
-        2 = Surface
-        3 = Series
-        4 = Tournois
-        5 = Date
-        6 = 'Court'
-    dico : whole data
-    """
+def create_target(data):
     
-    df_train= dico[0]
-    res= ()
-    
-    ### 
-    data_past_players = df_train.loc[((df_train['Winner'] == x[0]) & (df_train['Loser'] == x[1])) | ((df_train['Winner'] == x[1]) & (df_train['Loser'] == x[0]))].copy()
-    data_past_player1 = df_train.loc[((df_train['Winner'] == x[0]) | (df_train['Loser'] == x[0]))].copy()
-    data_past_player2 = df_train.loc[((df_train['Winner'] == x[1]) | (df_train['Loser'] == x[1]))].copy()
-   
-    
-    ### between players
-    for jours in [100, 400, 1500]:
-        
-        data_past_players = data_past_players.loc[(data_past_players["Date"] < x[5])&(data_past_players["Date"] >= (pd.to_datetime(x[5]) - timedelta(days=jours)))]
-        data_past_player1 = data_past_player1.loc[(data_past_player1["Date"] < x[5])&(data_past_player1["Date"] >= (pd.to_datetime(x[5]) - timedelta(days=jours)))]
-        data_past_player2 = data_past_player2.loc[(data_past_player2["Date"] < x[5])&(data_past_player2["Date"] >= (pd.to_datetime(x[5]) - timedelta(days=jours)))]
-        
-        res += basic_statistics(data_past_players, data_past_player1, data_past_player2, x)
-    
-        
-    return [res]
-
-
-def basic_statistics(data_past_players, data_past_player1, data_past_player2, x):
-
-    stat = (
-            data_past_player1.shape[0], ### nbr match joues player 1
-            data_past_player2.shape[0], ### nbr match joues player 2
-            
-            sum(((data_past_player1["Winner"] == x[0]))*1), ### nbr match gagne player 1
-            sum(((data_past_player2["Winner"] == x[1]))*1), ### nbr match gagne player 2
-            
-            data_past_player1.loc[data_past_player1["Surface"] == x[2]].shape[0], ### nbr match joues player 1 meme surface
-            data_past_player2.loc[data_past_player2["Surface"] == x[2]].shape[0], ### nbr match joues player 2 meme surface
-            
-            sum(((data_past_player1["Winner"] == x[0])&(data_past_player1["Surface"] == x[2]))*1), ### nbr match gagne player 1 meme surface
-            sum(((data_past_player2["Winner"] == x[1])&(data_past_player2["Surface"] == x[2]))*1), ### nbr match gagne player 2 meme surface
-            
-            data_past_player1.loc[data_past_player1["Surface"] == x[3]].shape[0], ### nbr match joues player 1 meme serie
-            data_past_player2.loc[data_past_player2["Surface"] == x[3]].shape[0], ### nbr match joues player 2 meme serie
-            
-            sum(((data_past_player1["Winner"] == x[0])&(data_past_player1["Surface"] == x[3]))*1), ### nbr match gagne player 1 meme serie
-            sum(((data_past_player2["Winner"] == x[1])&(data_past_player2["Surface"] == x[3]))*1), ### nbr match gagne player 2 meme serie
-            
-            min(list(data_past_player1.loc[(data_past_player1['Winner'] == x[0]) , "Wrank"]) + list(data_past_player1.loc[(data_past_player1['Loser'] == x[0]), "Lrank"])),  ### best rank joueur 1
-            min(list(data_past_player2.loc[(data_past_player2['Winner'] == x[1]) , "Wrank"]) + list(data_past_player2.loc[(data_past_player2['Loser'] == x[1]), "Lrank"])),  ### best rank joueur 2
-             
-            max(list(data_past_player1.loc[(data_past_player1['Winner'] == x[0]) , "Wrank"]) + list(data_past_player1.loc[(data_past_player1['Loser'] == x[0]), "Lrank"])), ### worst rank joueur 1
-            max(list(data_past_player2.loc[(data_past_player2['Winner'] == x[1]) , "Wrank"]) + list(data_past_player2.loc[(data_past_player2['Loser'] == x[1]), "Lrank"])), ### worst rank joueur 1
-            
-            sum(data_past_player1.loc[(data_past_player1['Loser'] == x[0]) , "Lsets"]),  ### nbr set gagne quand perdu player1
-            sum(data_past_player2.loc[(data_past_player2['Loser'] == x[1]) , "Lsets"]),  ### nbr set gagne quand perdu player2
-            
-            sum(data_past_player1.loc[(data_past_player1['Winner'] == x[0]) , "Lsets"]),  ### nbr set concede quand gagne player 1
-            sum(data_past_player2.loc[(data_past_player2['Winner'] == x[1]) , "Lsets"]),  ### nbr set concede quand gagne player 1
-            
-            data_past_player1.loc[data_past_player1['Court'] == x[6]].shape[0], ### nb match joue meme int/ext player1 
-            data_past_player2.loc[data_past_player2['Court'] == x[6]].shape[0], ### nb match joue meme int/ext player2
-            data_past_player1.loc[(data_past_player1['Winner'] == x[0]) &(data_past_player2['Court'] == x[6])].shape[0], ### nb match gagne meme int/ext player1 
-            data_past_player2.loc[(data_past_player2['Winner'] == x[1]) &(data_past_player2['Court'] == x[6])].shape[0], ### nb match gagne meme int/ext player2
-            
-            data_past_players.shape[0], # nbr match joues ensemble
-            data_past_players.loc[data_past_players["Winner"] == x[0]].shape[0], # nbr victoire joueur 1 sur joueur 2
-            
-            data_past_players.loc[data_past_players["Surface"] == x[2]].shape[0], # nbr match joues ensemble meme surface
-            data_past_players.loc[(data_past_players["Surface"] == x[2])&(data_past_players["Winner"] == x[0])].shape[0], # nbr victoire joueur 1 sur joueur 2 meme surface
-            
-            ### nbr jeu moyen premier set quand perd
-            ### nbr jeu moyen second set quand perd
-            
-            ### nombre tie break joues
-            ### nbr tie break gagnes
-        
-            ### delta moyen de jeu premier set
-            ### delta moyen de jeu second set
-            
-            )
-#            
-#            sum(((sub_data["Winner"] == x[i])&(sub_data["Court"] == 0))*1) ### nbr match won outdoor
-            
-            ### info manquante :
-            
-            ### index retour 
-            ### index service 
-            ### index blessure 
-            ### index motivation
-            ### index physique / athletic ou juste technique
-    
-    return stat
-
-
-
-def data_prep_history(dataset):
-    
-    data = dataset.copy()
-    ### integer rounds and calculate number of rounds
-    
-   
-    ### take care of empty set score
-    for i in range(1,6):
-        for k in ["L", "W"]:
-            data[k + str(i)] = data[k + str(i)].replace(" ",0)
-            data[k + str(i)] = data[k + str(i)].fillna(0) 
-
-    columns = []
-    columns += []
-            
-    t0 = time.time()        
-    print("Start parallelisation")
-    counts = parallelize_dataframe(data.copy(), create_stats, [data], 7)
-    counts = list(zip(*counts))
-    counts = np.transpose(counts)
-    print(time.time() - t0)
-    
-    for i,col in enumerate(columns):
-        data[col] = counts[:,i]
-        
-    #### nbr de fois deja gagne ce tournois
-    #### nbr de fois deja franchis cette etape dans tournois
-    
-    data1 = data.copy()
+    data1 = data[["winner_id", "loser_id", "Date", "surface", "tourney_id"]].copy()
     data1["target"] = 1
     
-    ### take care of missing rank values
-    data2 = data.copy()
+    data2 = data1.copy()
+    data2 = data2.rename(columns = {"winner_id" : "loser_id", "loser_id" : "winner_id"})
     data2["target"] = 0
+    data2 = data2[["winner_id", "loser_id", "Date", "target", "surface", "tourney_id"]]
     
-    data2.rename(columns = {'Winner': 'Loser', 'Loser': 'Winner', "elo1": "elo2", "elo2":"elo1"}, inplace = True)
-         
-    data2 = data2[data1.columns]
-    data_concat = pd.concat([data1, data2], axis=0).sort_index().reset_index(drop=True)
+    tot = pd.concat([data1, data2], axis= 0)
+    tot["Date"] = pd.to_datetime(tot["Date"], format = "%Y-%m-%d")
     
-    return data_concat
+    return tot
 
-if __name__ == "__main__":
-    data2 = data_prep_history(data)
+
+def calculate_corr_time(tot, start_year=1990, end_year=2017, weight_1 = 6):
+    
+    def exponenial_func(x, a, b, c):
+        return a*np.exp(-b*x)+c
+
+    tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)].copy()
+    tot_loc["year"] = tot_loc["Date"].dt.year
+    tot_loc["month"] = tot_loc["Date"].dt.month
+    
+    liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
+    dataframe = pd.DataFrame([], index= liste_players, columns = range(22))
+    
+    for pl in liste_players: 
+        pl_data = tot_loc.loc[tot_loc["winner_id"] == pl].copy()
+        
+        agg = pl_data[["year", "month", "target"]].groupby(["year", "month"]).mean()
+        if len(agg) > 5:
+            rep = agg["target"].tolist()[::-1]
+            for i in range(len(agg)):
+                dataframe.loc[pl, i] = rep[i]
+                
+    dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
+    time_correlations = dataframe.corr()
+    
+    #### first 6 months should have weight = 1 ---> leads to first 12 months weight = 1
+    count_1 = weight_1
+    size = 150
+    time_correlations = time_correlations.loc[:size, :size]
+    
+    time_corr = []
+    for t in range(1,size):
+        s = 0
+        for i in range(size):
+            if time_correlations.shape[1] > i+t:
+                s  += time_correlations.iloc[i, i+t]
+                
+        time_corr.append(s / size)
+        
+    coef_offset = 1/time_corr[count_1]    
+    corr_temp = pd.DataFrame(time_corr)*coef_offset
+    corr_temp.index = list(range(1, len(corr_temp)+1))
+    popt, pcov = curve_fit(exponenial_func, corr_temp.index, corr_temp[0], p0=(1, 1e-2, 1))
+    
+    a = []
+    for x in range(1,size):
+        a.append(exponenial_func(x, popt[0], popt[1], popt[2]))
+    
+    corr_temp["pred"] = a
+    corr_temp.loc[corr_temp["pred"]>=1, "pred"] = 1
+    corr_temp.loc[corr_temp["pred"]<=0, "pred"] = 0
+    corr_temp[[0,"pred"]].plot()
+    
+    return popt, corr_temp["pred"]
+
+
+def calculate_corr_surface(tot, start_year=1990, end_year=2017):
+    
+    ### because dont want info from test set
+    tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)]
+    liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
+    dataframe = pd.DataFrame([], index= liste_players, columns = ["Hard", "Clay", "Carpet", "Grass"])
+    
+    for pl in liste_players: 
+        pl_data = tot_loc.loc[tot_loc["winner_id"] == pl]
+        agg = pl_data[["surface", "target"]].groupby("surface").mean()
+        for i, surf in enumerate(agg.index.tolist()):
+            dataframe.loc[pl, surf] = agg.loc[surf].values[0]
+    
+    dataframe = dataframe.loc[(~pd.isnull(dataframe["Hard"]))]
+    
+    dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
+    surface_correlations = dataframe.corr()
+    
+    return surface_correlations
+
+
+def proportion_win(x, total_data):
+    
+    sub_data1 = total_data.loc[(total_data["Date"] < x["Date"])&(total_data["winner_id"] == x["winner_id"])].copy()
+    sub2 = sub_data1.loc[(sub_data1["loser_id"] == x["loser_id"])].copy()
+    
+    liste_id_player1 = set(sub_data1["loser_id"])
+    liste_id_player2 = set(total_data.loc[(total_data["Date"] < x["Date"])&(total_data["winner_id"] == x["loser_id"]), "loser_id"].copy())
+    
+    sub3 = sub_data1.loc[sub_data1["loser_id"].isin(list(set.intersection(liste_id_player1, liste_id_player2)))].copy()
+    
+    if len(sub3)>0 and len(sub2)>0:
+        return [[sub_data1["target"].mean(), sub2["target"].mean(), sub3["target"].mean()]]   
+    else:
+        return [[sub_data1["target"].mean(), np.nan, np.nan]]    
+
+
+def calculate_corr_opponents(tot, remake = False, start_year=1990, end_year=2017):
+    
+    if remake:
+        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)].copy()
+        data = tot_loc[["Date","winner_id", "loser_id", "target"]]
+        
+        rep = data.apply(lambda x : proportion_win(x, data), axis=1)["loser_id"]
+        a = list(list(zip(*rep))[0])
+        b = list(list(zip(*rep))[1])
+        c = list(list(zip(*rep))[2])
+        
+        d = pd.DataFrame(np.transpose([a,b,c]), columns= ["1Vall", "1v1", "1Vsub"])
+        corr = d.loc[~pd.isnull(d["1Vall"])]
+        
+        return corr
+        
+    else:
+        return pd.DataFrame([1, 0.9, 0.3], index= ["1v1", "1Vsub", "1Vall"], columns = ["correlation"])
+    
     
 
+def prep_data(data):
+    
+    dataset = data.copy()
+    return dataset
+
+
+if __name__ == "__mane__": 
+    
+    data = pd.read_csv(r"C:\Users\User\Documents\tennis\data\clean_datasets\historical\matches_elo_variables_V1.csv")
+    tot = create_target(data)
+    
