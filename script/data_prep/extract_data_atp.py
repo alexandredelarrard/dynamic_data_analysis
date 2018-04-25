@@ -111,7 +111,7 @@ def fill_in_missing_values(total_data, redo):
     
     total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.rename(columns = {"surface_x": "surface", "tourney_name_x" : "tourney_name"})
     
-    ####◙ remaining mvs for time of match
+    #### remaining mvs for time of match
     total_data_wrank_stats_tourney_players.loc[pd.isnull(total_data_wrank_stats_tourney_players["minutes"]), "minutes"] = 100
     
     return total_data_wrank_stats_tourney_players
