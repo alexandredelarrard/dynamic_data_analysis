@@ -48,6 +48,27 @@ def add_weight(x, sub_data, corr_surface, corr_time):
     sub_data["weight"] = sub_data["surface"].map(corr_surface[x["surface"]])*sub_data["weight"].map(corr_time)
     
     return sub_data
+
+
+def get_stats(x, sub_data):
+    
+    winner_w_data = sub_data.loc[sub_data["winner_id"] == x["winner_id"]]
+    winner_l_data = sub_data.loc[sub_data["loser_id"] == x["winner_id"]]
+    loser_w_data = sub_data.loc[sub_data["winner_id"] == x["loser_id"]]
+    loser_l_data = sub_data.loc[sub_data["loser_id"] == x["loser_id"]]
+    
+    weight_winner = (winner_w_data["weight"].sum() + winner_l_data["weight"]).sum()
+    weight_loser = (loser_w_data["weight"].sum() + loser_l_data["weight"]).sum()
+    
+    count = (sub_data.shape[0], ### confidence on stat
+             
+             (winner_w_data["w_ace"]*winner_w_data["weight"]  + winner_l_data["l_ace"]*winner_l_data["weight"]).sum()/weight_winner -\
+             (loser_w_data["w_ace"]*loser_w_data["weight"]  + loser_l_data["l_ace"]*loser_l_data["weight"]).sum()/weight_loser, #### difference aces
+             
+             
+             )
+    
+    return count
     
 
 def weighted_statistics(x, liste_dataframe):
@@ -74,6 +95,7 @@ def global_stats(data):
     data["diff_elo"] = data['elo1'] - data['elo2']
     data["diff_rank"] = data['winner_rank'] - data['loser_rank']
     data["diff_rk_pts"] = data['winner_rank_points'] - data['loser_rank_points']
+    data["diff_hand"] = data['winner_hand'] - data['loser_hand']
     
     return data
 
