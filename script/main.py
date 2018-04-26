@@ -45,7 +45,7 @@ def main_create_data(rebuild):
 
 if __name__ == "__main__":
     
-    data_atp = main_create_data(rebuild= False)
+    data_atp = main_create_data(rebuild= True)
     
 #    #### lr modelling 
 #    clf, importance = modelling_logistic(data_merge_player_elo, "2017-01-01", "2017-06-01", "gbm")

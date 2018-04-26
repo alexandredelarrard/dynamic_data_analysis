@@ -126,13 +126,15 @@ def prep_data(data):
     # serv normalization
     for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:
         dataset[col] = dataset[col] / (dataset["w_svpt"])
-    for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:    
+        
+    for col in ["l_ace", "l_df", 'l_1stIn', 'l_1stWon', 'l_2ndWon', "l_total_srv_won"]:    
         dataset[col] = dataset[col] / (dataset["l_svpt"])
     
     ## bp normalization
-    for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:    
+    for col in ["w_bp_converted", "w_bpSaved", "w_bpFaced"]:    
         dataset[col] = dataset[col] / (dataset["w_SvGms"])
-    for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:    
+        
+    for col in ["l_bp_converted", "l_bpSaved", "l_bpFaced"]:    
         dataset[col] = dataset[col] / (dataset["l_SvGms"])
     
     ### return normalization suppressing double fault not seen as successes

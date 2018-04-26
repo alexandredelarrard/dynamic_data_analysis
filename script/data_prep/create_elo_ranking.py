@@ -142,7 +142,7 @@ def merge_data_elo(data):
     data["elo2_surface"] = elos_extracted["elo2_surface"]
     
     data["elo_answer_surface"] = 0
-    data.loc[data["prob_elo"] >=0.5, "elo_answer_surface"] = 1
+    data.loc[data["prob_elo_surface"] >=0.5, "elo_answer_surface"] = 1
     data["elo_answer"] = 0
     data.loc[data["prob_elo"] >=0.5, "elo_answer"] = 1
     
