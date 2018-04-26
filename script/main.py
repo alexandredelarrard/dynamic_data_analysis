@@ -24,10 +24,7 @@ def main_create_data(rebuild):
         ### add elo system ranking
         data_merge_player_elo = merge_data_elo(data_atp)
         
-        #data_merge_player_elo["elo_answer"] = 0
-        #data_merge_player_elo.loc[data_merge_player_elo["prob_elo_surface"] >=0.5, "elo_answer"] = 1
-        #1 - sum(1 - data_merge_player_elo.loc[data_merge_player_elo["Date"].dt.year >= 2014, "elo_answer"])/len(data_merge_player_elo.loc[data_merge_player_elo["Date"].dt.year >= 2014, "elo_answer"])
-                
+      
         ### create value added variables/lean dataset and irregularities
         data2 = prep_data(data_merge_player_elo)
    
@@ -39,7 +36,7 @@ def main_create_data(rebuild):
         data2["Date"] = pd.to_datetime(data2["Date"], format = "%Y-%m-%d")
         data2["DOB_w"] = pd.to_datetime(data2["DOB_l"], format = "%Y-%m-%d")
         data2["DOB_l"] = pd.to_datetime(data2["DOB_l"], format = "%Y-%m-%d")
-        data2["tourney_date"] = pd.to_datetime(data2["tourney_date"], format = "%Y-%m-%d")
+        data2["tourney_date"] = pd.to_datetime(data2["tourney_date"], format = "%d/%m/%Y")
         
     ### create counting past historical data
     

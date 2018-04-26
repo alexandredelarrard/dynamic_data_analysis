@@ -122,6 +122,29 @@ def prep_data(data):
     dataset["w_imc"] = dataset["Weight_w"] / (dataset["winner_ht"]/100)**2
     dataset["l_imc"] = dataset["Weight_l"] / (dataset["loser_ht"]/100)**2
     
+    ### normalize match statistics
+    # serv normalization
+    for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:
+        dataset[col] = dataset[col] / (dataset["w_svpt"])
+    for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:    
+        dataset[col] = dataset[col] / (dataset["l_svpt"])
+    
+    ## bp normalization
+    for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:    
+        dataset[col] = dataset[col] / (dataset["w_SvGms"])
+    for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:    
+        dataset[col] = dataset[col] / (dataset["l_SvGms"])
+    
+    ### return normalization suppressing double fault not seen as successes
+    dataset['w_1st_srv_ret_won'] = dataset['w_1st_srv_ret_won'] / (dataset["l_1stIn"])
+    dataset['l_1st_srv_ret_won'] = dataset['l_1st_srv_ret_won'] / (dataset["w_1stIn"])
+    
+    dataset['w_2nd_srv_ret_won'] = dataset['w_2nd_srv_ret_won'] / (dataset["w_2nd_srv_ret_won"] + dataset["l_2ndWon"])
+    dataset['l_2nd_srv_ret_won'] = dataset['l_2nd_srv_ret_won'] / (dataset["l_2nd_srv_ret_won"] + dataset["w_2ndWon"])
+    
+    dataset['w_total_ret_won'] = dataset['w_total_ret_won'] / (dataset["l_svpt"] - dataset["l_df"])
+    dataset['l_total_ret_won'] = dataset['l_total_ret_won'] / (dataset["w_svpt"] - dataset["w_df"])
+    
     print("[{0}s] 8) Create additionnal variables ".format(time.time() - t0))
         
     return dataset

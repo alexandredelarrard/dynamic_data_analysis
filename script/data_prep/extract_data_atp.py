@@ -87,12 +87,12 @@ def fill_in_missing_values(total_data, redo):
     total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
     print("[{0}s] 2) fill missing rank based on closest info ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     
-    #### add match stats on service missing
+    #### add match stats missing
     t0 = time.time()
     total_data_wrank_stats = merge_atp_missing_stats(total_data_wrank, redo)
     print("[{0}s] 3) fill missing stats based on atp crawling matching  ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
     
-    #### fill in irreductible missingvalues based on history
+    #### fill in irreductible missing values based on history
     mvs = pd.isnull(total_data_wrank_stats).sum()
     t0 = time.time()
     total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)

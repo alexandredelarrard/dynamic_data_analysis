@@ -65,6 +65,9 @@ def get_stats(x, sub_data):
              (winner_w_data["w_ace"]*winner_w_data["weight"]  + winner_l_data["l_ace"]*winner_l_data["weight"]).sum()/weight_winner -\
              (loser_w_data["w_ace"]*loser_w_data["weight"]  + loser_l_data["l_ace"]*loser_l_data["weight"]).sum()/weight_loser, #### difference aces
              
+             (winner_w_data["w_df"]*winner_w_data["weight"]  + winner_l_data["l_df"]*winner_l_data["weight"]).sum()/weight_winner -\
+             (loser_w_data["w_df"]*loser_w_data["weight"]  + loser_l_data["l_df"]*loser_l_data["weight"]).sum()/weight_loser, #### difference df
+             
              
              )
     

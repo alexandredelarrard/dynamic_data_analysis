@@ -65,6 +65,7 @@ def update_end_of_season(data, year_ref, mean_elo=1000):
 def calculate_elo(data):
     
     data = data[["Date", "winner_id", "loser_id", "surface"]].copy()
+    data = data.reset_index()
     
     data["elo1"] = 1500
     data["elo2"] = 1500
@@ -140,6 +141,15 @@ def merge_data_elo(data):
     data["elo1_surface"] = elos_extracted["elo1_surface"]
     data["elo2_surface"] = elos_extracted["elo2_surface"]
     
+    data["elo_answer_surface"] = 0
+    data.loc[data["prob_elo"] >=0.5, "elo_answer_surface"] = 1
+    data["elo_answer"] = 0
+    data.loc[data["prob_elo"] >=0.5, "elo_answer"] = 1
+    
+    for i in range(2014,2018):
+        print("[ELO] Error {0} is {1}".format(i, 1 - sum(1 - data.loc[data["Date"].dt.year == i, "elo_answer"])/len(data.loc[data["Date"].dt.year == i, "elo_answer"])))
+        print("[ELO SURFACE] Error {0} is {1}".format(i, 1 - sum(1 - data.loc[data["Date"].dt.year == i, "elo_answer_surface"])/len(data.loc[data["Date"].dt.year == i, "elo_answer_surface"])))
+            
     print("[{0}s] 7) Calculate Elo ranking overall/surface ".format(time.time() - t0))
     
     return data
