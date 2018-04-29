@@ -10,8 +10,10 @@ import numpy as np
 from multiprocessing import Pool
 from functools import partial
 from datetime import  timedelta
+import re
 
 from utils.weight_past_matches import calculate_corr_surface, calculate_corr_time, calculate_corr_opponents
+
 
 def parallelize_dataframe(df, function, dictionnary, njobs):
     df_split = np.array_split(df, njobs)
@@ -23,6 +25,7 @@ def parallelize_dataframe(df, function, dictionnary, njobs):
     pool.join()
     
     return df2
+
 
 def common_opponents(x, data):
     
@@ -64,6 +67,7 @@ def weighted_statistics(x, liste_dataframe):
 
 
 def get_stats(x, sub_data):
+    
     
     winner_w_data = sub_data.loc[sub_data["winner_id"] == x["winner_id"]]
     winner_l_data = sub_data.loc[sub_data["loser_id"] == x["winner_id"]]
@@ -126,7 +130,11 @@ def get_stats(x, sub_data):
              
              
              ### proportion victory 1 vs 2 
-             sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] ,
+             sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0],
+             
+              ### proportion victory common adversories
+             (sub_data.loc[(sub_data["winner_id"] == x["winner_id"])].shape[0] - sub_data.loc[(sub_data["winner_id"] == x["loser_id"])])/ sub_data.shape[0],
+             
              
              ### proportion points won 1 vs 2 
 #             sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] 
@@ -144,7 +152,14 @@ def fatigue_minutes(x , data):
 
 def fatigue_games(x , data):
     ### number of games played during last 3 days
+    sub_data = data.loc[((x["Date"] - data["Date"]).dt.days.isin([1,2,3]))&(data["winner_id"] = x_winner_id)]
+    
     return 0
+
+def extract_games_number(x):
+    x = re.sub(r'\([^)]*\)', '', x)
+    x = x.replace(" ",",").replace("-",",").split(",")
+    return sum([int(a) for a in x])
 
 def global_stats(data):
     
@@ -184,6 +199,8 @@ def create_statistics(data):
 #    correlation_opponents = calculate_corr_opponents(tot)
     
     data["fatigue_minutes"] = data[["Date", "winner_id", "loser_id", "minutes"]].apply(lambda x : fatigue_minutes(x, data), axis= 1)["minutes"]
+    data["total_games"] = data["score"].apply(lambda x : extract_games_number(x))
+    data["fatigue_games"] = data[["Date", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_minutes(x, data), axis= 1)["games"]
     
     col_for_stats = ['Date', 'winner_id', 'loser_id', 'minutes', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
