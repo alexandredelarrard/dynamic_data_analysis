@@ -7,7 +7,6 @@ Created on Wed Apr  4 13:38:19 2018
 
 import pandas as pd
 import numpy as np
-from scipy.optimize import curve_fit
 from multiprocessing import Pool
 from functools import partial
 from datetime import  timedelta
@@ -50,30 +49,6 @@ def add_weight(x, sub_data, corr_surface, corr_time):
     return sub_data
 
 
-def get_stats(x, sub_data):
-    
-    winner_w_data = sub_data.loc[sub_data["winner_id"] == x["winner_id"]]
-    winner_l_data = sub_data.loc[sub_data["loser_id"] == x["winner_id"]]
-    loser_w_data = sub_data.loc[sub_data["winner_id"] == x["loser_id"]]
-    loser_l_data = sub_data.loc[sub_data["loser_id"] == x["loser_id"]]
-    
-    weight_winner = (winner_w_data["weight"].sum() + winner_l_data["weight"]).sum()
-    weight_loser = (loser_w_data["weight"].sum() + loser_l_data["weight"]).sum()
-    
-    count = (sub_data.shape[0], ### confidence on stat
-             
-             (winner_w_data["w_ace"]*winner_w_data["weight"]  + winner_l_data["l_ace"]*winner_l_data["weight"]).sum()/weight_winner -\
-             (loser_w_data["w_ace"]*loser_w_data["weight"]  + loser_l_data["l_ace"]*loser_l_data["weight"]).sum()/weight_loser, #### difference aces
-             
-             (winner_w_data["w_df"]*winner_w_data["weight"]  + winner_l_data["l_df"]*winner_l_data["weight"]).sum()/weight_winner -\
-             (loser_w_data["w_df"]*loser_w_data["weight"]  + loser_l_data["l_df"]*loser_l_data["weight"]).sum()/weight_loser, #### difference df
-             
-             
-             )
-    
-    return count
-    
-
 def weighted_statistics(x, liste_dataframe):
     
     data = liste_dataframe[0]
@@ -86,7 +61,90 @@ def weighted_statistics(x, liste_dataframe):
     stats    = get_stats(x, sub_data)
     
     return stats
+
+
+def get_stats(x, sub_data):
     
+    winner_w_data = sub_data.loc[sub_data["winner_id"] == x["winner_id"]]
+    winner_l_data = sub_data.loc[sub_data["loser_id"] == x["winner_id"]]
+    loser_w_data = sub_data.loc[sub_data["winner_id"] == x["loser_id"]]
+    loser_l_data = sub_data.loc[sub_data["loser_id"] == x["loser_id"]]
+    
+    weight_winner = (winner_w_data["weight"].sum() + winner_l_data["weight"]).sum()
+    weight_loser = (loser_w_data["weight"].sum() + loser_l_data["weight"]).sum()
+    
+    ws1 = (((winner_w_data["w_1stIn"]*winner_w_data["w_1stWon"] + (1-winner_w_data["w_1stIn"])*winner_w_data["w_2ndWon"])*winner_w_data["weight"]).sum() 
+             + ((winner_l_data["l_1stIn"]*winner_l_data["l_1stWon"] + (1-winner_l_data["l_1stIn"])*winner_l_data["l_2ndWon"])*winner_l_data["weight"]).sum())/weight_winner 
+    
+    ws2 = (((loser_w_data["w_1stIn"]*loser_w_data["w_1stWon"] + (1-loser_w_data["w_1stIn"])*loser_w_data["w_2ndWon"])*loser_w_data["weight"]  ).sum()
+             + ((loser_l_data["l_1stIn"]*loser_l_data["l_1stWon"] + (1-loser_l_data["l_1stIn"])*loser_l_data["l_2ndWon"])*loser_l_data["weight"]).sum())/weight_loser 
+    
+    wr1 = (((winner_w_data["w_1st_srv_ret_won"]*winner_w_data["l_1stIn"] + (1-winner_w_data["l_1stIn"])*winner_w_data["w_2nd_srv_ret_won"])*winner_w_data["weight"]).sum() 
+             + ((winner_l_data["l_1st_srv_ret_won"]*winner_l_data["w_1stIn"] + (1-winner_l_data["w_1stIn"])*winner_l_data["l_2nd_srv_ret_won"])*winner_l_data["weight"]).sum())/weight_winner 
+    
+    wr2 = (((loser_w_data["w_1st_srv_ret_won"]*loser_w_data["l_1stIn"] + (1-loser_w_data["l_1stIn"])*loser_w_data["w_2nd_srv_ret_won"])*loser_w_data["weight"]).sum() 
+             + ((loser_l_data["l_1st_srv_ret_won"]*loser_l_data["w_1stIn"] + (1-loser_l_data["w_1stIn"])*loser_l_data["l_2nd_srv_ret_won"])*loser_l_data["weight"]).sum())/weight_loser
+    
+    
+    count = (sub_data.shape[0], ### confidence on stat
+             
+             ((winner_w_data["w_ace"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_ace"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_ace"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_ace"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion aces
+             
+             ((winner_w_data["w_df"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_df"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_df"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_df"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion df
+             
+             ((winner_w_data["w_1stIn"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_1stIn"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_1stIn"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_1stIn"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion first serv
+             
+             ((winner_w_data["w_1stWon"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_1stWon"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_1stWon"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_1stWon"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion first won
+             
+             ((winner_w_data["w_2ndWon"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_2ndWon"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_2ndWon"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_2ndWon"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
+             
+             #### overall skill on serv =  w1sp*fs + (1-fs)*w2sp
+             ws1 - ws2, 
+            
+             ### overall skill on return = w1_ret* (l_fs) + (1- l_fs)*w2_ret
+             wr1 - wr2, 
+             
+             ### overall skill on both
+             ws1*ws1 - ws2*wr2,
+             
+             ### difference serv return 
+             ws1 - wr2,
+             
+             ### difference serv return 2
+             ws2- wr1,
+             
+             ### break point competencies  = bp_saved * bp_converted
+             (((winner_w_data["w_bpSaved"]*winner_w_data["w_bp_converted"]*winner_w_data["weight"]).sum() + (winner_l_data["l_bpSaved"]*winner_l_data["l_bp_converted"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_bpSaved"]*loser_w_data["w_bp_converted"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_bpSaved"]*loser_l_data["l_bp_converted"]*loser_l_data["weight"]).sum()))/weight_loser, 
+             
+             ### tie break competencies 
+             
+             
+             ### proportion victory 1 vs 2 
+             sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] ,
+             
+             ### proportion points won 1 vs 2 
+#             sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] 
+             
+             
+             )
+    
+    return count
+    
+
+def fatigue_minutes(x , data):
+    ### number of minutes played during last 3 days
+    return 0
+
+
+def fatigue_games(x , data):
+    ### number of games played during last 3 days
+    return 0
 
 def global_stats(data):
     
@@ -99,6 +157,8 @@ def global_stats(data):
     data["diff_rank"] = data['winner_rank'] - data['loser_rank']
     data["diff_rk_pts"] = data['winner_rank_points'] - data['loser_rank_points']
     data["diff_hand"] = data['winner_hand'] - data['loser_hand']
+    data["diff_is_birthday"] = data['w_birthday'] - data['l_birthday']
+    data["diff_home"] = data['w_home'] - data['l_home']
     
     return data
 
@@ -107,6 +167,7 @@ def create_statistics(data):
     
     data = global_stats(data)
     
+    #### calculate correlations
     data1 = data[["Date", "winner_id", "loser_id", "surface", "tourney_id"]].copy()
     data1["target"] = 1
     
@@ -122,12 +183,15 @@ def create_statistics(data):
     correlation_time      = calculate_corr_time(tot, start_year=1990, end_year=2017)
 #    correlation_opponents = calculate_corr_opponents(tot)
     
+    data["fatigue_minutes"] = data[["Date", "winner_id", "loser_id", "minutes"]].apply(lambda x : fatigue_minutes(x, data), axis= 1)["minutes"]
+    
     col_for_stats = ['Date', 'winner_id', 'loser_id', 'minutes', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
                      'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
                      'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks']
     
     counts = data1.apply(lambda x : weighted_statistics(x, [data[col_for_stats], correlation_surface, correlation_time]), axis= 1)
+    data["stats"] = counts
     
     return tot
 

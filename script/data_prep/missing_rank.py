@@ -18,8 +18,9 @@ def deduce_rank_from_past(x, data):
         sub_data = data.loc[((data["winner_id"] == x["winner_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["winner_id"]) &(~pd.isnull(data["loser_rank"])))].copy()
         sub_data["time_dist"] = abs((x["Date"] - sub_data["Date"]).dt.days)
         
-        if len(sub_data) ==0:
-             missed =[ int(data["winner_rank"].mean()), int(data["winner_rank_points"].mean())]
+        if len(sub_data) ==0: #### no previous or after value ---> this is a new person : take percentile 99 
+             missed =[int(np.percentile(data.loc[~pd.isnull(data["loser_rank"]), "loser_rank"], q = 99)), 
+                                        int(np.percentile(data.loc[~pd.isnull(data["loser_rank_points"]), "loser_rank_points"], q = 95))]
         else:
             elect = sub_data.loc[sub_data["time_dist"] == min(sub_data["time_dist"])].iloc[0]
             
@@ -35,8 +36,9 @@ def deduce_rank_from_past(x, data):
         sub_data = data.loc[((data["winner_id"] == x["loser_id"])&(~pd.isnull(data["winner_rank"]))) | ((data["loser_id"] == x["loser_id"]) &(~pd.isnull(data["loser_rank"])))].copy()
         sub_data["time_dist"] = abs((x["Date"] - sub_data["Date"]).dt.days)
         
-        if len(sub_data) ==0:
-             missed +=[ int(data["loser_rank"].mean()), int(data["loser_rank_points"].mean())]
+        if len(sub_data) ==0: #### no previous or after value ---> this is a new person : take percentile 99 
+             missed +=[int(np.percentile(data.loc[~pd.isnull(data["loser_rank"]), "loser_rank"], q = 99)), 
+                                          int(np.percentile(data.loc[~pd.isnull(data["loser_rank_points"]), "loser_rank_points"], q = 95))]
         else:
             elect = sub_data.loc[sub_data["time_dist"] == min(sub_data["time_dist"])].iloc[0]
             

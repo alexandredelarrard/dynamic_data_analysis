@@ -39,6 +39,7 @@ def main_create_data(rebuild):
         data2["tourney_date"] = pd.to_datetime(data2["tourney_date"], format = "%d/%m/%Y")
         
     ### create counting past historical data
+
     
     return data2
     

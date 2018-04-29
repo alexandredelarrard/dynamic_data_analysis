@@ -48,6 +48,7 @@ def fillin_missing_stats(data_stats):
     missing_data = data.loc[(pd.isnull(data["w_ace"]))|(pd.isnull(data["minutes"]))|(((data["l_svpt"] ==0)|(data["w_svpt"] ==0))&(data["status"] == "Completed"))].copy()
     
     for ind, i in enumerate(missing_data["ATP_ID"]):
+        
         x = missing_data.iloc[ind]
         index1 = (data["winner_id"] == x["winner_id"])&(data["surface"] == x["surface"])&(data["best_of"] == x["best_of"])
         sub_data = data.loc[index1]
@@ -60,16 +61,18 @@ def fillin_missing_stats(data_stats):
         #### no history around this match, we take average of stats for winners
         if pd.isnull(x["w_ace"]):
             if len(sub_data1) ==0:
-             sub_data1 = data.loc[(abs(data["Date"] - x["Date"]).dt.days< 50)]
+                sub_data1 = data.loc[(abs(data["Date"] - x["Date"]).dt.days< 50)]
              
-            for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced"]:
-                 data.loc[data["ATP_ID"] == i, col] = sub_data1[col].mean()
+            if pd.isnull(x["w_svpt"]) or x["w_svpt"] ==0:
+                for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced"]:
+                     data.loc[data["ATP_ID"] == i, col] = sub_data1[col].mean()
             
             if len(sub_data2) ==0:
                  sub_data2 = data.loc[(abs(data["Date"] - x["Date"]).dt.days< 50)]
             
-            for col in ["l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced"]:
-                data.loc[data["ATP_ID"] == i, col] = sub_data2[col].mean()
+            if pd.isnull(x["lw_svpt"]) or x["l_svpt"] ==0:
+                for col in ["l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced"]:
+                    data.loc[data["ATP_ID"] == i, col] = sub_data2[col].mean()
 
         if pd.isnull(x["minutes"]):
             data.loc[data["ATP_ID"] == i, "minutes"] = data.loc[((data["winner_id"] == x["winner_id"])|(data["loser_id"] == x["loser_id"]))&(data["best_of"] == x["best_of"]), "minutes"].mean()

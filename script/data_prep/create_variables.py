@@ -94,9 +94,9 @@ def prep_data(data):
     dataset.loc[(dataset["tourney_id"] == "2017-0308")&(dataset["winner_name"] == "Hyeon Chung")&(dataset["loser_name"] == "Martin Klizan"), "minutes"] = 135
     dataset.loc[(dataset["tourney_id"] == "2016-M001")&(dataset["winner_name"] == "Gilles Muller")&(dataset["loser_name"] == "Jeremy Chardy"), "minutes"] = 90
     
-    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[~pd.isnull(dataset["w_S5"]), "minutes"].mean())
-    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S4"]))&(pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S5"]))&(~pd.isnull(dataset["w_S4"])), "minutes"].mean())
-    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S3"]))&(pd.isnull(dataset["w_S4"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S4"]))&(~pd.isnull(dataset["w_S3"])), "minutes"].mean())
+    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[~pd.isnull(dataset["w_S5"]), "minutes"].median())
+    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S4"]))&(pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S5"]))&(~pd.isnull(dataset["w_S4"])), "minutes"].median())
+    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S3"]))&(pd.isnull(dataset["w_S4"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S4"]))&(~pd.isnull(dataset["w_S3"])), "minutes"].median())
     
     ### tie breaks
     dataset["Nbr_tie-breaks"]   = dataset['score'].apply(lambda x : len(re.findall('\((.*?)\)', str(x))))
@@ -122,6 +122,16 @@ def prep_data(data):
     dataset["w_imc"] = dataset["Weight_w"] / (dataset["winner_ht"]/100)**2
     dataset["l_imc"] = dataset["Weight_l"] / (dataset["loser_ht"]/100)**2
     
+    ### return normalization suppressing double fault not seen as successes
+    dataset['w_1st_srv_ret_won'] = dataset['w_1st_srv_ret_won'] / (dataset["l_1stIn"])
+    dataset['l_1st_srv_ret_won'] = dataset['l_1st_srv_ret_won'] / (dataset["w_1stIn"])
+    
+    dataset['w_2nd_srv_ret_won'] = dataset['w_2nd_srv_ret_won'] / (dataset["w_2nd_srv_ret_won"] + dataset["l_2ndWon"])
+    dataset['l_2nd_srv_ret_won'] = dataset['l_2nd_srv_ret_won'] / (dataset["l_2nd_srv_ret_won"] + dataset["w_2ndWon"])
+    
+    dataset['w_total_ret_won'] = dataset['w_total_ret_won'] / (dataset["l_svpt"])
+    dataset['l_total_ret_won'] = dataset['l_total_ret_won'] / (dataset["w_svpt"])
+    
     ### normalize match statistics
     # serv normalization
     for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:
@@ -136,16 +146,6 @@ def prep_data(data):
         
     for col in ["l_bp_converted", "l_bpSaved", "l_bpFaced"]:    
         dataset[col] = dataset[col] / (dataset["l_SvGms"])
-    
-    ### return normalization suppressing double fault not seen as successes
-    dataset['w_1st_srv_ret_won'] = dataset['w_1st_srv_ret_won'] / (dataset["l_1stIn"])
-    dataset['l_1st_srv_ret_won'] = dataset['l_1st_srv_ret_won'] / (dataset["w_1stIn"])
-    
-    dataset['w_2nd_srv_ret_won'] = dataset['w_2nd_srv_ret_won'] / (dataset["w_2nd_srv_ret_won"] + dataset["l_2ndWon"])
-    dataset['l_2nd_srv_ret_won'] = dataset['l_2nd_srv_ret_won'] / (dataset["l_2nd_srv_ret_won"] + dataset["w_2ndWon"])
-    
-    dataset['w_total_ret_won'] = dataset['w_total_ret_won'] / (dataset["l_svpt"] - dataset["l_df"])
-    dataset['l_total_ret_won'] = dataset['l_total_ret_won'] / (dataset["w_svpt"] - dataset["w_df"])
     
     print("[{0}s] 8) Create additionnal variables ".format(time.time() - t0))
         
