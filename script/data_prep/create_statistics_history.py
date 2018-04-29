@@ -147,12 +147,14 @@ def get_stats(x, sub_data):
 
 def fatigue_minutes(x , data):
     ### number of minutes played during last 3 days
+    sub_data = data.loc[(abs(x["Date"] - data["Date"]).dt.days <= 3)&(data["Date"] < x["Date"])&((data["winner_id"] == x["winner_id"]) | (data["loser_id"] == x["loser_id"]))]
+    
     return 0
 
 
 def fatigue_games(x , data):
     ### number of games played during last 3 days
-    sub_data = data.loc[((x["Date"] - data["Date"]).dt.days.isin([1,2,3]))&(data["winner_id"] = x_winner_id)]
+    sub_data = data.loc[(abs(x["Date"] - data["Date"]).dt.days <= 3)&(data["Date"] < x["Date"])&((data["winner_id"] == x["winner_id"]) | (data["loser_id"] == x["loser_id"]))]
     
     return 0
 
