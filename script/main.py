@@ -29,6 +29,7 @@ def main_create_data(rebuild):
         data2 = prep_data(data_merge_player_elo)
    
         ### create counting past historical data
+        
          
         #### save dataset
         data2.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv", index= False)

@@ -4,14 +4,11 @@ Created on Wed Mar 21 20:29:59 2018
 
 @author: User
 """
-import os
+
 import pandas as pd
 import numpy as np
 import glob
-from tqdm import tqdm
 import time 
-
-tqdm.pandas(tqdm())
 
 def href_match_h2h(path):
     
@@ -71,7 +68,7 @@ def match_proba(x, data):
     
 def data_match(data_atp, data_orig):
     
-    data_orig["ID"] = data_orig["key"].progress_apply(lambda x : match_proba(x, data_atp))
+    data_orig["ID"] = data_orig["key"].apply(lambda x : match_proba(x, data_atp))
     return data_orig
 
 
