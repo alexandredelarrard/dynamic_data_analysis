@@ -250,9 +250,10 @@ def create_statistics(data, redo = False):
                  'diff_age', 'diff_ht', 'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']:
         data2[col] = -1*data2[col]
         
-    total_data= pd.concat([data[modelling_cols], data2[modelling_cols]], axis= 0)
+    total_data_with_cols = pd.concat([data, data2], axis= 0)
+    total_data           = pd.concat([data[modelling_cols], data2[modelling_cols]], axis= 0)
                     
-    return total_data
+    return total_data_with_cols, total_data
 
 
 if __name__ == "__main__": 

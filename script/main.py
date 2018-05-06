@@ -7,9 +7,9 @@ Created on Fri Mar  9 10:16:28 2018
 
 import pandas as pd
 import os
-from modelling.modelling_lr import modelling_logistic
+
 from data_prep.extract_data_atp import import_data_atp
-#from data_prep.create_statistics_history import data_prep_history
+from data_prep.create_statistics_history import create_statistics
 from data_prep.create_elo_ranking import merge_data_elo
 from data_prep.create_variables import prep_data
 
@@ -24,27 +24,31 @@ def main_create_data(rebuild):
 
         ### add elo system ranking
         data_merge_player_elo = merge_data_elo(data_atp)
+        data_merge_player_elo.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_V1.csv", index= False)
         
         ### create value added variables/lean dataset and irregularities
         data2 = prep_data(data_merge_player_elo)
+        data2.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv", index= False)
    
         ### create counting past historical data
-        
+        data_total, data3 = create_statistics(data2, redo= False)
          
         #### save dataset
-        data2.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv", index= False)
+        data3.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/variables_for_modelling_V1.csv", index= False)
+        data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/total_dataset_modelling.csv", index= False)
         
     else:
-        data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
-        data2["Date"] = pd.to_datetime(data2["Date"], format = "%Y-%m-%d")
-        data2["DOB_w"] = pd.to_datetime(data2["DOB_l"], format = "%Y-%m-%d")
-        data2["DOB_l"] = pd.to_datetime(data2["DOB_l"], format = "%Y-%m-%d")
-        data2["tourney_date"] = pd.to_datetime(data2["tourney_date"], format = "%d/%m/%Y")
+        data3 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/variables_for_modelling_V1.csv")
+        data3["Date"] = pd.to_datetime(data3["Date"], format = "%Y-%m-%d")
         
-    return data2
+        data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/total_dataset_modelling.csv")
+        data_total["Date"] = pd.to_datetime(data3["Date"], format = "%Y-%m-%d")
+        
+    return data_total, data3
     
 
 if __name__ == "__main__":
 
     data_atp = main_create_data(rebuild= True)
+    data_merge_player_elo = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_V1.csv")
     

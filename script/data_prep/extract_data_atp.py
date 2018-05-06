@@ -49,7 +49,7 @@ def import_data_atp(path, redo=False):
     data.loc[index, "status"] = "Retired"
     index = data["score"].apply(lambda x : "DEF" in str(x))
     data.loc[index, "status"] = "Def"
-    index = data["score"].apply(lambda x : "W/O" in str(x) or "W/O " in str(x))
+    index = data["score"].apply(lambda x : "W/O" in str(x) or "W/O " in str(x) or " W/O" in str(x))
     data.loc[index, "status"] = "Walkover"
     
     #### create variable nbr days since retired / walkover
@@ -58,15 +58,8 @@ def import_data_atp(path, redo=False):
     data["diff_days_since_stop"] = data["diff_days_since_stop"].apply(lambda x: x[0] - x[1])
     print(" --- calculate return after walkover or retired : {0} ".format(time.time() - t0))
 
-    ### suppress walkovers
-    sp = data.shape[0] 
-    data = data.loc[~data["score"].isin(["W/O", "W/O "])]
-    print(" --- Suppress walkovers matches : {0} ".format(sp - data.shape[0]))
-    
-    ### suppress retired
-    sp = data.shape[0] 
-    data = data.loc[~data["score"].isin(["DEF", "RET"])]
-    print(" --- Suppress retired matches : {0} ".format(sp - data.shape[0]))
+    ### suppress not completed match
+    data = data.loc[~data["status"].isin(["Retired", "Walkover", "Def"])]
     
     #### fill in missing scores
     data.loc[(data["tourney_id"] == "2007-533")&(pd.isnull(data["score"])), "score"] = "6-1 4-6 7-5"

@@ -167,7 +167,7 @@ def prep_data(data):
         
     dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'],axis = 1)
     
-    print("[{0}s] 8) Create additionnal variables ".format(time.time() - t0))
+    print("[{0}s] 7) Create additionnal variables ".format(time.time() - t0))
         
     return dataset
 
