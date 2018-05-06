@@ -17,6 +17,7 @@ def set_extract(x, taille):
     else:
         return np.nan
     
+    
 def games_extract(x, w_l):
     
     try:
@@ -37,7 +38,6 @@ def win_tb(x):
     return count
 
 
-
 def extract_games_number(x):
     try:
         x = re.sub(r'\([^)]*\)', '', x)
@@ -47,6 +47,10 @@ def extract_games_number(x):
     except Exception:
         print(x)
         
+        
+def count_sets(x):
+    x = re.sub(r'\([^)]*\)', '', x)
+    return x.count("-")
     
     
 def prep_data(data):
@@ -92,7 +96,7 @@ def prep_data(data):
     
     #### create score variables
     dataset["total_games"] = dataset["score"].apply(lambda x : extract_games_number(x))
-    dataset['N_set']  = dataset['score'].str.count("-")
+    dataset['N_set']  = dataset['score'].apply(lambda x : count_sets(x))
     dataset['score'] = dataset['score'].str.split(" ")
     dataset["S1"] = dataset['score'].apply(lambda x : set_extract(x, 1))
     dataset["S2"] = dataset['score'].apply(lambda x : set_extract(x, 2))

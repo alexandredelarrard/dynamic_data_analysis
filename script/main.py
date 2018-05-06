@@ -20,7 +20,7 @@ def main_create_data(rebuild):
     if rebuild:
         ### read atp data and clean it / redo = build from scratch with the matching algo with stats match from atp 
         path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
-        data_atp = import_data_atp(path, redo = False)
+        data_atp = import_data_atp(path, redo = True)
 
         ### add elo system ranking
         data_merge_player_elo = merge_data_elo(data_atp)
@@ -32,7 +32,6 @@ def main_create_data(rebuild):
          
         #### save dataset
         data2.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv", index= False)
-        
         
     else:
         data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
