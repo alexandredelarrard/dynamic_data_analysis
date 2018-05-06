@@ -7,82 +7,94 @@ Created on Wed Apr 25 17:47:25 2018
 import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
+import os
 
-
-def calculate_corr_time(tot, start_year=1990, end_year=2017, weight_1 = 6):
+def calculate_corr_time(tot, start_year=1990, end_year=2017, weight_1 = 6, redo = False):
     
-    def exponenial_func(x, a, b, c):
-        return a*np.exp(-b*x)+c
-
-    tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)].copy()
-    tot_loc["year"] = tot_loc["Date"].dt.year
-    tot_loc["month"] = tot_loc["Date"].dt.month
+    if redo:
+        def exponenial_func(x, a, b, c):
+            return a*np.exp(-b*x)+c
     
-    liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
-    dataframe = pd.DataFrame([], index= liste_players, columns = range(22))
-    
-    for pl in liste_players: 
-        pl_data = tot_loc.loc[tot_loc["winner_id"] == pl].copy()
+        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)].copy()
+        tot_loc["year"] = tot_loc["Date"].dt.year
+        tot_loc["month"] = tot_loc["Date"].dt.month
         
-        agg = pl_data[["year", "month", "target"]].groupby(["year", "month"]).mean()
-        if len(agg) > 5:
-            rep = agg["target"].tolist()[::-1]
-            for i in range(len(agg)):
-                dataframe.loc[pl, i] = rep[i]
-                
-    dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
-    time_correlations = dataframe.corr()
-    
-    #### first 6 months should have weight = 1 ---> leads to first 12 months weight = 1
-    count_1 = weight_1
-    size = 150
-    time_correlations = time_correlations.loc[:size, :size]
-    
-    time_corr = []
-    for t in range(1,size):
-        s = 0
-        for i in range(size):
-            if time_correlations.shape[1] > i+t:
-                s  += time_correlations.iloc[i, i+t]
-                
-        time_corr.append(s / size)
+        liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
+        dataframe = pd.DataFrame([], index= liste_players, columns = range(22))
         
-    coef_offset = 1/time_corr[count_1]    
-    corr_temp = pd.DataFrame(time_corr)*coef_offset
-    corr_temp.index = list(range(1, len(corr_temp)+1))
-    popt, pcov = curve_fit(exponenial_func, corr_temp.index, corr_temp[0], p0=(1, 1e-2, 1))
+        for pl in liste_players: 
+            pl_data = tot_loc.loc[tot_loc["winner_id"] == pl].copy()
+            
+            agg = pl_data[["year", "month", "target"]].groupby(["year", "month"]).mean()
+            if len(agg) > 5:
+                rep = agg["target"].tolist()[::-1]
+                for i in range(len(agg)):
+                    dataframe.loc[pl, i] = rep[i]
+                    
+        dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
+        time_correlations = dataframe.corr()
+        
+        #### first 6 months should have weight = 1 ---> leads to first 12 months weight = 1
+        count_1 = weight_1
+        size = 150
+        time_correlations = time_correlations.loc[:size, :size]
+        
+        time_corr = []
+        for t in range(1,size):
+            s = 0
+            for i in range(size):
+                if time_correlations.shape[1] > i+t:
+                    s  += time_correlations.iloc[i, i+t]
+                    
+            time_corr.append(s / size)
+            
+        coef_offset = 1/time_corr[count_1]    
+        corr_temp = pd.DataFrame(time_corr)*coef_offset
+        corr_temp.index = list(range(1, len(corr_temp)+1))
+        popt, pcov = curve_fit(exponenial_func, corr_temp.index, corr_temp[0], p0=(1, 1e-2, 1))
+        
+        a = []
+        for x in range(1,size):
+            a.append(exponenial_func(x, popt[0], popt[1], popt[2]))
+        
+        corr_temp["pred"] = a
+        corr_temp.loc[corr_temp["pred"]>=1, "pred"] = 1
+        corr_temp.loc[corr_temp["pred"]<=0, "pred"] = 0
+        corr_temp[[0,"pred"]].plot()
+        
+        corr_temp[0] = 1
+        
+        corr_temp.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/historical/correlations_temps.csv")
     
-    a = []
-    for x in range(1,size):
-        a.append(exponenial_func(x, popt[0], popt[1], popt[2]))
-    
-    corr_temp["pred"] = a
-    corr_temp.loc[corr_temp["pred"]>=1, "pred"] = 1
-    corr_temp.loc[corr_temp["pred"]<=0, "pred"] = 0
-    corr_temp[[0,"pred"]].plot()
-    
-    corr_temp[0] = 1
+    else:
+        corr_temp = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/historical/correlations_temps.csv")
     
     return corr_temp["pred"]
 
 
-def calculate_corr_surface(tot, start_year=1990, end_year=2017):
+def calculate_corr_surface(tot, start_year=1990, end_year=2017, redo = False):
     
     ### because dont want info from test set
-    tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)]
-    liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
-    dataframe = pd.DataFrame([], index= liste_players, columns = ["Hard", "Clay", "Carpet", "Grass"])
-    
-    for pl in liste_players: 
-        pl_data = tot_loc.loc[tot_loc["winner_id"] == pl]
-        agg = pl_data[["surface", "target"]].groupby("surface").mean()
-        for i, surf in enumerate(agg.index.tolist()):
-            dataframe.loc[pl, surf] = agg.loc[surf].values[0]
-    
-    dataframe = dataframe.loc[(~pd.isnull(dataframe["Hard"]))]
-    
-    dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
-    surface_correlations = dataframe.corr()
+    if redo:
+        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)]
+        liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
+        dataframe = pd.DataFrame([], index= liste_players, columns = ["Hard", "Clay", "Carpet", "Grass"])
+        
+        for pl in liste_players: 
+            pl_data = tot_loc.loc[tot_loc["winner_id"] == pl]
+            agg = pl_data[["surface", "target"]].groupby("surface").mean()
+            for i, surf in enumerate(agg.index.tolist()):
+                dataframe.loc[pl, surf] = agg.loc[surf].values[0]
+        
+        dataframe = dataframe.loc[(~pd.isnull(dataframe["Hard"]))]
+        
+        dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
+        surface_correlations = dataframe.corr()
+        
+        surface_correlations.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/historical/correlations_surface.csv")
+        
+    else:
+        surface_correlations = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/historical/correlations_surface.csv", index_col=0)
     
     return surface_correlations
 

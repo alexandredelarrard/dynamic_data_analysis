@@ -35,6 +35,13 @@ def win_tb(x):
             if int(se.split("-")[0]) > int(re.sub(r'\([^)]*\)', '', se.split("-")[1])):
                 count +=1
     return count
+
+
+
+def extract_games_number(x):
+    x = re.sub(r'\([^)]*\)', '', x)
+    x = x.replace(" ",",").replace("-",",").split(",")
+    return sum([int(a) for a in x])
     
     
 def prep_data(data):
@@ -79,6 +86,7 @@ def prep_data(data):
     dataset["l_total_ret_won"]   = dataset["l_1st_srv_ret_won"] + dataset["l_2nd_srv_ret_won"]
     
     #### create score variables
+    dataset["total_games"] = dataset["score"].apply(lambda x : extract_games_number(x))
     dataset['score'] = dataset['score'].str.split(" ")
     dataset["S1"] = dataset['score'].apply(lambda x : set_extract(x, 1))
     dataset["S2"] = dataset['score'].apply(lambda x : set_extract(x, 2))
@@ -146,6 +154,8 @@ def prep_data(data):
         
     for col in ["l_bp_converted", "l_bpSaved", "l_bpFaced"]:    
         dataset[col] = dataset[col] / (dataset["l_SvGms"])
+        
+    dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'],axis = 1)
     
     print("[{0}s] 8) Create additionnal variables ".format(time.time() - t0))
         

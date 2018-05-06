@@ -9,8 +9,11 @@ import pandas as pd
 import glob
 import numpy as np
 import os
-from tqdm import tqdm
+from tqdm import tqdm, tqdm_pandas
 import time 
+from multiprocessing import Pool
+from functools import partial
+tqdm_pandas(tqdm())
 
 from utils.build_match_statistics_database import match_stats_main
 from data_prep.extract_players import  merge_atp_players
@@ -43,6 +46,9 @@ def import_data_atp(path, redo=False):
     index = data["score"].apply(lambda x : "W/O" in str(x) or "W/O " in str(x))
     data.loc[index, "status"] = "Walkover"
     
+    #### create variable nbr days since retired / walkover
+    data["days_since_stop"] = data[["Date", "winner_id", "loser_id", "status"]].progress_apply(lambda x : walkover_retired(x,data), axis=1)["status"]
+    
     #### suppress challenger matches
     sp = data.shape[0] 
     data = data.loc[data["tourney_level"] != "C"]
@@ -50,13 +56,13 @@ def import_data_atp(path, redo=False):
     
     ### suppress walkovers
     sp = data.shape[0] 
-    data = data.loc[~data["score"].isin(["W/O", " W/O"])]
+    data = data.loc[~data["status"].isin(["Walkover"])]
     print(" --- Suppress walkovers matches : {0} ".format(sp - data.shape[0]))
     
     ### suppress retired
-    index = data["score"].apply(lambda x: "RET" in str(x))
-    data = data.loc[~index]
-    print(" --- Suppress retired matches : {0} ".format(sum(index)))
+    sp = data.shape[0] 
+    data = data.loc[~data["status"].isin(["Retired"])]
+    print(" --- Suppress retired matches : {0} ".format(sp - data.shape[0]))
     
     #### suppress davis cup and JO
     sp = data.shape[0] 
@@ -163,4 +169,31 @@ def merge_tourney(data):
     return data_merge
 
 
+def walkover_retired(x, data):
+    
+    data_sub = data.loc[(data["Date"]< x["Date"])&(data["status"].isin(["Retired", "Walkover"]))]
+    
+    sub_data = data_sub.loc[((data_sub["loser_id"] == x["loser_id"]))]
+    a = (x["Date"] - sub_data["Date"]).dt.days
+      
+    if a.shape[0]> 0:
+      min_days= min(a)
+      l = min(min_days, 20)
+    else:
+      l = 20
+      
+    sub_data = data_sub.loc[((data_sub["loser_id"] == x["winner_id"]))]
+    a = (x["Date"] - sub_data["Date"]).dt.days   
+      
+    if a.shape[0]> 0:
+      min_days= min(a)
+      w = min(min_days, 20)
+    else:
+      w = 20
+      
+    return [w,l]
+      
+  
+      
+      
  
