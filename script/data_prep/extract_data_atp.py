@@ -7,13 +7,8 @@ Created on Sat Mar 17 14:00:49 2018
 
 import pandas as pd
 import glob
-import numpy as np
 import os
-from tqdm import tqdm, tqdm_pandas
 import time 
-from multiprocessing import Pool
-from functools import partial
-tqdm_pandas(tqdm())
 
 from utils.build_match_statistics_database import match_stats_main
 from data_prep.extract_players import  merge_atp_players
@@ -37,6 +32,17 @@ def import_data_atp(path, redo=False):
     data = data.sort_values(["Date", "tourney_name"])
     data["ATP_ID"] = range(len(data))
     
+    #### suppress davis cup and JO
+    sp = data.shape[0] 
+    not_davis_index = data["tourney_name"].apply(lambda x : "Davis Cup" not in x and "Olympic" not in x)
+    data = data.loc[not_davis_index]
+    print(" --- Suppress davis cup and JO : {0} ".format(sp - data.shape[0]))
+    
+    #### suppress challenger matches
+    sp = data.shape[0] 
+    data = data.loc[data["tourney_level"] != "C"]
+    print(" --- Suppress challenger matches : {0} ".format(sp - data.shape[0]))
+    
     ### create status of match
     data["status"] = "Completed"
     index = data["score"].apply(lambda x : "RET" in str(x))
@@ -47,28 +53,20 @@ def import_data_atp(path, redo=False):
     data.loc[index, "status"] = "Walkover"
     
     #### create variable nbr days since retired / walkover
-    data["days_since_stop"] = data[["Date", "winner_id", "loser_id", "status"]].progress_apply(lambda x : walkover_retired(x,data), axis=1)["status"]
-    
-    #### suppress challenger matches
-    sp = data.shape[0] 
-    data = data.loc[data["tourney_level"] != "C"]
-    print(" --- Suppress challenger matches : {0} ".format(sp - data.shape[0]))
-    
+    t0 = time.time()
+    data["diff_days_since_stop"] = data[["Date", "winner_id", "loser_id", "status"]].apply(lambda x : walkover_retired(x,data), axis=1)["status"]
+    data["diff_days_since_stop"] = data["diff_days_since_stop"].apply(lambda x: x[0] - x[1])
+    print(" --- calculate return after walkover or retired : {0} ".format(time.time() - t0))
+
     ### suppress walkovers
     sp = data.shape[0] 
-    data = data.loc[~data["status"].isin(["Walkover"])]
+    data = data.loc[~data["score"].isin(["W/O", "W/O "])]
     print(" --- Suppress walkovers matches : {0} ".format(sp - data.shape[0]))
     
     ### suppress retired
     sp = data.shape[0] 
-    data = data.loc[~data["status"].isin(["Retired"])]
+    data = data.loc[~data["score"].isin(["DEF", "RET"])]
     print(" --- Suppress retired matches : {0} ".format(sp - data.shape[0]))
-    
-    #### suppress davis cup and JO
-    sp = data.shape[0] 
-    not_davis_index = data["tourney_name"].apply(lambda x : "Davis Cup" not in x and "Olympic" not in x)
-    data = data.loc[not_davis_index]
-    print(" --- Suppress davis cup and JO : {0} ".format(sp - data.shape[0]))
     
     #### fill in missing scores
     data.loc[(data["tourney_id"] == "2007-533")&(pd.isnull(data["score"])), "score"] = "6-1 4-6 7-5"
@@ -171,27 +169,28 @@ def merge_tourney(data):
 
 def walkover_retired(x, data):
     
-    data_sub = data.loc[(data["Date"]< x["Date"])&(data["status"].isin(["Retired", "Walkover"]))]
+    cap = 10
+    data_sub = data.loc[(data["Date"]< x["Date"])&(data["status"].isin(["Retired", "Walkover", "Def"]))]
     
     sub_data = data_sub.loc[((data_sub["loser_id"] == x["loser_id"]))]
     a = (x["Date"] - sub_data["Date"]).dt.days
       
     if a.shape[0]> 0:
-      min_days= min(a)
-      l = min(min_days, 20)
+      l = min(min(a), cap)
+      l = 1 if l<cap else 0
     else:
-      l = 20
+      l = 0
       
     sub_data = data_sub.loc[((data_sub["loser_id"] == x["winner_id"]))]
     a = (x["Date"] - sub_data["Date"]).dt.days   
       
     if a.shape[0]> 0:
-      min_days= min(a)
-      w = min(min_days, 20)
+      w = min(min(a), cap)
+      w = 1 if w < cap else 0
     else:
-      w = 20
+      w = 0
       
-    return [w,l]
+    return [[w,l]]
       
   
       

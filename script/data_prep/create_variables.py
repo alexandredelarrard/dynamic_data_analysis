@@ -39,9 +39,14 @@ def win_tb(x):
 
 
 def extract_games_number(x):
-    x = re.sub(r'\([^)]*\)', '', x)
-    x = x.replace(" ",",").replace("-",",").split(",")
-    return sum([int(a) for a in x])
+    try:
+        x = re.sub(r'\([^)]*\)', '', x)
+        x = x.replace(" ",",").replace("-",",").split(",")
+        return sum([int(a) for a in x if a !=""])
+    
+    except Exception:
+        print(x)
+        
     
     
 def prep_data(data):
@@ -87,6 +92,7 @@ def prep_data(data):
     
     #### create score variables
     dataset["total_games"] = dataset["score"].apply(lambda x : extract_games_number(x))
+    dataset['N_set']  = dataset['score'].str.count("-")
     dataset['score'] = dataset['score'].str.split(" ")
     dataset["S1"] = dataset['score'].apply(lambda x : set_extract(x, 1))
     dataset["S2"] = dataset['score'].apply(lambda x : set_extract(x, 2))

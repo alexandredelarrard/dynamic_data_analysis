@@ -9,12 +9,9 @@ import pandas as pd
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-from datetime import  timedelta
-import re
 import sys
-from tqdm import tqdm, tqdm_pandas
 import time
-tqdm_pandas(tqdm())
+
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from utils.weight_past_matches import calculate_corr_surface, calculate_corr_time
 
@@ -132,11 +129,12 @@ def get_stats(x, sub_data):
                  ws2- wr1,
                  
                  ### break point competencies  = bp_saved * bp_converted
-                 (((winner_w_data["w_bpSaved"]*winner_w_data["w_bp_converted"]*winner_w_data["weight"]).sum() + (winner_l_data["l_bpSaved"]*winner_l_data["l_bp_converted"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_bpSaved"]*loser_w_data["w_bp_converted"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_bpSaved"]*loser_l_data["l_bp_converted"]*loser_l_data["weight"]).sum()))/weight_loser, 
+                 ((winner_w_data["w_bpSaved"]*winner_w_data["w_bp_converted"]*winner_w_data["weight"]).sum() + (winner_l_data["l_bpSaved"]*winner_l_data["l_bp_converted"]*winner_l_data["weight"]).sum())/weight_winner -\
+                 ((loser_w_data["w_bpSaved"]*loser_w_data["w_bp_converted"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_bpSaved"]*loser_l_data["l_bp_converted"]*loser_l_data["weight"]).sum())/weight_loser, 
                  
                  ### tie break competencies 
-                 
+                 ((winner_w_data["w_tie-breaks_won"]*winner_w_data["weight"]/winner_w_data["N_set"]).sum() + (winner_l_data["l_tie-breaks_won"]*winner_l_data["weight"]/winner_l_data["N_set"]).sum())/weight_winner -  
+                 ((loser_w_data["w_tie-breaks_won"]*loser_w_data["weight"]/loser_w_data["N_set"]).sum() + (loser_l_data["l_tie-breaks_won"]*loser_l_data["weight"]/loser_l_data["N_set"]).sum())/weight_loser,
                  
                  ### proportion victory 1 vs 2 
                  sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0],
@@ -144,9 +142,8 @@ def get_stats(x, sub_data):
                   ### proportion victory common adversories
                  (sub_data.loc[(sub_data["winner_id"] == x["winner_id"])].shape[0] - sub_data.loc[(sub_data["winner_id"] == x["loser_id"])].shape[0])/ sub_data.shape[0],
                  
-                 
                  ### proportion points won 1 vs 2 
-    #             sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] 
+#                 sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] 
                  )
     else:
           count = (0, )   + (np.nan,)*13
@@ -154,20 +151,22 @@ def get_stats(x, sub_data):
     return [count]
     
 
-#def fatigue_minutes(x , data):
-#    ### number of minutes played during last 3 days
-#    sub_data = data.loc[(abs(x["Date"] - data["Date"]).dt.days <= 3)&(data["Date"] < x["Date"])&((data["winner_id"] == x["winner_id"]) | (data["loser_id"] == x["loser_id"])), "minutes"].sum()
-#    return 
-    
 
 def execute_stats(wrong_word_dict, data):
     count = data.apply(lambda x: weighted_statistics(x, wrong_word_dict))
     return count
 
 def fatigue_games(x , data):
-    ### number of games played during last 3 days
-    sub_data = data.loc[(abs(x["Date"] - data["Date"]).dt.days <= 3)&(data["Date"] < x["Date"])&((data["winner_id"] == x["winner_id"]) | (data["loser_id"] == x["loser_id"]))]
-    return sub_data["l_SvGms"].sum() + sub_data["w_SvGms"].sum()
+    
+    days= 4
+    ### number of games played during last days days
+    sub_data = data.loc[((x["Date"] - data["Date"]).dt.days.between(1,days))&((data["winner_id"] == x["winner_id"]) | (data["loser_id"] == x["winner_id"]))]
+    fatigue_w = sub_data["total_games"].sum()
+    
+    sub_data = data.loc[((x["Date"] - data["Date"]).dt.days.between(1,days, inclusive= True))&((data["winner_id"] == x["loser_id"]) | (data["loser_id"] == x["loser_id"]))]
+    fatigue_l = sub_data["total_games"].sum()
+    
+    return fatigue_w - fatigue_l
 
 
 def total_score(x):
@@ -217,19 +216,16 @@ def create_statistics(data, redo = False):
         correlation_surface   = calculate_corr_surface(data, redo)
         correlation_time      = calculate_corr_time(data, redo)
         
-#    data["fatigue_minutes"] = data[["Date", "winner_id", "loser_id", "minutes"]].apply(lambda x : fatigue_minutes(x, data), axis= 1)["minutes"]
-#    
-#    data["total_games"] = data["score"].apply(lambda x : total_score(x))
-#    data["fatigue_games"] = data[["Date", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_minutes(x, data), axis= 1)["games"]
+    data["fatigue_games"] = data[["Date", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)["games"]
     
     t0 = time.time()
     col_for_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
                      'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
-                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks']
+                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set"]
     
 #    counts = parallelize_dataframe(data[["Date", "winner_id", "loser_id", "surface"]], execute_stats, [data[col_for_stats], correlation_surface, correlation_time], 8)
-    counts = data[["Date", "winner_id", "loser_id", "surface"]].progress_apply(lambda x : weighted_statistics(x, [data[col_for_stats], correlation_surface, correlation_time]), axis= 1)
+    counts = data[["Date", "winner_id", "loser_id", "surface"]].apply(lambda x : weighted_statistics(x, [data[col_for_stats], correlation_surface, correlation_time]), axis= 1)
     counts = list(zip(*counts["surface"]))
     
     col_stats = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
@@ -244,7 +240,7 @@ def create_statistics(data, redo = False):
     data["target"] = 1
     modelling_cols = ["Date", "winner_id", "loser_id", "tourney_name", 'prize', 'best_of', 'round', 'Common_matches', 'diff_aces', 'diff_df', 'diff_1st_serv_in', 
                       'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv','diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
-                      'diff_bp', 'diff_victories_12', 'diff_victories_common_matches','diff_age', 'diff_ht', 
+                      'diff_bp', 'diff_victories_12', 'diff_victories_common_matches','diff_age', 'diff_ht', "diff_days_since_stop",
                       'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']
                             
     data2 = data.copy()
@@ -270,6 +266,6 @@ if __name__ == "__main__":
     tot = create_statistics(data)
     
     tot2 = tot[['Common_matches', 'diff_aces', 'diff_df', 'diff_1st_serv_in', 'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv',
- 'diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 'diff_bp', 'diff_victories_12', 'diff_victories_common_matches',
- 'diff_age', 'diff_ht', 'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']]
+                 'diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 'diff_bp', 'diff_victories_12', 'diff_victories_common_matches',
+                 'diff_age', 'diff_ht', 'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']]
     tot2 = tot2.loc[tot2["Common_matches"] > 5]
