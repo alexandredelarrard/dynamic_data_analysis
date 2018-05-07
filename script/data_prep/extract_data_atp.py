@@ -9,6 +9,7 @@ import pandas as pd
 import glob
 import os
 import time 
+import numpy as np
 
 from utils.build_match_statistics_database import match_stats_main
 from data_prep.extract_players import  merge_atp_players
@@ -54,9 +55,11 @@ def import_data_atp(path, redo=False):
     data.loc[index, "status"] = "Walkover"
     
     #### create variable nbr days since retired / walkover
+    
     t0 = time.time()
-    data["diff_days_since_stop"] = data[["Date", "winner_id", "loser_id", "status"]].apply(lambda x : walkover_retired(x,data), axis=1)["status"]
-    data["diff_days_since_stop"] = data["diff_days_since_stop"].apply(lambda x: x[0] - x[1])
+    data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
+    data["diff_days_since_stop"] = data[["ref_days", "winner_id", "loser_id", "status"]].apply(lambda x : walkover_retired(x, data), axis=1)
+    del data["ref_days"]
     print(" --- calculate return after walkover or retired : {0} ".format(time.time() - t0))
 
     ### suppress not completed match
@@ -163,28 +166,26 @@ def merge_tourney(data):
 
 def walkover_retired(x, data):
     
-    cap = 10
-    data_sub = data.loc[(data["Date"]< x["Date"])&(data["status"].isin(["Retired", "Walkover", "Def"]))]
+    cap = 8
+    data_sub = data.loc[(data["ref_days"]< x["ref_days"])&(data["status"].isin(["Retired", "Walkover", "Def"]))]
     
-    sub_data = data_sub.loc[((data_sub["loser_id"] == x["loser_id"]))]
-    a = (x["Date"] - sub_data["Date"]).dt.days
+    ref_day = np.max(data_sub.loc[((data_sub["loser_id"] == x["loser_id"])), "ref_days"])
+    a = (x["ref_days"] - ref_day)
       
-    if a.shape[0]> 0:
-      l = min(min(a), cap)
-      l = 1 if l<cap else 0
+    if a:
+      l = 1 if a <= cap else 0
     else:
       l = 0
       
-    sub_data = data_sub.loc[((data_sub["loser_id"] == x["winner_id"]))]
-    a = (x["Date"] - sub_data["Date"]).dt.days   
+    ref_day = np.max(data_sub.loc[((data_sub["loser_id"] == x["winner_id"])), "ref_days"])
+    a = (x["ref_days"] - ref_day)   
       
-    if a.shape[0]> 0:
-      w = min(min(a), cap)
-      w = 1 if w < cap else 0
+    if a:
+      w = 1 if a <= cap else 0
     else:
       w = 0
       
-    return [[w,l]]
+    return w -l
       
   
       
