@@ -50,5 +50,5 @@ def main_create_data(rebuild):
 if __name__ == "__main__":
 
     data_atp = main_create_data(rebuild= True)
-    data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
+#    data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
     
