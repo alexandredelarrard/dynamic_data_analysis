@@ -24,7 +24,7 @@ def elo_diff(A, B):
 
 def expected(sub_data, player, elo_player):
     
-    real = sum((sub_data["Winner"] == player)*1)
+    real = sum(sub_data["Winner"] == player)
     elo_other_player = list(sub_data.loc[sub_data["Winner"] == player, "elo2"]) + list(sub_data.loc[sub_data["Loser"] == player, "elo1"])
     expect = elo_diff(np.array([elo_player]*len(elo_other_player)), np.array(elo_other_player)).sum()
     max_date  = max(sub_data["Date"])
@@ -70,8 +70,8 @@ def calculate_elo(data):
     data["elo1"] = 1500
     data["elo2"] = 1500
     
-    data["elo1_surface"] = 1500
-    data["elo2_surface"] = 1500
+#    data["elo1_surface"] = 1500
+#    data["elo2_surface"] = 1500
 
     print(" Calculate elo for each player ")
     
@@ -81,8 +81,8 @@ def calculate_elo(data):
 
         elo_winner = sub_data["elo1"]
         elo_loser  = sub_data["elo2"]
-        elo_winner_surface = sub_data["elo1_surface"]
-        elo_loser_surface  = sub_data["elo2_surface"]
+#        elo_winner_surface = sub_data["elo1_surface"]
+#        elo_loser_surface  = sub_data["elo2_surface"]
         
         index_filter = data.index <= i
         
@@ -99,12 +99,12 @@ def calculate_elo(data):
         data.loc[filter_lose, "elo2"] = new_elo
         
         #### winner elo per surface
-        nbr_seen_surface = nbr_seen.loc[(nbr_seen["surface"] ==  sub_data["surface"])].shape[0]
-        k_winner = calculate_k(nbr_seen_surface)
-        new_elo = elo(elo_winner_surface, elo_diff(elo_winner_surface, elo_loser_surface), 1, k=k_winner)
-        
-        data.loc[(filter_win) & (data["surface"] ==  sub_data["surface"]), "elo1_surface"] = new_elo
-        data.loc[(filter_lose) & (data["surface"] ==  sub_data["surface"]), "elo2_surface"] = new_elo
+#        nbr_seen_surface = nbr_seen.loc[(nbr_seen["surface"] ==  sub_data["surface"])].shape[0]
+#        k_winner = calculate_k(nbr_seen_surface)
+#        new_elo = elo(elo_winner_surface, elo_diff(elo_winner_surface, elo_loser_surface), 1, k=k_winner)
+#        
+#        data.loc[(filter_win) & (data["surface"] ==  sub_data["surface"]), "elo1_surface"] = new_elo
+#        data.loc[(filter_lose) & (data["surface"] ==  sub_data["surface"]), "elo2_surface"] = new_elo
         
         ##### loser elo
         player = sub_data["loser_id"]
@@ -119,12 +119,12 @@ def calculate_elo(data):
         data.loc[filter_lose, "elo2"] = new_elo
         
         #### loser elo per surface
-        nbr_seen_surface = nbr_seen.loc[(nbr_seen["surface"] ==  sub_data["surface"])].shape[0]
-        k_loser = calculate_k(nbr_seen_surface)
-        new_elo = elo(elo_loser_surface, elo_diff(elo_loser_surface, elo_winner_surface), 0, k=k_loser)
-        
-        data.loc[(filter_win)&(data["surface"] ==  sub_data["surface"]), "elo1_surface"] = new_elo
-        data.loc[(filter_lose)&(data["surface"] ==  sub_data["surface"]), "elo2_surface"] = new_elo
+#        nbr_seen_surface = nbr_seen.loc[(nbr_seen["surface"] ==  sub_data["surface"])].shape[0]
+#        k_loser = calculate_k(nbr_seen_surface)
+#        new_elo = elo(elo_loser_surface, elo_diff(elo_loser_surface, elo_winner_surface), 0, k=k_loser)
+#        
+#        data.loc[(filter_win)&(data["surface"] ==  sub_data["surface"]), "elo1_surface"] = new_elo
+#        data.loc[(filter_lose)&(data["surface"] ==  sub_data["surface"]), "elo2_surface"] = new_elo
         
     return data[["Date", "winner_id", "loser_id", "elo1", "elo2", "elo1_surface", "elo2_surface"]]
 
@@ -134,21 +134,21 @@ def merge_data_elo(data):
     t0 = time.time()
     elos_extracted = calculate_elo(data)
     data["prob_elo"] = 1 / (1 + 10 ** ((elos_extracted["elo2"] - elos_extracted["elo1"]) / 400))
-    data["prob_elo_surface"] = 1 / (1 + 10 ** ((elos_extracted["elo2_surface"] - elos_extracted["elo1_surface"]) / 400))
+#    data["prob_elo_surface"] = 1 / (1 + 10 ** ((elos_extracted["elo2_surface"] - elos_extracted["elo1_surface"]) / 400))
     
     data["elo1"] = elos_extracted["elo1"]
     data["elo2"] = elos_extracted["elo2"]
-    data["elo1_surface"] = elos_extracted["elo1_surface"]
-    data["elo2_surface"] = elos_extracted["elo2_surface"]
+#    data["elo1_surface"] = elos_extracted["elo1_surface"]
+#    data["elo2_surface"] = elos_extracted["elo2_surface"]
     
-    data["elo_answer_surface"] = 0
-    data.loc[data["prob_elo_surface"] >=0.5, "elo_answer_surface"] = 1
+#    data["elo_answer_surface"] = 0
+#    data.loc[data["prob_elo_surface"] >=0.5, "elo_answer_surface"] = 1
     data["elo_answer"] = 0
     data.loc[data["prob_elo"] >=0.5, "elo_answer"] = 1
     
     for i in range(2014,2018):
         print("[ELO] Error {0} is {1}".format(i, 1 - sum(1 - data.loc[data["Date"].dt.year == i, "elo_answer"])/len(data.loc[data["Date"].dt.year == i, "elo_answer"])))
-        print("[ELO SURFACE] Error {0} is {1}".format(i, 1 - sum(1 - data.loc[data["Date"].dt.year == i, "elo_answer_surface"])/len(data.loc[data["Date"].dt.year == i, "elo_answer_surface"])))
+#        print("[ELO SURFACE] Error {0} is {1}".format(i, 1 - sum(1 - data.loc[data["Date"].dt.year == i, "elo_answer_surface"])/len(data.loc[data["Date"].dt.year == i, "elo_answer_surface"])))
             
     print("[{0}s] 7) Calculate Elo ranking overall/surface ".format(time.time() - t0))
     

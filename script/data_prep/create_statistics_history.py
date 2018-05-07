@@ -223,7 +223,7 @@ def create_statistics(data, redo = False):
         correlation_time      = calculate_corr_time(data, redo)
         
     data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
-    data["diff_fatigue_games"] = data[["ref_days", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)["total_games"]
+    data["diff_fatigue_games"] = data[["ref_days", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)
     del data["ref_days"]
     
     t0 = time.time()
