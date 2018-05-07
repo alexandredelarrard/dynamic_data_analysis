@@ -15,6 +15,7 @@ from data_prep.extract_players import  merge_atp_players
 from data_prep.missing_rank  import fill_ranks_based_origin
 from data_prep.missing_stats  import fillin_missing_stats
 
+
 def import_data_atp(path, redo=False):
     
     t0 = time.time()
@@ -47,7 +48,7 @@ def import_data_atp(path, redo=False):
     data["status"] = "Completed"
     index = data["score"].apply(lambda x : "RET" in str(x))
     data.loc[index, "status"] = "Retired"
-    index = data["score"].apply(lambda x : "DEF" in str(x))
+    index = data["score"].apply(lambda x : "DEF" in str(x) or "Jun" in str(x))
     data.loc[index, "status"] = "Def"
     index = data["score"].apply(lambda x : "W/O" in str(x) or "W/O " in str(x) or " W/O" in str(x))
     data.loc[index, "status"] = "Walkover"

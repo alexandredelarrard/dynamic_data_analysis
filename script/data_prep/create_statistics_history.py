@@ -11,6 +11,9 @@ from multiprocessing import Pool
 from functools import partial
 import sys
 import time
+from tqdm import tqdm
+
+tqdm.pandas(tqdm())
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from utils.weight_past_matches import calculate_corr_surface, calculate_corr_time
@@ -159,12 +162,15 @@ def execute_stats(wrong_word_dict, data):
 def fatigue_games(x , data):
     
     days= 4
-    ### number of games played during last days days
-    sub_data = data.loc[((x["Date"] - data["Date"]).dt.days.between(1,days))&((data["winner_id"] == x["winner_id"]) | (data["loser_id"] == x["winner_id"]))]
-    fatigue_w = sub_data["total_games"].sum()
+
+    sub_data = data.loc[(x["ref_days"] - data["ref_days"]).between(1,days)]
     
-    sub_data = data.loc[((x["Date"] - data["Date"]).dt.days.between(1,days, inclusive= True))&((data["winner_id"] == x["loser_id"]) | (data["loser_id"] == x["loser_id"]))]
-    fatigue_l = sub_data["total_games"].sum()
+    ### number of games played during last days days
+    sub_data1 = sub_data.loc[((sub_data["winner_id"] == x["winner_id"]) | (sub_data["loser_id"] == x["winner_id"]))]
+    fatigue_w = sub_data1["total_games"].sum()
+    
+    sub_data2 = sub_data.loc[((sub_data["winner_id"] == x["loser_id"]) | (sub_data["loser_id"] == x["loser_id"]))]
+    fatigue_l = sub_data2["total_games"].sum()
     
     return fatigue_w - fatigue_l
 
@@ -216,7 +222,9 @@ def create_statistics(data, redo = False):
         correlation_surface   = calculate_corr_surface(data, redo)
         correlation_time      = calculate_corr_time(data, redo)
         
-    data["fatigue_games"] = data[["Date", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)["games"]
+    data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
+    data["diff_fatigue_games"] = data[["ref_days", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)["total_games"]
+    del data["ref_days"]
     
     t0 = time.time()
     col_for_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
@@ -228,30 +236,30 @@ def create_statistics(data, redo = False):
     counts = data[["Date", "winner_id", "loser_id", "surface"]].apply(lambda x : weighted_statistics(x, [data[col_for_stats], correlation_surface, correlation_time]), axis= 1)
     counts = list(zip(*counts["surface"]))
     
-    col_stats = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
+    stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                              "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", 
                              "diff_victories_12", "diff_victories_common_matches"]
-    for i, col in enumerate(col_stats):
+    for i, col in enumerate(stats_cols):
         data[col] =  list(counts[i])
 
     data = global_stats(data)
     print("exec stats {}".format(time.time()-t0))
     
     data["target"] = 1
-    modelling_cols = ["Date", "winner_id", "loser_id", "tourney_name", 'prize', 'best_of', 'round', 'Common_matches', 'diff_aces', 'diff_df', 'diff_1st_serv_in', 
+    basic_cols    = ["target", "Date", "winner_id", "loser_id", "tourney_name", 'prize', 'best_of', 'round', 'Common_matches']
+    
+    stats_cols =  ['diff_aces', 'diff_df', 'diff_1st_serv_in', "diff_fatigue_games",
                       'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv','diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
                       'diff_bp', 'diff_victories_12', 'diff_victories_common_matches','diff_age', 'diff_ht', "diff_days_since_stop",
                       'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']
                             
     data2 = data.copy()
     data2["target"] = 0
-    for col in ['diff_aces', 'diff_df', 'diff_1st_serv_in', 'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv',
-                 'diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 'diff_bp', 'diff_victories_12', 'diff_victories_common_matches',
-                 'diff_age', 'diff_ht', 'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']:
+    for col in stats_cols:
         data2[col] = -1*data2[col]
         
     total_data_with_cols = pd.concat([data, data2], axis= 0)
-    total_data           = pd.concat([data[modelling_cols], data2[modelling_cols]], axis= 0)
+    total_data           = pd.concat([data[stats_cols + basic_cols], data2[stats_cols + basic_cols]], axis= 0)
                     
     return total_data_with_cols, total_data
 

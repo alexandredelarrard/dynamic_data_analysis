@@ -82,17 +82,17 @@ def prep_data(data):
     dataset["day_of_month"] = dataset["Date"].dt.day
     
     #### return stats
-    dataset["w_1st_srv_ret_won"] = dataset["l_1stIn"] - dataset["l_1stWon"]
-    dataset["w_2nd_srv_ret_won"] = dataset["l_svpt"] - dataset["l_1stIn"] - dataset["l_2ndWon"]
-    dataset["w_bp_converted"]    = dataset["l_bpFaced"] - dataset["l_bpSaved"]
-    dataset["w_total_srv_won"]   = dataset["w_1stWon"] + dataset["w_2ndWon"]
-    dataset["w_total_ret_won"]   = dataset["w_1st_srv_ret_won"] + dataset["w_2nd_srv_ret_won"]
+    dataset["w_1st_srv_ret_won"] = dataset["l_1stIn"].astype(int) - dataset["l_1stWon"].astype(int)
+    dataset["w_2nd_srv_ret_won"] = dataset["l_svpt"].astype(int) - dataset["l_1stIn"].astype(int) - dataset["l_2ndWon"].astype(int)
+    dataset["w_bp_converted"]    = dataset["l_bpFaced"].astype(int) - dataset["l_bpSaved"].astype(int)
+    dataset["w_total_srv_won"]   = dataset["w_1stWon"].astype(int) + dataset["w_2ndWon"].astype(int)
+    dataset["w_total_ret_won"]   = dataset["w_1st_srv_ret_won"].astype(int) + dataset["w_2nd_srv_ret_won"].astype(int)
     
-    dataset["l_1st_srv_ret_won"] = dataset["w_1stIn"] - dataset["w_1stWon"]
-    dataset["l_2nd_srv_ret_won"] = dataset["w_svpt"] - dataset["w_1stIn"] - dataset["w_2ndWon"]
-    dataset["l_bp_converted"]    = dataset["w_bpFaced"] - dataset["w_bpSaved"]
-    dataset["l_total_srv_won"]   = dataset["l_1stWon"] + dataset["l_2ndWon"]
-    dataset["l_total_ret_won"]   = dataset["l_1st_srv_ret_won"] + dataset["l_2nd_srv_ret_won"]
+    dataset["l_1st_srv_ret_won"] = dataset["w_1stIn"].astype(int) - dataset["w_1stWon"].astype(int)
+    dataset["l_2nd_srv_ret_won"] = dataset["w_svpt"].astype(int) - dataset["w_1stIn"] - dataset["w_2ndWon"].astype(int)
+    dataset["l_bp_converted"]    = dataset["w_bpFaced"].astype(int) - dataset["w_bpSaved"].astype(int)
+    dataset["l_total_srv_won"]   = dataset["l_1stWon"].astype(int) + dataset["l_2ndWon"].astype(int)
+    dataset["l_total_ret_won"]   = dataset["l_1st_srv_ret_won"].astype(int) + dataset["l_2nd_srv_ret_won"].astype(int)
     
     #### create score variables
     dataset["total_games"] = dataset["score"].apply(lambda x : extract_games_number(x))
@@ -141,29 +141,29 @@ def prep_data(data):
     dataset["l_imc"] = dataset["Weight_l"] / (dataset["loser_ht"]/100)**2
     
     ### return normalization suppressing double fault not seen as successes
-    dataset['w_1st_srv_ret_won'] = dataset['w_1st_srv_ret_won'] / (dataset["l_1stIn"])
-    dataset['l_1st_srv_ret_won'] = dataset['l_1st_srv_ret_won'] / (dataset["w_1stIn"])
+    dataset['w_1st_srv_ret_won'] = dataset['w_1st_srv_ret_won'].astype(float) / (dataset["l_1stIn"].astype(float))
+    dataset['l_1st_srv_ret_won'] = dataset['l_1st_srv_ret_won'].astype(float) / (dataset["w_1stIn"].astype(float))
     
-    dataset['w_2nd_srv_ret_won'] = dataset['w_2nd_srv_ret_won'] / (dataset["w_2nd_srv_ret_won"] + dataset["l_2ndWon"])
-    dataset['l_2nd_srv_ret_won'] = dataset['l_2nd_srv_ret_won'] / (dataset["l_2nd_srv_ret_won"] + dataset["w_2ndWon"])
+    dataset['w_2nd_srv_ret_won'] = dataset['w_2nd_srv_ret_won'].astype(float) / (dataset["w_2nd_srv_ret_won"].astype(float) + dataset["l_2ndWon"].astype(float))
+    dataset['l_2nd_srv_ret_won'] = dataset['l_2nd_srv_ret_won'].astype(float) / (dataset["l_2nd_srv_ret_won"].astype(float) + dataset["w_2ndWon"].astype(float))
     
-    dataset['w_total_ret_won'] = dataset['w_total_ret_won'] / (dataset["l_svpt"])
-    dataset['l_total_ret_won'] = dataset['l_total_ret_won'] / (dataset["w_svpt"])
+    dataset['w_total_ret_won'] = dataset['w_total_ret_won'].astype(float) / (dataset["l_svpt"].astype(float))
+    dataset['l_total_ret_won'] = dataset['l_total_ret_won'].astype(float) / (dataset["w_svpt"].astype(float))
     
     ### normalize match statistics
     # serv normalization
     for col in ["w_ace", "w_df", 'w_1stIn', 'w_1stWon', 'w_2ndWon', "w_total_srv_won"]:
-        dataset[col] = dataset[col] / (dataset["w_svpt"])
+        dataset[col] = dataset[col].astype(float) / (dataset["w_svpt"].astype(float))
         
     for col in ["l_ace", "l_df", 'l_1stIn', 'l_1stWon', 'l_2ndWon', "l_total_srv_won"]:    
-        dataset[col] = dataset[col] / (dataset["l_svpt"])
+        dataset[col] = dataset[col].astype(float) / (dataset["l_svpt"].astype(float))
     
     ## bp normalization
     for col in ["w_bp_converted", "w_bpSaved", "w_bpFaced"]:    
-        dataset[col] = dataset[col] / (dataset["w_SvGms"])
+        dataset[col] = dataset[col].astype(float) / (dataset["w_SvGms"].astype(float))
         
     for col in ["l_bp_converted", "l_bpSaved", "l_bpFaced"]:    
-        dataset[col] = dataset[col] / (dataset["l_SvGms"])
+        dataset[col] = dataset[col].astype(float) / (dataset["l_SvGms"].astype(float))
         
     dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'],axis = 1)
     
