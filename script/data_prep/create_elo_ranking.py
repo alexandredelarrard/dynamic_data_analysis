@@ -126,7 +126,7 @@ def calculate_elo(data):
 #        data.loc[(filter_win)&(data["surface"] ==  sub_data["surface"]), "elo1_surface"] = new_elo
 #        data.loc[(filter_lose)&(data["surface"] ==  sub_data["surface"]), "elo2_surface"] = new_elo
         
-    return data[["Date", "winner_id", "loser_id", "elo1", "elo2", "elo1_surface", "elo2_surface"]]
+    return data[["Date", "winner_id", "loser_id", "elo1", "elo2"]]
 
 
 def merge_data_elo(data):

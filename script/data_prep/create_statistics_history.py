@@ -140,16 +140,18 @@ def get_stats(x, sub_data):
                  ((loser_w_data["w_tie-breaks_won"]*loser_w_data["weight"]/loser_w_data["N_set"]).sum() + (loser_l_data["l_tie-breaks_won"]*loser_l_data["weight"]/loser_l_data["N_set"]).sum())/weight_loser,
                  
                  ### proportion victory 1 vs 2 
-                 sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0],
+                 (sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0] - 
+                 sub_data.loc[(sub_data["winner_id"] == x["loser_id"]) & (sub_data["loser_id"] == x["winner_id"])].shape[0])/ sub_data.shape[0], 
                  
                   ### proportion victory common adversories
-                 (sub_data.loc[(sub_data["winner_id"] == x["winner_id"])].shape[0] - sub_data.loc[(sub_data["winner_id"] == x["loser_id"])].shape[0])/ sub_data.shape[0],
+                 (sub_data.loc[(sub_data["winner_id"] == x["winner_id"])].shape[0] - 
+                  sub_data.loc[(sub_data["winner_id"] == x["loser_id"])].shape[0])/ sub_data.shape[0],
                  
                  ### proportion points won 1 vs 2 
 #                 sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] 
                  )
     else:
-          count = (0, )   + (np.nan,)*13
+          count = (0, )   + (np.nan,)*14
     
     return [count]
     
@@ -237,7 +239,7 @@ def create_statistics(data, redo = False):
     counts = list(zip(*counts["surface"]))
     
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
-                             "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", 
+                             "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
                              "diff_victories_12", "diff_victories_common_matches"]
     for i, col in enumerate(stats_cols):
         data[col] =  list(counts[i])
