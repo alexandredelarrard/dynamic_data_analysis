@@ -251,10 +251,10 @@ def create_statistics(data, redo = False):
     basic_cols    = ["target", "Date", "winner_id", "loser_id", "tourney_name", 'prize', 'best_of', 'round', 'Common_matches']
     
     stats_cols =  ['diff_aces', 'diff_df', 'diff_1st_serv_in', "diff_fatigue_games",
-                      'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv','diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
-                      'diff_bp', 'diff_victories_12', 'diff_victories_common_matches','diff_age', 'diff_ht', "diff_days_since_stop",
-                      'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']
-                            
+                  'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv','diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
+                  'diff_bp', "diff_tie_break", 'diff_victories_12', 'diff_victories_common_matches','diff_age', 'diff_ht', "diff_days_since_stop",
+                  'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']
+                        
     data2 = data.copy()
     data2["target"] = 0
     for col in stats_cols:

@@ -7,6 +7,8 @@ Created on Fri Mar  9 10:16:28 2018
 
 import pandas as pd
 import os
+import warnings
+warnings.filterwarnings("ignore")
 
 from data_prep.extract_data_atp import import_data_atp
 from data_prep.create_statistics_history import create_statistics
@@ -36,6 +38,8 @@ def main_create_data(param):
         else:
             data_merge_player_elo = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_V1.csv")
             data_merge_player_elo["Date"]= pd.to_datetime(data_merge_player_elo["Date"], format = "%Y-%m-%d")
+            data_merge_player_elo["DOB_w"] = pd.to_datetime(data_merge_player_elo["DOB_w"], format = "%Y-%m-%d")
+            data_merge_player_elo["DOB_l"] = pd.to_datetime(data_merge_player_elo["DOB_l"], format = "%Y-%m-%d")
             
         ### create value added variables/lean dataset and irregularities
         if param["create_variable"]:
@@ -44,6 +48,8 @@ def main_create_data(param):
         else:
             data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
             data2["Date"]= pd.to_datetime(data2["Date"], format = "%Y-%m-%d")
+            data2["DOB_w"] = pd.to_datetime(data2["DOB_w"], format = "%Y-%m-%d")
+            data2["DOB_l"] = pd.to_datetime(data2["DOB_l"], format = "%Y-%m-%d")
         
         ### create counting past historical data
         if param["create_statistics"]:
@@ -72,6 +78,7 @@ if __name__ == "__main__":
                "create_statistics" : True}
     
     data_atp = main_create_data(rebuild)
+    
 #    data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
 #    
 #    data0 = data_atp[1].copy()
