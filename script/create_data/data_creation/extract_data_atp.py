@@ -12,9 +12,9 @@ import time
 import numpy as np
 
 from utils.build_match_statistics_database import match_stats_main
-from data_prep.extract_players import  merge_atp_players
-from data_prep.missing_rank  import fill_ranks_based_origin
-from data_prep.missing_stats  import fillin_missing_stats
+from data_creation.extract_players import  merge_atp_players
+from data_creation.missing_rank  import fill_ranks_based_origin
+from data_creation.missing_stats  import fillin_missing_stats
 
 
 def import_data_atp(path, redo=False):

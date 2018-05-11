@@ -8,12 +8,13 @@ Created on Fri Mar  9 10:16:28 2018
 import pandas as pd
 import os
 import warnings
+import time
 warnings.filterwarnings("ignore")
 
-from data_prep.extract_data_atp import import_data_atp
-from data_prep.create_statistics_history import create_statistics
-from data_prep.create_elo_rankingV2 import merge_data_elo
-from data_prep.create_variables import prep_data
+from data_creation.extract_data_atp import import_data_atp
+from data_creation.create_statistics_history import create_statistics
+from data_creation.create_elo_rankingV2 import merge_data_elo
+from data_creation.create_variables import prep_data
 
 os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 
@@ -69,18 +70,24 @@ def main_create_data(param):
     return data_total, data3
     
 
+def main_creation(rebuild=False):
+    
+    t0 = time.time()
+    if not rebuild:
+        rebuild = {"redo_missing_atp_statistics" : False,
+                   "create_elo" : False,
+                   "create_statistics": False,
+                   "create_variable" : False}
+   
+    full_data, modelling_data = main_create_data(rebuild)    
+    print("\n \n Global time to create data is {0}".format(time.time() - t0))
+    
+    return full_data, modelling_data
+
+
 if __name__ == "__main__":
-    rebuild = {
-               "redo_missing_atp_statistics" : False,
-               "import_atp": False,
-               "create_elo": False,
-               "create_variable" : False,
-               "create_statistics" : True}
     
-    data_atp = main_create_data(rebuild)
+    full_data, modelling_data = main_creation(rebuild=False)
     
-#    data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
-#    
-#    data0 = data_atp[1].copy()
-#    data0 = data0.loc[~pd.isnull(data0["diff_aces"])]
-#    
+    
+    
