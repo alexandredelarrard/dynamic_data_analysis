@@ -34,6 +34,7 @@ def fillin_missing_stats(data_stats):
     
     data.loc[pd.isnull(data["w_ace"])].to_csv(os.environ["DATA_PATH"] + "/to_check/missing_stats.csv")
     data["missing_stats"] = np.where(pd.isnull(data["w_ace"]), 1, 0)
+    data.loc[data["l_svpt"] == 0, 'missing_stats'] = 1
     
     ### fill in nans and 0 values for matches not retired or cancelled
     missing_data = data.loc[(pd.isnull(data["w_ace"]))|(pd.isnull(data["minutes"]))|(((data["l_svpt"] ==0)|(data["w_svpt"] ==0))&(data["status"] == "Completed"))].copy()

@@ -59,23 +59,17 @@ def prep_data(data):
     dataset = data.copy()
          
     ### dummify court
-    dataset.loc[dataset["indoor_flag"] == "Outdoor", "indoor_flag"] = "0"
-    dataset.loc[dataset["indoor_flag"] == "Indoor", "indoor_flag"]  = "1"
-    dataset["indoor_flag"] = dataset["indoor_flag"].astype(int)
+    dataset["indoor_flag"] = np.where(dataset["indoor_flag"] == "Outdoor", 0,1).astype(int)
     
     ### create hard indoor and hard outdoor as two different surfaces
     dataset["surface"] = dataset["surface"] + "_" + dataset["indoor_flag"].astype(str)
-    dataset["surface"] = np.where(dataset["surface"] == "Carpet_0", "Carpet_1", "Carpet_0") ### low volume
-    dataset["surface"] = np.where(dataset["surface"] == "Clay_1", "Clay_0", "Clay_1") ### low volume
+    dataset.loc[dataset["surface"] == "Carpet_0", "surface"] = "Carpet_1"
+    dataset.loc[dataset["surface"] == "Clay_1", "surface"] = "Clay_0"
 
     ### dummify hand player
-    dataset.loc[dataset["winner_hand"] =="Right-Handed", "winner_hand"] = "1"
-    dataset.loc[dataset["winner_hand"] !="Right-Handed", "winner_hand"] = "0" ### left hand and ambidextre
-    dataset["winner_hand"] = dataset["winner_hand"].astype(int)
-    dataset.loc[dataset["loser_hand"] =="Right-Handed", "loser_hand"] = "1"
-    dataset.loc[dataset["loser_hand"] !="Right-Handed", "loser_hand"] = "0" ### left hand and ambidextre
-    dataset["loser_hand"] = dataset["loser_hand"].astype(int)
-    
+    dataset["winner_hand"] = np.where(dataset["winner_hand"] == "Right-Handed", 1, 0).astype(int)   
+    dataset["loser_hand"] = np.where(dataset["loser_hand"] == "Right-Handed", 1, 0).astype(int)
+
     #### date into days
     dataset["Date"] = pd.to_datetime(dataset["Date"], format = "%Y-%m-%d")
     
@@ -94,7 +88,7 @@ def prep_data(data):
     dataset["w_total_ret_won"]   = dataset["w_1st_srv_ret_won"].astype(int) + dataset["w_2nd_srv_ret_won"].astype(int)
     
     dataset["l_1st_srv_ret_won"] = dataset["w_1stIn"].astype(int) - dataset["w_1stWon"].astype(int)
-    dataset["l_2nd_srv_ret_won"] = dataset["w_svpt"].astype(int) - dataset["w_1stIn"] - dataset["w_2ndWon"].astype(int)
+    dataset["l_2nd_srv_ret_won"] = dataset["w_svpt"].astype(int) - dataset["w_1stIn"].astype(int) - dataset["w_2ndWon"].astype(int)
     dataset["l_bp_converted"]    = dataset["w_bpFaced"].astype(int) - dataset["w_bpSaved"].astype(int)
     dataset["l_total_srv_won"]   = dataset["l_1stWon"].astype(int) + dataset["l_2ndWon"].astype(int)
     dataset["l_total_ret_won"]   = dataset["l_1st_srv_ret_won"].astype(int) + dataset["l_2nd_srv_ret_won"].astype(int)

@@ -26,7 +26,7 @@ def main_create_data(param):
         if param["redo_missing_atp_statistics"]:
             ### read atp data and clean it / redo = build from scratch with the matching algo with stats match from atp 
             path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
-            data_atp = import_data_atp(path, redo = True)
+            data_atp = import_data_atp(path, redo = True) ### redo the stats match with crawled matches from atp
         else:
             data_atp = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_V1.csv")
             data_atp["Date"]= pd.to_datetime(data_atp["Date"], format = "%Y-%m-%d")
@@ -54,7 +54,7 @@ def main_create_data(param):
         
         ### create counting past historical data
         if param["create_statistics"]:
-            data_total, data3 = create_statistics(data2, redo= False)
+            data_total, data3 = create_statistics(data2, redo= True)
              
             #### save dataset
             data3.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/variables_for_modelling_V1.csv", index= False)

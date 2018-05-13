@@ -9,13 +9,10 @@ import pandas as pd
 import numpy as np
 from multiprocessing import Pool
 from functools import partial
-import sys
 import time
-from tqdm import tqdm
 
-sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
-from utils.weight_past_matches import calculate_corr_surface, calculate_corr_time
 
+from create_data.utils.weight_past_matches import calculate_corr_surface, calculate_corr_time
 
 def parallelize_dataframe(df, function, dictionnary, njobs):
     df_split = np.array_split(df, njobs)
@@ -159,7 +156,6 @@ def get_stats(x, sub_data):
                  ### weight loser
                  weight_loser,
                  
-                 
                  )
     else:
           count = (0, )   + (np.nan,)*18
@@ -231,8 +227,8 @@ def create_statistics(data, redo = True):
         tot = pd.concat([data1, data2], axis= 0)
         tot["Date"] = pd.to_datetime(tot["Date"], format = "%Y-%m-%d")
         
-        correlation_surface   = calculate_corr_surface(tot, redo)
-        correlation_time      = calculate_corr_time(tot, redo)
+        correlation_surface   = calculate_corr_surface(tot, start_year=1990, end_year=2016, redo=redo)
+        correlation_time      = calculate_corr_time(tot, start_year=1990, end_year=2016, redo=redo)
         
     else:    
         correlation_surface   = calculate_corr_surface(data, redo)
@@ -267,11 +263,11 @@ def create_statistics(data, redo = True):
     
     stats_cols =  ['diff_aces', 'diff_df', 'diff_1st_serv_in', "diff_fatigue_games", 'diff_1st_serv_won',
                    'diff_skill_serv', 'diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
-                  'diff_bp', "diff_tie_break", 'diff_victories_12', 'diff_victories_common_matches','diff_age', 
-                  'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 
-                  'diff_is_birthday', 'diff_home', "diff_pts_common_matches", 'diff_2nd_serv_won', 
-                  "diff_mean_rank_adversaries", "diff_imc", 'diff_ht', "diff_days_since_stop", "weight_winner", 
-                 "weight_loser"]
+                   'diff_bp', "diff_tie_break", 'diff_victories_12', 'diff_victories_common_matches','diff_age', 
+                   'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 
+                   'diff_is_birthday', 'diff_home', "diff_pts_common_matches", 'diff_2nd_serv_won', 
+                   "diff_mean_rank_adversaries", "diff_imc", 'diff_ht', "diff_days_since_stop", "weight_winner", 
+                   "weight_loser"]
                         
     data2 = data.copy()
     data2["target"] = 0
