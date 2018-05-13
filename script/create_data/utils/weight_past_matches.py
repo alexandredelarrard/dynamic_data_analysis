@@ -9,7 +9,7 @@ import pandas as pd
 from scipy.optimize import curve_fit
 import os
 
-def calculate_corr_time(tot, start_year=1990, end_year=2017, weight_1 = 6, redo = False):
+def calculate_corr_time(tot, start_year=1990, end_year=2016, weight_1 = 6, redo = False):
     
     if redo:
         def exponenial_func(x, a, b, c):
@@ -72,7 +72,7 @@ def calculate_corr_time(tot, start_year=1990, end_year=2017, weight_1 = 6, redo 
     return corr_temp["pred"]
 
 
-def calculate_corr_surface(tot, start_year=1990, end_year=2017, redo = False):
+def calculate_corr_surface(tot, start_year=1990, end_year=2016, redo = False):
     
     ### because dont want info from test set
     if redo:
@@ -115,7 +115,7 @@ def proportion_win(x, total_data):
         return [[sub_data1["target"].mean(), np.nan, np.nan]]    
 
 
-def calculate_corr_opponents(tot, remake = False, start_year=1990, end_year=2017):
+def calculate_corr_opponents(tot, remake = False, start_year=1990, end_year=2016):
     
     if remake:
         tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)].copy()
