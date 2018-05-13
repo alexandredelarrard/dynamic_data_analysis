@@ -7,7 +7,6 @@ Created on Sat Mar 17 14:00:49 2018
 
 import pandas as pd
 import glob
-import os
 import time 
 import numpy as np
 
@@ -15,6 +14,7 @@ from utils.build_match_statistics_database import match_stats_main
 from data_creation.extract_players import  merge_atp_players
 from data_creation.missing_rank  import fill_ranks_based_origin
 from data_creation.missing_stats  import fillin_missing_stats
+from data_creation.tourney  import merge_tourney
 
 
 def import_data_atp(path, redo=False):
@@ -113,7 +113,7 @@ def fill_in_missing_values(total_data, redo):
     total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.rename(columns = {"surface_x": "surface", "tourney_name_x" : "tourney_name"})
     
     #### remaining mvs for time of match
-    total_data_wrank_stats_tourney_players.loc[pd.isnull(total_data_wrank_stats_tourney_players["minutes"]), "minutes"] = 100
+    total_data_wrank_stats_tourney_players.loc[pd.isnull(total_data_wrank_stats_tourney_players["minutes"]), "minutes"] = 90
     
     return total_data_wrank_stats_tourney_players
 
@@ -132,36 +132,6 @@ def merge_atp_missing_stats(total_data, redo = False):
             data.loc[data["ATP_ID"] == i, "minutes"] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, "minutes"].values[0]
    
     return data
-
-
-def merge_tourney(data):
-    
-    country = {'Australia' : "AUS", 'United States': "USA", 'New Zealand': "NZL", 'Brazil': "BRA", 'Italy':"ITA",
-               'Belgium' : "BEL", 'Canada':"CAN", 'Germany':"GER", 'Netherlands': "NED", 'Morocco':"MAR",
-               'Portugal' : "POR", 'Spain':"ESP", 'Japan':"JAP", 'France':"FRA", 'South Korea':"KOR", 'Hong Kong':"HKG",
-               'Monaco':"MON", 'Singapore':"SGP", 'Croatia':"CRO", 'Great Britain':"GBR", 'Switzerland':"SUI",
-               'Sweden':"SWE", 'Austria':"AUT", 'Czech Republic':"CZE", 'San Marino':"SAM", 'Greece':"GRE",
-               'Israel':"ISR", 'Russia':"RUS", 'Denmark':"DEN", 'South Africa':"RSA",
-               'Taiwan':"TPE", 'Qatar':"QAT", 'Malaysia':"MAS", 'Indonesia':"INA", 'United Arab Emirates':"UAE",
-               'Mexico':"MEX", 'Romania':"ROM", 'China':"CHN", 'Chile':"CHI", 'Argentina':"ARG", 'Costa Rica':"CRC",
-               'Colombia':"COL", 'Urugay':"URU", 'Bermuda':"BER", 'India':"IND", 'Uzbekistan':"UZB", 
-               'Poland':"POL", 'Thailand':"THA", 'Vietnam':"VIE", 'Serbia':"SER", 'Ecuador':"ECU", 'Turkey':"TUR",
-               'Bulgaria':"BUL", 'Hungary':"HUN"
-                }
-    
-    tournament = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/tournament/tourney.csv", encoding = "latin1")
-    tournament.loc[pd.isnull(tournament["masters"]), "masters"] = "classic"
-    tournament.loc[pd.isnull(tournament["Currency"]), "Currency"] = "$"
-    
-    data_merge = pd.merge(data, tournament, on = "tourney_id", how = "left")
-     
-    data_merge = data_merge.drop(["tourney_name", "surface_y", "tourney_id_atp", "tourney_year"], axis=1)
-    
-    data_merge.loc[data_merge["tourney_country"] == "Netherland", "tourney_country"] = "Netherlands"
-    data_merge.loc[data_merge["tourney_country"] == "England", "tourney_country"] = "Great Britain"
-    data_merge["tourney_country"] = data_merge["tourney_country"].map(country)
-    
-    return data_merge
 
 
 def walkover_retired(x, data):
@@ -187,7 +157,3 @@ def walkover_retired(x, data):
       
     return w -l
       
-  
-      
-      
- 

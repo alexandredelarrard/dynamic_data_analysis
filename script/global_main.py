@@ -9,7 +9,7 @@ import os
 import warnings
 warnings.filterwarnings("ignore")
 
-from create_data.main_create import main_create
+from create_data.main_create import main_creation
 from create_models.main_modelling import main_modelling
 from create_finance.main_finance import main_finance
 
@@ -17,5 +17,5 @@ from create_finance.main_finance import main_finance
 os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 
 if __name__ == "__main__":
-    full_data, modelling_data = main_create()
+    full_data, modelling_data = main_creation(rebuild=True)
 

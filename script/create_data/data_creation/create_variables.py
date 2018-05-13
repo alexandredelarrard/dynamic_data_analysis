@@ -63,6 +63,11 @@ def prep_data(data):
     dataset.loc[dataset["indoor_flag"] == "Indoor", "indoor_flag"]  = "1"
     dataset["indoor_flag"] = dataset["indoor_flag"].astype(int)
     
+    ### create hard indoor and hard outdoor as two different surfaces
+    dataset["surface"] = dataset["surface"] + "_" + dataset["indoor_flag"].astype(str)
+    dataset["surface"] = np.where(dataset["surface"] == "Carpet_0", "Carpet_1", "Carpet_0") ### low volume
+    dataset["surface"] = np.where(dataset["surface"] == "Clay_1", "Clay_0", "Clay_1") ### low volume
+
     ### dummify hand player
     dataset.loc[dataset["winner_hand"] =="Right-Handed", "winner_hand"] = "1"
     dataset.loc[dataset["winner_hand"] !="Right-Handed", "winner_hand"] = "0" ### left hand and ambidextre
@@ -140,6 +145,10 @@ def prep_data(data):
     dataset["w_imc"] = dataset["Weight_w"] / (dataset["winner_ht"]/100)**2
     dataset["l_imc"] = dataset["Weight_l"] / (dataset["loser_ht"]/100)**2
     
+    ### nbr proportion total points won
+    dataset['w_total_pts_won'] = (dataset['w_2ndWon'].astype(float) + dataset['w_1stWon'].astype(float) + dataset['w_total_ret_won'].astype(float)) / (dataset["l_svpt"].astype(float) + dataset["w_svpt"].astype(float))
+    dataset['l_total_pts_won'] = (dataset['l_2ndWon'].astype(float) + dataset['l_1stWon'].astype(float) + dataset['l_total_ret_won'].astype(float)) / (dataset["l_svpt"].astype(float) + dataset["w_svpt"].astype(float))
+
     ### return normalization suppressing double fault not seen as successes
     dataset['w_1st_srv_ret_won'] = dataset['w_1st_srv_ret_won'].astype(float) / (dataset["l_1stIn"].astype(float))
     dataset['l_1st_srv_ret_won'] = dataset['l_1st_srv_ret_won'].astype(float) / (dataset["w_1stIn"].astype(float))

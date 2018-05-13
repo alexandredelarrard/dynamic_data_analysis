@@ -13,8 +13,6 @@ import sys
 import time
 from tqdm import tqdm
 
-tqdm.pandas(tqdm())
-
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from utils.weight_past_matches import calculate_corr_surface, calculate_corr_time
 
@@ -147,11 +145,17 @@ def get_stats(x, sub_data):
                  (sub_data.loc[(sub_data["winner_id"] == x["winner_id"])].shape[0] - 
                   sub_data.loc[(sub_data["winner_id"] == x["loser_id"])].shape[0])/ sub_data.shape[0],
                  
-                 ### proportion points won 1 vs 2 
-#                 sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0]/ sub_data.shape[0] 
+                 ### proportion points won common adversaries
+                 ((winner_w_data["w_total_pts_won"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_total_pts_won"]*winner_l_data["weight"]).sum())/weight_winner -\
+                 ((loser_w_data["w_total_pts_won"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_total_pts_won"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
+                 
+                 #### diff mean rank common adversaries
+                 ((winner_w_data["loser_rank"]*winner_w_data["weight"]).sum()  + (winner_l_data["winner_rank"]*winner_l_data["weight"]).sum())/weight_winner -\
+                 ((loser_w_data["loser_rank"]*loser_w_data["weight"]).sum()  + (loser_l_data["winner_rank"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
+                 
                  )
     else:
-          count = (0, )   + (np.nan,)*14
+          count = (0, )   + (np.nan,)*16
     
     return [count]
     
@@ -189,6 +193,7 @@ def global_stats(data):
     data = data.copy()
     data["diff_age"] = ((data["Date"] - data["DOB_w"]).dt.days - (data["Date"] - data["DOB_l"]).dt.days)/365
     data["diff_ht"] = data["winner_ht"] - data["loser_ht"]
+    data["diff_imc"] = data["w_imc"] - data["l_imc"]
     data["diff_weight"] = data["Weight_w"] - data["Weight_l"]
     data["diff_year_turned_pro"] = data['Turned pro_w'] - data['Turned pro_l']
     
@@ -198,6 +203,7 @@ def global_stats(data):
     data["diff_hand"] = data['winner_hand'] - data['loser_hand']
     data["diff_is_birthday"] = data['w_birthday'] - data['l_birthday']
     data["diff_home"] = data['w_home'] - data['l_home']
+    data["max_rank"]  = data[["winner_rank", 'loser_rank']].max(axis= 1)
     
     return data
 
@@ -229,18 +235,18 @@ def create_statistics(data, redo = False):
     del data["ref_days"]
     
     t0 = time.time()
-    col_for_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+    col_for_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
                      'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
-                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set"]
-    
-#    counts = parallelize_dataframe(data[["Date", "winner_id", "loser_id", "surface"]], execute_stats, [data[col_for_stats], correlation_surface, correlation_time], 8)
+                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won']
+
     counts = data[["Date", "winner_id", "loser_id", "surface"]].apply(lambda x : weighted_statistics(x, [data[col_for_stats], correlation_surface, correlation_time]), axis= 1)
     counts = list(zip(*counts["surface"]))
     
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
-                             "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
-                             "diff_victories_12", "diff_victories_common_matches"]
+                 "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
+                 "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries"]
+    
     for i, col in enumerate(stats_cols):
         data[col] =  list(counts[i])
 
@@ -250,10 +256,12 @@ def create_statistics(data, redo = False):
     data["target"] = 1
     basic_cols    = ["target", "Date", "winner_id", "loser_id", "tourney_name", 'prize', 'best_of', 'round', 'Common_matches']
     
-    stats_cols =  ['diff_aces', 'diff_df', 'diff_1st_serv_in', "diff_fatigue_games",
-                  'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv','diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
-                  'diff_bp', "diff_tie_break", 'diff_victories_12', 'diff_victories_common_matches','diff_age', 'diff_ht', "diff_days_since_stop",
-                  'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']
+    stats_cols =  ['diff_aces', 'diff_df', 'diff_1st_serv_in', "diff_fatigue_games", 'diff_1st_serv_won',
+                   'diff_skill_serv', 'diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
+                  'diff_bp', "diff_tie_break", 'diff_victories_12', 'diff_victories_common_matches','diff_age', 
+                  'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 
+                  'diff_is_birthday', 'diff_home', "diff_pts_common_matches", 'diff_2nd_serv_won', 
+                  "diff_mean_rank_adversaries", "diff_imc", 'diff_ht', "diff_days_since_stop"]
                         
     data2 = data.copy()
     data2["target"] = 0
@@ -276,7 +284,3 @@ if __name__ == "__main__":
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
     tot = create_statistics(data)
     
-    tot2 = tot[['Common_matches', 'diff_aces', 'diff_df', 'diff_1st_serv_in', 'diff_1st_serv_won','diff_2nd_serv_won', 'diff_skill_serv',
-                 'diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 'diff_bp', 'diff_victories_12', 'diff_victories_common_matches',
-                 'diff_age', 'diff_ht', 'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 'diff_is_birthday', 'diff_home']]
-    tot2 = tot2.loc[tot2["Common_matches"] > 5]

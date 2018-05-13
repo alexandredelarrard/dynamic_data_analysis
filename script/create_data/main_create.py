@@ -57,14 +57,14 @@ def main_create_data(param):
             data_total, data3 = create_statistics(data2, redo= False)
              
             #### save dataset
-            data3.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/variables_for_modelling_V1.csv", index= False)
-            data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/total_dataset_modelling.csv", index= False)
+            data3.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/variables_for_modelling_V1.csv", index= False)
+            data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/total_dataset_modelling.csv", index= False)
             
     if not rebuild:        
-        data3 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/variables_for_modelling_V1.csv")
+        data3 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/variables_for_modelling_V1.csv")
         data3["Date"] = pd.to_datetime(data3["Date"], format = "%Y-%m-%d")
         
-        data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/total_dataset_modelling.csv")
+        data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/total_dataset_modelling.csv")
         data_total["Date"] = pd.to_datetime(data3["Date"], format = "%Y-%m-%d")
             
     return data_total, data3
@@ -73,11 +73,17 @@ def main_create_data(param):
 def main_creation(rebuild=False):
     
     t0 = time.time()
-    if not rebuild:
+    if rebuild == False:
         rebuild = {"redo_missing_atp_statistics" : False,
                    "create_elo" : False,
                    "create_statistics": False,
                    "create_variable" : False}
+        
+    if rebuild == True:
+         rebuild = {"redo_missing_atp_statistics" : True,
+                   "create_elo" : True,
+                   "create_statistics": True,
+                   "create_variable" : True}    
    
     full_data, modelling_data = main_create_data(rebuild)    
     print("\n \n Global time to create data is {0}".format(time.time() - t0))
@@ -86,7 +92,6 @@ def main_creation(rebuild=False):
 
 
 if __name__ == "__main__":
-    
     full_data, modelling_data = main_creation(rebuild=False)
     
     
