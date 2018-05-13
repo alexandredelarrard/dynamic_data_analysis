@@ -14,7 +14,7 @@ from utils.build_match_statistics_database import match_stats_main
 from data_creation.extract_players import  merge_atp_players
 from data_creation.missing_rank  import fill_ranks_based_origin
 from data_creation.missing_stats  import fillin_missing_stats
-from data_creation.tourney  import merge_tourney
+from data_creation.merge_tourney  import merge_tourney
 
 
 def import_data_atp(path, redo=False):
@@ -33,6 +33,9 @@ def import_data_atp(path, redo=False):
     
     data = data.sort_values(["Date", "tourney_name"])
     data["ATP_ID"] = range(len(data))
+    
+    ### identify a game as retired:  Andreas Seppi  Mario Ancic 2007-02-12    Marseille
+    data.loc[(data["Date"] == "2007-02-12")&(data["winner_name"] == "Andreas Seppi")&(data["loser_name"] == "Mario Ancic"), "score"] = "RET"
     
     #### suppress davis cup and JO
     sp = data.shape[0] 
@@ -124,19 +127,21 @@ def merge_atp_missing_stats(total_data, redo = False):
     missing_match_stats= match_stats_main(data, redo = redo)
     
     for i in missing_match_stats["ATP_ID"].tolist():
-        if pd.isnull(data.loc[data["ATP_ID"] == i, "w_ace"].values[0]):
-            for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced",\
-                        "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]:
-                data.loc[data["ATP_ID"] == i, col] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, col].values[0]
-        else:
-            data.loc[data["ATP_ID"] == i, "minutes"] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, "minutes"].values[0]
-   
+        try:
+            if pd.isnull(data.loc[data["ATP_ID"] == i, "w_ace"].values[0]):
+                for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced",\
+                            "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]:
+                    data.loc[data["ATP_ID"] == i, col] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, col].values[0]
+            else:
+                data.loc[data["ATP_ID"] == i, "minutes"] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, "minutes"].values[0]
+        except Exception:
+           data.loc[data["ATP_ID"] == i, "w_ace"]
     return data
 
 
 def walkover_retired(x, data):
     
-    cap = 8
+    cap = 10
     data_sub = data.loc[(data["ref_days"]< x["ref_days"])&(data["status"].isin(["Retired", "Walkover", "Def"]))]
     
     ref_day = np.max(data_sub.loc[((data_sub["loser_id"] == x["loser_id"])), "ref_days"])

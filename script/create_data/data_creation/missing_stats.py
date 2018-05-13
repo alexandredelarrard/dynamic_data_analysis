@@ -6,6 +6,8 @@ Created on Mon Apr  2 13:36:14 2018
 """
 
 import pandas as pd
+import numpy as np
+import os
 
 def loop_size_data(x, sub_data):
      len_sub = 0
@@ -29,6 +31,9 @@ def loop_size_data(x, sub_data):
 def fillin_missing_stats(data_stats):
     
     data = data_stats.copy()
+    
+    data.loc[pd.isnull(data["w_ace"])].to_csv(os.environ["DATA_PATH"] + "/to_check/missing_stats.csv")
+    data["missing_stats"] = np.where(pd.isnull(data["w_ace"]), 1, 0)
     
     ### fill in nans and 0 values for matches not retired or cancelled
     missing_data = data.loc[(pd.isnull(data["w_ace"]))|(pd.isnull(data["minutes"]))|(((data["l_svpt"] ==0)|(data["w_svpt"] ==0))&(data["status"] == "Completed"))].copy()

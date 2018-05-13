@@ -153,9 +153,16 @@ def get_stats(x, sub_data):
                  ((winner_w_data["loser_rank"]*winner_w_data["weight"]).sum()  + (winner_l_data["winner_rank"]*winner_l_data["weight"]).sum())/weight_winner -\
                  ((loser_w_data["loser_rank"]*loser_w_data["weight"]).sum()  + (loser_l_data["winner_rank"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
                  
+                 ### weight winner
+                 weight_winner,
+                 
+                 ### weight loser
+                 weight_loser,
+                 
+                 
                  )
     else:
-          count = (0, )   + (np.nan,)*16
+          count = (0, )   + (np.nan,)*18
     
     return [count]
     
@@ -164,6 +171,7 @@ def get_stats(x, sub_data):
 def execute_stats(wrong_word_dict, data):
     count = data.apply(lambda x: weighted_statistics(x, wrong_word_dict))
     return count
+
 
 def fatigue_games(x , data):
     
@@ -208,7 +216,7 @@ def global_stats(data):
     return data
 
 
-def create_statistics(data, redo = False):
+def create_statistics(data, redo = True):
     
     if redo :
         #### calculate correlations
@@ -245,7 +253,8 @@ def create_statistics(data, redo = False):
     
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
-                 "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries"]
+                 "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "weight_winner", 
+                 "weight_loser"]
     
     for i, col in enumerate(stats_cols):
         data[col] =  list(counts[i])
@@ -261,7 +270,8 @@ def create_statistics(data, redo = False):
                   'diff_bp', "diff_tie_break", 'diff_victories_12', 'diff_victories_common_matches','diff_age', 
                   'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 
                   'diff_is_birthday', 'diff_home', "diff_pts_common_matches", 'diff_2nd_serv_won', 
-                  "diff_mean_rank_adversaries", "diff_imc", 'diff_ht', "diff_days_since_stop"]
+                  "diff_mean_rank_adversaries", "diff_imc", 'diff_ht', "diff_days_since_stop", "weight_winner", 
+                 "weight_loser"]
                         
     data2 = data.copy()
     data2["target"] = 0
