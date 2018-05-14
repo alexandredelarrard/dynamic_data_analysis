@@ -116,15 +116,15 @@ def model_def(inputs, outputs):
 #    model.add(BatchNormalization(axis=1))
     model.add(Dense(32, input_shape=(inputs,), kernel_initializer='normal'))
     model.add(Activation('relu'))
-#    model.add(Dense(32, kernel_initializer='normal'))
-#    model.add(Activation('relu'))
-#    model.add(Dropout(0.1))
+    model.add(Dense(16, kernel_initializer='normal'))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.1))
     model.add(Dense(outputs))
     
-    adam = optimizers.Adam(lr=0.00005)
+    adam = optimizers.Adam(lr=0.00003)
     model.compile(loss='mean_squared_error', 
                   optimizer=adam,
-                  metrics=['mse', "mae"])
+                  metrics=["mse", "mae"])
     model.summary()
     
     return model
@@ -142,15 +142,15 @@ def callback(file_path, patience):
 
 def modelling(train, test):
     
-    cols_to_predict = ['w_svpt', 'l_svpt'] # , 'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 
+    cols_to_predict = ['w_svpt', 'l_svpt', 'w_1stIn', 'l_1stIn'] # , 'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 
 #                    'l_SvGms', 'l_bpSaved', 'l_bpFaced'
     
     n_splits = 10
     batch_size = 128
     
     train = train.reset_index(drop=True)
-    train = train.drop(['w_ace', 'w_df', 'l_ace', 'l_df', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 
-                        'l_SvGms', 'l_bpSaved', 'l_bpFaced', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms',  # 'minutes', 
+    train = train.drop(['w_ace', 'w_df', 'l_ace', 'l_df', 'l_1stWon', 'l_2ndWon', 
+                        'l_SvGms', 'l_bpSaved', 'l_bpFaced', 'w_1stWon', 'w_2ndWon', 'w_SvGms',  # 'minutes', 
                         'w_bpSaved', 'w_bpFaced'],axis= 1)
     
     cols_to_train = list(set(train.columns) - set(cols_to_predict))
@@ -179,10 +179,10 @@ def modelling(train, test):
         scaler.transform(X_test) 
         
         file_path = r"D:\projects\jigsaw\scripts\improve_activ_lstm\model_weights_%i.hdf5"%i
-        callbacks_list = callback(file_path, patience = 30)
+        callbacks_list = callback(file_path, patience = 25)
         model = model_def(inputs, outputs)
     
-        history = model.fit(x_train, y_train, batch_size= batch_size, epochs= 130, 
+        history = model.fit(x_train, y_train, batch_size= batch_size, epochs= 250, 
                             validation_data = (x_valid , y_valid), callbacks=callbacks_list)
         
         model.load_weights(file_path)
@@ -218,9 +218,9 @@ def modelling(train, test):
         y_pred  = model.predict(x_valid, batch_size=1024)
         i +=1
         
-        print("error in % is for w_svpt {0}".format(np.mean((abs(y_valid[:,0] - y_pred[:,0])/y_valid[:,0]))))
-        print("error in % is for w_svpt {0}".format(np.mean((abs(y_valid[:,1] - y_pred[:,1])/y_valid[:,1]))))
-        
+        for i in range(y_valid.shape[1]):
+            print("MAE for {0} = {1}".format(cols_to_predict[i], np.mean((abs(y_valid[:,i] - y_pred[:,i])/y_valid[:,i]))))
+
     overall_pred = overall_pred/float(n_splits)
     y_pred = y_pred/float(n_splits)
     

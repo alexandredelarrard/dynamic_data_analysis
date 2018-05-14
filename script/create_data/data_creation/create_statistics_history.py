@@ -288,5 +288,5 @@ if __name__ == "__main__":
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
-    tot = create_statistics(data)
+#    tot = create_statistics(data)
     

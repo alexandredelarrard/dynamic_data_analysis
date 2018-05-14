@@ -18,10 +18,10 @@ os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 if __name__ == "__main__":
     
     rebuild = {"redo_missing_atp_statistics" : True,
-                   "create_elo" : True,
-                   "create_variable" : True,
-                   "create_statistics": True
-                   }    
+               "create_elo" : True,
+               "create_variable" : True,
+               "create_statistics": True
+              }    
     
     full_data, modelling_data = main_creation(rebuild=rebuild)
 

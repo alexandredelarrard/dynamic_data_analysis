@@ -9,7 +9,7 @@ import pandas as pd
 from scipy.optimize import curve_fit
 import os
 
-def calculate_corr_time(tot, start_year=1990, end_year=2016, weight_1 = 6, redo = False):
+def calculate_corr_time(tot, start_year=1990, end_year=2016, weight_1 = 3, redo = False):
     
     if redo:
         def exponenial_func(x, a, b, c):
@@ -34,7 +34,7 @@ def calculate_corr_time(tot, start_year=1990, end_year=2016, weight_1 = 6, redo 
         dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
         time_correlations = dataframe.corr()
         
-        #### first 6 months should have weight = 1 ---> leads to first 12 months weight = 1
+        #### first 3 months should have weight = 1 ---> leads to first 12 months weight = 1
         count_1 = weight_1
         size = 150
         time_correlations = time_correlations.loc[:size, :size]
@@ -78,7 +78,7 @@ def calculate_corr_surface(tot, start_year=1990, end_year=2016, redo = False):
     if redo:
         tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)]
         liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
-        dataframe = pd.DataFrame([], index= liste_players, columns = ["Hard", "Clay", "Carpet", "Grass"])
+        dataframe = pd.DataFrame([], index= liste_players, columns = tot["surface"].unique())
         
         for pl in liste_players: 
             pl_data = tot_loc.loc[tot_loc["winner_id"] == pl]
@@ -86,7 +86,7 @@ def calculate_corr_surface(tot, start_year=1990, end_year=2016, redo = False):
             for i, surf in enumerate(agg.index.tolist()):
                 dataframe.loc[pl, surf] = agg.loc[surf].values[0]
         
-        dataframe = dataframe.loc[(~pd.isnull(dataframe["Hard"]))]
+        dataframe = dataframe.loc[(~pd.isnull(dataframe[tot["surface"].value_counts().index[0]]))]
         
         dataframe[dataframe.columns] = dataframe[dataframe.columns].astype(float)
         surface_correlations = dataframe.corr()

@@ -11,10 +11,10 @@ import warnings
 import time
 warnings.filterwarnings("ignore")
 
-from data_creation.extract_data_atp import import_data_atp
-from data_creation.create_statistics_history import create_statistics
-from data_creation.create_elo_rankingV2 import merge_data_elo
-from data_creation.create_variables import prep_data
+from create_data.data_creation.extract_data_atp import import_data_atp
+from create_data.data_creation.create_statistics_history import create_statistics
+from create_data.data_creation.create_elo_rankingV2 import merge_data_elo
+from create_data.data_creation.create_variables import prep_data
 
 os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 
