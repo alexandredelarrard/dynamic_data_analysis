@@ -146,7 +146,7 @@ def modelling(train, test):
 #                    'l_SvGms', 'l_bpSaved', 'l_bpFaced'
     
     n_splits = 10
-    batch_size = 128
+    batch_size = 256
     
     train = train.reset_index(drop=True)
     train = train.drop(['w_ace', 'w_df', 'l_ace', 'l_df', 'l_1stWon', 'l_2ndWon', 
@@ -179,10 +179,10 @@ def modelling(train, test):
         scaler.transform(X_test) 
         
         file_path = r"D:\projects\jigsaw\scripts\improve_activ_lstm\model_weights_%i.hdf5"%i
-        callbacks_list = callback(file_path, patience = 25)
+        callbacks_list = callback(file_path, patience = 15)
         model = model_def(inputs, outputs)
     
-        history = model.fit(x_train, y_train, batch_size= batch_size, epochs= 250, 
+        history = model.fit(x_train, y_train, batch_size= batch_size, epochs= 130, 
                             validation_data = (x_valid , y_valid), callbacks=callbacks_list)
         
         model.load_weights(file_path)
@@ -219,7 +219,7 @@ def modelling(train, test):
         i +=1
         
         for i in range(y_valid.shape[1]):
-            print("MAE for {0} = {1}".format(cols_to_predict[i], np.mean((abs(y_valid[:,i] - y_pred[:,i])/y_valid[:,i]))))
+            print("MAE for {0} = {1}".format(cols_to_predict[i], np.mean((abs(y_valid[:,i] - y_pred[:,i])/(y_valid[:,i]+1)))))
 
     overall_pred = overall_pred/float(n_splits)
     y_pred = y_pred/float(n_splits)
