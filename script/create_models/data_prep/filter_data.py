@@ -15,6 +15,10 @@ def data_prep_for_modelling(data):
     shape0 = full_data.shape[0]
     full_data = full_data.loc[~pd.isnull(full_data["diff_aces"])&(full_data["Common_matches"]>5)]
     print("[0] Suppressed missing values : {} suppressed".format(full_data.shape[0] - shape0))
+    
+    shape0 = full_data.shape[0]
+    full_data = full_data.loc[full_data['missing_stats'] !=1]
+    print("[0] Suppressed missing_stats = 1 : {} suppressed".format(full_data.shape[0] - shape0))
 
     ### filter interesting columns
     columns_to_keep = list(set(['diff_fatigue_games', 'Common_matches', 'diff_aces', 'diff_df', 'diff_1st_serv_in', 'diff_1st_serv_won', 'diff_2nd_serv_won', 
@@ -41,7 +45,9 @@ def data_prep_for_modelling(data):
     full_data2["tourney_name"] = full_data["tourney_name"]
     
     full_data2["prob_elo"] =  1 / (1 + 10 ** ((full_data2["diff_elo"]) / 400))
-
+    
+   
+    #
     return full_data2
 
 

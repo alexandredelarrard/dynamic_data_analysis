@@ -23,5 +23,12 @@ if __name__ == "__main__":
                "create_statistics": True
               }    
     
-    full_data, modelling_data = main_creation(rebuild=rebuild)
+#    full_data, modelling_data = main_creation(rebuild=rebuild)
+    
+    params = {
+            "date_test_start" : "2017-01-01", 
+            "date_test_end":"2017-12-31"
+             }
+    
+    clf, var_imp, modelling_data = main_modelling(params)
 

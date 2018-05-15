@@ -13,7 +13,7 @@ from create_models.data_prep.filter_data import data_prep_for_modelling
 from create_models.models.xgb import modelling_xgboost
 from create_models.models.logistic import modelling_logistic
 
-def main_modelling(retrain=False):
+def main_modelling(params):
     
     t0 = time.time()
 
@@ -24,7 +24,7 @@ def main_modelling(retrain=False):
     modelling_data.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/modelling/data_modelling_V1.csv")
     
     ### modelling _ xgb
-    clf, var_imp = modelling_xgboost(modelling_data, date_test_start = "2018-01-01", date_test_end="2018-12-31")
+    clf, var_imp = modelling_xgboost(modelling_data, params["date_test_start"], params["date_test_end"])
     
     ### modelling logistic
 #    clf, var_imp = modelling_xgboost(modelling_data, date_test_start = "2017-01-01", date_test_end="2017-12-31")
