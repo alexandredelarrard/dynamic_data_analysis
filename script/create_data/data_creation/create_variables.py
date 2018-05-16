@@ -124,16 +124,12 @@ def prep_data(data):
     dataset["DOB_w"] = pd.to_datetime(dataset["DOB_w"], format = "%Y-%m-%d") 
     dataset["DOB_l"] = pd.to_datetime(dataset["DOB_l"], format = "%Y-%m-%d") 
     
-    dataset["w_birthday"] =0
-    dataset.loc[(dataset["month"] == dataset["DOB_w"].dt.month)&(dataset["day_of_month"] == dataset["DOB_w"].dt.day) ,"w_birthday"] =1
-    dataset["l_birthday"] =0
-    dataset.loc[(dataset["month"] == dataset["DOB_l"].dt.month)&(dataset["day_of_month"] == dataset["DOB_l"].dt.day) ,"l_birthday"] =1
+    dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_w"].dt.month)&(dataset["day_of_month"] == dataset["DOB_w"].dt.day), 1, 0).astype(int)   
+    dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_l"].dt.month)&(dataset["day_of_month"] == dataset["DOB_l"].dt.day), 1, 0).astype(int)   
     
     ### if home country
-    dataset["w_home"] = 0
-    dataset.loc[dataset["tourney_country"] == dataset["winner_ioc"], "w_home"] = 1
-    dataset["l_home"] = 0
-    dataset.loc[dataset["tourney_country"] == dataset["loser_ioc"], "l_home"] = 1
+    dataset["w_home"] = np.where(dataset["tourney_country"] == dataset["winner_ioc"],1,0)
+    dataset["l_home"] = np.where(dataset["tourney_country"] == dataset["loser_ioc"],1,0)
     
     ### imc
     dataset["w_imc"] = dataset["Weight_w"] / (dataset["winner_ht"]/100)**2

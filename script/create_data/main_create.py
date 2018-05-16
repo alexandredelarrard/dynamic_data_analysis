@@ -54,20 +54,16 @@ def main_create_data(param):
         
         ### create counting past historical data
         if param["create_statistics"]:
-            data_total, data3 = create_statistics(data2, redo= True)
+            data_total = create_statistics(data2, redo= True)
              
             #### save dataset
-            data3.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/variables_for_modelling_V1.csv", index= False)
             data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/total_dataset_modelling.csv", index= False)
             
     if not rebuild:        
-        data3 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/variables_for_modelling_V1.csv")
-        data3["Date"] = pd.to_datetime(data3["Date"], format = "%Y-%m-%d")
-        
         data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/total_dataset_modelling.csv")
-        data_total["Date"] = pd.to_datetime(data3["Date"], format = "%Y-%m-%d")
+        data_total["Date"] = pd.to_datetime(data_total["Date"], format = "%Y-%m-%d")
             
-    return data_total, data3
+    return data_total
     
 
 def main_creation(rebuild=False):
@@ -85,14 +81,14 @@ def main_creation(rebuild=False):
                    "create_statistics": True,
                    "create_variable" : True}    
    
-    full_data, modelling_data = main_create_data(rebuild)    
+    full_data = main_create_data(rebuild)    
     print("\n \n Global time to create data is {0}".format(time.time() - t0))
     
-    return full_data, modelling_data
+    return full_data
 
 
 if __name__ == "__main__":
-    full_data, modelling_data = main_creation(rebuild=True)
+    full_data = main_creation(rebuild=True)
     
     
     

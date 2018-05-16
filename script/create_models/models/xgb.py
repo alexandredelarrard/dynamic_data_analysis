@@ -39,10 +39,10 @@ def modelling_xgboost(data, date_test_start, date_test_end):
                     learning_rate=0.08, 
                     subsample=0.85,
                     colsample_bytree=0.75,
-                    min_child_weight=4,
+                    min_child_weight=2,
                     reg_alpha = 1,
                     reg_lambda = 1,
-                    gamma =0
+                    gamma =0,
                  )
         
         eval_set=[(x_train, y_train), (x_test, y_test)]

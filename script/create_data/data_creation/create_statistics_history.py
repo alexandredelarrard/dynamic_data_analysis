@@ -207,7 +207,6 @@ def global_stats(data):
     data["diff_hand"] = data['winner_hand'] - data['loser_hand']
     data["diff_is_birthday"] = data['w_birthday'] - data['l_birthday']
     data["diff_home"] = data['w_home'] - data['l_home']
-    data["max_rank"]  = data[["winner_rank", 'loser_rank']].max(axis= 1)
     
     return data
 
@@ -238,15 +237,17 @@ def create_statistics(data, redo = True):
     data["diff_fatigue_games"] = data[["ref_days", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)
     del data["ref_days"]
     
+    ###### calculation of statistics
     t0 = time.time()
-    col_for_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
                      'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
                      'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won']
 
-    counts = data[["Date", "winner_id", "loser_id", "surface"]].apply(lambda x : weighted_statistics(x, [data[col_for_stats], correlation_surface, correlation_time]), axis= 1)
+    counts = data[["Date", "winner_id", "loser_id", "surface"]].apply(lambda x : weighted_statistics(x, [data[calculate_stats], correlation_surface, correlation_time]), axis= 1)
     counts = list(zip(*counts["surface"]))
     
+    ###### put the right name to the right column
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
                  "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "weight_winner", 
@@ -256,28 +257,33 @@ def create_statistics(data, redo = True):
         data[col] =  list(counts[i])
 
     data = global_stats(data)
+    data["target"] = 1
     print("exec stats {}".format(time.time()-t0))
     
-    data["target"] = 1
-    basic_cols    = ["target", "Date", "winner_id", "loser_id", "tourney_name", 'prize', 'best_of', 'round', 'Common_matches']
-    
-    stats_cols =  ['diff_aces', 'diff_df', 'diff_1st_serv_in', "diff_fatigue_games", 'diff_1st_serv_won',
-                   'diff_skill_serv', 'diff_skill_ret', 'diff_overall_skill', 'diff_serv1_ret2','diff_serv2_ret1', 
-                   'diff_bp', "diff_tie_break", 'diff_victories_12', 'diff_victories_common_matches','diff_age', 
-                   'diff_weight', 'diff_year_turned_pro', 'diff_elo', 'diff_rank', 'diff_rk_pts', 'diff_hand', 
-                   'diff_is_birthday', 'diff_home', "diff_pts_common_matches", 'diff_2nd_serv_won', 
-                   "diff_mean_rank_adversaries", "diff_imc", 'diff_ht', "diff_days_since_stop", "weight_winner", 
-                   "weight_loser"]
-                        
+    ############################# create reverse data ##########################################
+    ###### target
+   
     data2 = data.copy()
     data2["target"] = 0
-    for col in stats_cols:
+    
+    for col in [x for x in data2.columns if "w_" == x[:2]]:
+        data2.rename(columns={col : col.replace("w_","l_"), col.replace("w_","l_") : col}, inplace = True)
+        
+    for col in [x for x in data2.columns if "_w" == x[-2:]]:
+        data2.rename(columns={col : col.replace("_w","_l"), col.replace("_w","_l") : col}, inplace = True)
+    
+    for col in [x for x in data2.columns if "winner_" in x]:
+        data2.rename(columns={col : col.replace("winner_","loser_"), col.replace("winner_","loser_") : col}, inplace = True)
+    
+    data2.rename(columns={"elo1" : "elo2", "elo2" : "elo1", 'weight_winner' : "weight_loser", 'weight_loser':'weight_winner'}, inplace = True)
+    data2["prob_elo"] = 1 / (1 + 10 ** ((data2["elo2"] - data2["elo1"]) / 400))
+            
+    for col in [x for x in data2.columns if "diff_" == x[:5]]:
         data2[col] = -1*data2[col]
         
-    total_data_with_cols = pd.concat([data, data2], axis= 0)
-    total_data           = pd.concat([data[stats_cols + basic_cols], data2[stats_cols + basic_cols]], axis= 0)
-                    
-    return total_data_with_cols, total_data
+    total_data = pd.concat([data, data2], axis= 0)
+                  
+    return total_data
 
 
 if __name__ == "__main__": 
