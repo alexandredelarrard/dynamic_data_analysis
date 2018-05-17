@@ -10,8 +10,9 @@ import numpy as np
 from multiprocessing import Pool
 from functools import partial
 import time
+import sys
 
-
+sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_data.utils.weight_past_matches import calculate_corr_surface, calculate_corr_time
 
 def parallelize_dataframe(df, function, dictionnary, njobs):
@@ -49,6 +50,7 @@ def add_weight(x, sub_data, corr_surface, corr_time):
     
     try:
         sub_data["weight"] = sub_data["surface"].map(corr_surface[x["surface"]])*sub_data["weight"].map(corr_time)
+        sub_data["weight"] = np.where(sub_data["missing_stats"] ==1, sub_data["weight"]*0.5, sub_data["weight"])
         
     except Exception:
         print(x)
@@ -211,7 +213,7 @@ def global_stats(data):
     return data
 
 
-def create_statistics(data, redo = True):
+def create_statistics(data, redo = False):
     
     if redo :
         #### calculate correlations
@@ -239,7 +241,7 @@ def create_statistics(data, redo = True):
     
     ###### calculation of statistics
     t0 = time.time()
-    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
                      'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
                      'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won']
@@ -294,5 +296,5 @@ if __name__ == "__main__":
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
-#    tot = create_statistics(data)
+    tot = create_statistics(data)
     

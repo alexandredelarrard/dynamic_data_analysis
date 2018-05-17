@@ -54,7 +54,7 @@ def main_create_data(param):
         
         ### create counting past historical data
         if param["create_statistics"]:
-            data_total = create_statistics(data2, redo= True)
+            data_total = create_statistics(data2, redo= False)
              
             #### save dataset
             data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/total_dataset_modelling.csv", index= False)
