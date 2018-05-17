@@ -125,7 +125,7 @@ def prep_data(data):
     dataset["DOB_l"] = pd.to_datetime(dataset["DOB_l"], format = "%Y-%m-%d") 
     
     dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_w"].dt.month)&(dataset["day_of_month"] == dataset["DOB_w"].dt.day), 1, 0).astype(int)   
-    dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_l"].dt.month)&(dataset["day_of_month"] == dataset["DOB_l"].dt.day), 1, 0).astype(int)   
+    dataset["l_birthday"] =  np.where((dataset["month"] == dataset["DOB_l"].dt.month)&(dataset["day_of_month"] == dataset["DOB_l"].dt.day), 1, 0).astype(int)   
     
     ### if home country
     dataset["w_home"] = np.where(dataset["tourney_country"] == dataset["winner_ioc"],1,0)

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     
     rebuild = {"redo_missing_atp_statistics" : False,
                "create_elo" : False,
-               "create_variable" : False,
+               "create_variable" : True,
                "create_statistics": True
               }    
     

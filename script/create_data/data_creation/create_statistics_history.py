@@ -235,9 +235,15 @@ def create_statistics(data, redo = False):
         correlation_surface   = calculate_corr_surface(data, redo)
         correlation_time      = calculate_corr_time(data, redo)
         
+    t0 = time.time()
     data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
     data["diff_fatigue_games"] = data[["ref_days", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)
     del data["ref_days"]
+    print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))
+    
+    data = global_stats(data)
+    data["target"] = 1
+    print("Created target and global_stats variables")
     
     ###### calculation of statistics
     t0 = time.time()
@@ -258,9 +264,7 @@ def create_statistics(data, redo = False):
     for i, col in enumerate(stats_cols):
         data[col] =  list(counts[i])
 
-    data = global_stats(data)
-    data["target"] = 1
-    print("exec stats {}".format(time.time()-t0))
+    print("exec stats {0:.2f}".format(time.time()-t0))
     
     ############################# create reverse data ##########################################
     ###### target

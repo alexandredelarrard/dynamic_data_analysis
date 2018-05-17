@@ -15,7 +15,7 @@ def calculate_corr_time(tot, start_year=1990, end_year=2016, weight_1 = 3, redo 
         def exponenial_func(x, a, b, c):
             return a*np.exp(-b*x)+c
     
-        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)].copy()
+        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year <= end_year)].copy()
         tot_loc["year"] = tot_loc["Date"].dt.year
         tot_loc["month"] = tot_loc["Date"].dt.month
         
@@ -76,7 +76,7 @@ def calculate_corr_surface(tot, start_year=1990, end_year=2016, redo = False):
     
     ### because dont want info from test set
     if redo:
-        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)]
+        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year <= end_year)]
         liste_players = list(set(tot_loc["winner_id"].tolist() + tot_loc["winner_id"].tolist()))
         dataframe = pd.DataFrame([], index= liste_players, columns = tot["surface"].unique())
         
@@ -118,7 +118,7 @@ def proportion_win(x, total_data):
 def calculate_corr_opponents(tot, remake = False, start_year=1990, end_year=2016):
     
     if remake:
-        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year < end_year)].copy()
+        tot_loc = tot.loc[(tot["Date"].dt.year >= start_year)&(tot["Date"].dt.year <= end_year)].copy()
         data = tot_loc[["Date","winner_id", "loser_id", "target"]]
         
         rep = data.apply(lambda x : proportion_win(x, data), axis=1)["loser_id"]
