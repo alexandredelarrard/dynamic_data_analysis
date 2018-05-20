@@ -65,7 +65,7 @@ def modelling_logistic(data, date_test_start, date_test_end):
 def split_train_test(data, date_test_start, date_test_end):
     
     train = data.loc[(data["Date"] < date_test_start)]
-    test =  data.loc[(data["Date"] >= date_test_start) & (data["Date"]< date_test_end)]
+    test =  data.loc[(data["Date"] >= date_test_start) & (data["Date"]<= date_test_end)]
     
     return train, test
 

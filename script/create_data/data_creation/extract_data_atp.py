@@ -61,7 +61,7 @@ def import_data_atp(path, redo=False):
     
     t0 = time.time()
     data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
-    data["diff_days_since_stop"] = data[["ref_days", "winner_id", "loser_id", "status"]].apply(lambda x : walkover_retired(x, data), axis=1)
+    data["diff_days_since_stop"] = np.apply_along_axis(walkover_retired, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "status"]]))
     del data["ref_days"]
     print(" --- calculate return after walkover or retired : {0} ".format(time.time() - t0))
 
@@ -140,25 +140,28 @@ def merge_atp_missing_stats(total_data, redo = False):
 
 
 def walkover_retired(x, data):
+    """
+    columns : ["ref_days", "winner_id", "loser_id", "status"]
+    """
+
+    index = np.where((data[:,0] < x[0])&(np.isin(data[:,3], ["Retired", "Walkover", "Def"])))
+    data_sub = data[index]
     
-    cap = 10
-    data_sub = data.loc[(data["ref_days"]< x["ref_days"])&(data["status"].isin(["Retired", "Walkover", "Def"]))]
+    index_l = np.where(data_sub[:,2] == x[2])
+    index_w = np.where(data_sub[:,2] == x[1])
     
-    ref_day = np.max(data_sub.loc[((data_sub["loser_id"] == x["loser_id"])), "ref_days"])
-    a = (x["ref_days"] - ref_day)
-      
-    if a:
-      l = 1 if a <= cap else 0
+    if len(index_l[0])>0:
+        ref_day = np.max(data_sub[index_l, 0])
+        l = 1 if (x[0] - ref_day) <= 10 else 0
     else:
-      l = 0
-      
-    ref_day = np.max(data_sub.loc[((data_sub["loser_id"] == x["winner_id"])), "ref_days"])
-    a = (x["ref_days"] - ref_day)   
-      
-    if a:
-      w = 1 if a <= cap else 0
+        l=0
+          
+    if len(index_w[0])>0:   
+        ref_day = np.max(data_sub[index_w, 0])
+        w = 1 if (x[0] - ref_day)  <= 10 else 0
     else:
-      w = 0
-      
-    return w -l
+        w=0
+        
+    return w - l
+
       

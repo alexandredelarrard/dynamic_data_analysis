@@ -152,15 +152,12 @@ def get_stats(x, sub_data):
                  ((winner_w_data["loser_rank"]*winner_w_data["weight"]).sum()  + (winner_l_data["winner_rank"]*winner_l_data["weight"]).sum())/weight_winner -\
                  ((loser_w_data["loser_rank"]*loser_w_data["weight"]).sum()  + (loser_l_data["winner_rank"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
                  
-                 ### weight winner
-                 weight_winner,
-                 
-                 ### weight loser
-                 weight_loser,
+                 ### diff weights
+                 weight_winner - weight_loser,
                  
                  )
     else:
-          count = (0, )   + (np.nan,)*18
+          count = (0, )   + (np.nan,)*17
     
     return [count]
     
@@ -172,17 +169,16 @@ def execute_stats(wrong_word_dict, data):
 
 
 def fatigue_games(x , data):
-    
-    days= 4
 
-    sub_data = data.loc[(x["ref_days"] - data["ref_days"]).between(1,days)]
+    index_days = np.where(((x[0] - data[:,0]) >=1)&((x[0] - data[:,0]) <=4))
+    sub_data = data[index_days]
+    
+    index_1 = np.where(((sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1])))
+    index_2 = np.where(((sub_data[:,1] == x[2]) | (sub_data[:,2] == x[1])))
     
     ### number of games played during last days days
-    sub_data1 = sub_data.loc[((sub_data["winner_id"] == x["winner_id"]) | (sub_data["loser_id"] == x["winner_id"]))]
-    fatigue_w = sub_data1["total_games"].sum()
-    
-    sub_data2 = sub_data.loc[((sub_data["winner_id"] == x["loser_id"]) | (sub_data["loser_id"] == x["loser_id"]))]
-    fatigue_l = sub_data2["total_games"].sum()
+    fatigue_w = sub_data[index_1, 3].sum()
+    fatigue_l = sub_data[index_2, 3].sum()
     
     return fatigue_w - fatigue_l
 
@@ -236,8 +232,8 @@ def create_statistics(data, redo = False):
         correlation_time      = calculate_corr_time(data, redo)
         
     t0 = time.time()
-    data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
-    data["diff_fatigue_games"] = data[["ref_days", "winner_id", "loser_id", "total_games"]].apply(lambda x : fatigue_games(x, data), axis= 1)
+    data["ref_days"]= (data["Date"]- pd.to_datetime("1901-01-01")).dt.days
+    data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "total_games"]]))
     del data["ref_days"]
     print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))
     
@@ -258,8 +254,7 @@ def create_statistics(data, redo = False):
     ###### put the right name to the right column
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
-                 "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "weight_winner", 
-                 "weight_loser"]
+                 "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "diff_weights"]
     
     for i, col in enumerate(stats_cols):
         data[col] =  list(counts[i])
@@ -281,7 +276,7 @@ def create_statistics(data, redo = False):
     for col in [x for x in data2.columns if "winner_" in x]:
         data2.rename(columns={col : col.replace("winner_","loser_"), col.replace("winner_","loser_") : col}, inplace = True)
     
-    data2.rename(columns={"elo1" : "elo2", "elo2" : "elo1", 'weight_winner' : "weight_loser", 'weight_loser':'weight_winner'}, inplace = True)
+    data2.rename(columns={"elo1" : "elo2", "elo2" : "elo1"}, inplace = True)
     data2["prob_elo"] = 1 / (1 + 10 ** ((data2["elo2"] - data2["elo1"]) / 400))
             
     for col in [x for x in data2.columns if "diff_" == x[:5]]:
@@ -291,7 +286,6 @@ def create_statistics(data, redo = False):
                   
     return total_data
 
-
 if __name__ == "__main__": 
     import os
     os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
@@ -300,5 +294,5 @@ if __name__ == "__main__":
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
-    tot = create_statistics(data)
+    tot = create_statistics(data[:10000])
     

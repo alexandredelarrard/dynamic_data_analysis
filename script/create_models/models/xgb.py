@@ -34,12 +34,12 @@ def modelling_xgboost(data, date_test_start, date_test_end):
         
         clf = XGBClassifier(    
                     n_estimators=500,
-                    max_depth=6,
+                    max_depth=7,
                     objective="binary:logistic",
-                    learning_rate=0.08, 
-                    subsample=0.85,
-                    colsample_bytree=0.75,
-                    min_child_weight=2,
+                    learning_rate=0.07, 
+                    subsample=0.9,
+                    colsample_bytree=0.8,
+                    min_child_weight=4,
                     reg_alpha = 1,
                     reg_lambda = 1,
                     gamma =0,
@@ -64,7 +64,7 @@ def modelling_xgboost(data, date_test_start, date_test_end):
         var_imp = pd.DataFrame(np.array(clf.feature_importances_), columns = ["importance"], index= x_train.columns).sort_values("importance")
         addi_train = test
         
-    plot_importance(clf)
+        plot_importance(clf)
         
     print("_"*40)
     print("[AUC avg] {0} / [Accuracy avg] {1} / [logloss] {2} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
@@ -89,5 +89,6 @@ if __name__ == "__main__":
     
     clf, var_imp = modelling_xgboost(data0, date_test_start = "2017-01-01", date_test_end="2017-12-31")
     
+
 #[AUC avg] 0.8423372516654938 / [Accuracy avg] 0.7711612079965972 / [Match Nbr total] 4702  ---> 2016
 #[AUC avg] 0.8299067731919562 / [Accuracy avg] 0.7604046242774567 / [Match Nbr total] 3460  ---> 2017

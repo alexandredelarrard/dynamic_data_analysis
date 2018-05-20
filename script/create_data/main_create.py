@@ -86,7 +86,6 @@ def main_creation(rebuild=False):
     
     return full_data
 
-
 if __name__ == "__main__":
     full_data = main_creation(rebuild=True)
     
