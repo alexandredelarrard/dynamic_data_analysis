@@ -12,7 +12,7 @@ import time
 warnings.filterwarnings("ignore")
 
 from create_data.data_creation.extract_data_atp import import_data_atp
-from create_data.data_creation.create_statistics_history import create_statistics
+from create_data.data_creation.create_statistics_historyV2 import create_statistics
 from create_data.data_creation.create_elo_rankingV2 import merge_data_elo
 from create_data.data_creation.create_variables import prep_data
 

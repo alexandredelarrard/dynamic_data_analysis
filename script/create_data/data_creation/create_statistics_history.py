@@ -66,10 +66,19 @@ def weighted_statistics(x, liste_dataframe):
     corr_surface = liste_dataframe[1]
     corr_time = liste_dataframe[2]
     
-    sub_data = common_opponents(x, data.loc[data["Date"] < x["Date"]])
-    sub_data = add_weight(x, sub_data, corr_surface, corr_time)
-    
-    stats    = get_stats(x, sub_data)
+    #### calculate weight and stats if common opponents is not empty
+    data_date = data.loc[data["Date"] < x["Date"]]
+    if data_date.shape[0] > 0:
+        sub_data = common_opponents(x, data_date)
+        
+        if sub_data.shape[0]>0:
+            sub_data = add_weight(x, sub_data, corr_surface, corr_time)
+            stats    = get_stats(x, np.array(sub_data))
+        else:
+            stats = [(0, )   + (np.nan,)*17]
+    else:
+        stats = [(0, )   + (np.nan,)*17]
+
     return stats
 
 
@@ -95,69 +104,66 @@ def get_stats(x, sub_data):
     wr2 = (((loser_w_data["w_1st_srv_ret_won"]*loser_w_data["l_1stIn"] + (1-loser_w_data["l_1stIn"])*loser_w_data["w_2nd_srv_ret_won"])*loser_w_data["weight"]).sum() 
              + ((loser_l_data["l_1st_srv_ret_won"]*loser_l_data["w_1stIn"] + (1-loser_l_data["w_1stIn"])*loser_l_data["l_2nd_srv_ret_won"])*loser_l_data["weight"]).sum())/weight_loser
     
-    if sub_data.shape[0]> 0:
-        count = (sub_data.shape[0], ### confidence on stat
-                 
-                 ((winner_w_data["w_ace"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_ace"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_ace"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_ace"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion aces
-                 
-                 ((winner_w_data["w_df"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_df"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_df"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_df"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion df
-                 
-                 ((winner_w_data["w_1stIn"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_1stIn"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_1stIn"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_1stIn"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion first serv
-                 
-                 ((winner_w_data["w_1stWon"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_1stWon"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_1stWon"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_1stWon"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion first won
-                 
-                 ((winner_w_data["w_2ndWon"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_2ndWon"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_2ndWon"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_2ndWon"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
-                 
-                 #### overall skill on serv =  w1sp*fs + (1-fs)*w2sp
-                 ws1 - ws2, 
-                
-                 ### overall skill on return = w1_ret* (l_fs) + (1- l_fs)*w2_ret
-                 wr1 - wr2, 
-                 
-                 ### overall skill on both
-                 ws1*ws1 - ws2*wr2,
-                 
-                 ### difference serv return 
-                 ws1 - wr2,
-                 
-                 ### difference serv return 2
-                 ws2- wr1,
-                 
-                 ### break point competencies  = bp_saved * bp_converted
-                 ((winner_w_data["w_bpSaved"]*winner_w_data["w_bp_converted"]*winner_w_data["weight"]).sum() + (winner_l_data["l_bpSaved"]*winner_l_data["l_bp_converted"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_bpSaved"]*loser_w_data["w_bp_converted"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_bpSaved"]*loser_l_data["l_bp_converted"]*loser_l_data["weight"]).sum())/weight_loser, 
-                 
-                 ### tie break competencies 
-                 ((winner_w_data["w_tie-breaks_won"]*winner_w_data["weight"]/winner_w_data["N_set"]).sum() + (winner_l_data["l_tie-breaks_won"]*winner_l_data["weight"]/winner_l_data["N_set"]).sum())/weight_winner -  
-                 ((loser_w_data["w_tie-breaks_won"]*loser_w_data["weight"]/loser_w_data["N_set"]).sum() + (loser_l_data["l_tie-breaks_won"]*loser_l_data["weight"]/loser_l_data["N_set"]).sum())/weight_loser,
-                 
-                 ### proportion victory 1 vs 2 
-                 (sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0] - 
-                 sub_data.loc[(sub_data["winner_id"] == x["loser_id"]) & (sub_data["loser_id"] == x["winner_id"])].shape[0])/ sub_data.shape[0], 
-                 
-                  ### proportion victory common adversories
-                 (sub_data.loc[(sub_data["winner_id"] == x["winner_id"])].shape[0] - 
-                  sub_data.loc[(sub_data["winner_id"] == x["loser_id"])].shape[0])/ sub_data.shape[0],
-                 
-                 ### proportion points won common adversaries
-                 ((winner_w_data["w_total_pts_won"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_total_pts_won"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["w_total_pts_won"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_total_pts_won"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
-                 
-                 #### diff mean rank common adversaries
-                 ((winner_w_data["loser_rank"]*winner_w_data["weight"]).sum()  + (winner_l_data["winner_rank"]*winner_l_data["weight"]).sum())/weight_winner -\
-                 ((loser_w_data["loser_rank"]*loser_w_data["weight"]).sum()  + (loser_l_data["winner_rank"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
-                 
-                 ### diff weights
-                 weight_winner - weight_loser,
-                 
-                 )
-    else:
-          count = (0, )   + (np.nan,)*17
+    count = (sub_data.shape[0], ### confidence on stat
+             
+             ((winner_w_data["w_ace"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_ace"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_ace"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_ace"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion aces
+             
+             ((winner_w_data["w_df"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_df"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_df"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_df"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion df
+             
+             ((winner_w_data["w_1stIn"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_1stIn"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_1stIn"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_1stIn"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion first serv
+             
+             ((winner_w_data["w_1stWon"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_1stWon"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_1stWon"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_1stWon"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion first won
+             
+             ((winner_w_data["w_2ndWon"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_2ndWon"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_2ndWon"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_2ndWon"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
+             
+             #### overall skill on serv =  w1sp*fs + (1-fs)*w2sp
+             ws1 - ws2, 
+            
+             ### overall skill on return = w1_ret* (l_fs) + (1- l_fs)*w2_ret
+             wr1 - wr2, 
+             
+             ### overall skill on both
+             ws1*ws1 - ws2*wr2,
+             
+             ### difference serv return 
+             ws1 - wr2,
+             
+             ### difference serv return 2
+             ws2- wr1,
+             
+             ### break point competencies  = bp_saved * bp_converted
+             ((winner_w_data["w_bpSaved"]*winner_w_data["w_bp_converted"]*winner_w_data["weight"]).sum() + (winner_l_data["l_bpSaved"]*winner_l_data["l_bp_converted"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_bpSaved"]*loser_w_data["w_bp_converted"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_bpSaved"]*loser_l_data["l_bp_converted"]*loser_l_data["weight"]).sum())/weight_loser, 
+             
+             ### tie break competencies 
+             ((winner_w_data["w_tie-breaks_won"]*winner_w_data["weight"]/winner_w_data["N_set"]).sum() + (winner_l_data["l_tie-breaks_won"]*winner_l_data["weight"]/winner_l_data["N_set"]).sum())/weight_winner -  
+             ((loser_w_data["w_tie-breaks_won"]*loser_w_data["weight"]/loser_w_data["N_set"]).sum() + (loser_l_data["l_tie-breaks_won"]*loser_l_data["weight"]/loser_l_data["N_set"]).sum())/weight_loser,
+             
+             ### proportion victory 1 vs 2 
+             (sub_data.loc[(sub_data["winner_id"] == x["winner_id"]) & (sub_data["loser_id"] == x["loser_id"])].shape[0] - 
+             sub_data.loc[(sub_data["winner_id"] == x["loser_id"]) & (sub_data["loser_id"] == x["winner_id"])].shape[0])/ sub_data.shape[0], 
+             
+              ### proportion victory common adversories
+             (sub_data.loc[(sub_data["winner_id"] == x["winner_id"])].shape[0] - 
+              sub_data.loc[(sub_data["winner_id"] == x["loser_id"])].shape[0])/ sub_data.shape[0],
+             
+             ### proportion points won common adversaries
+             ((winner_w_data["w_total_pts_won"]*winner_w_data["weight"]).sum()  + (winner_l_data["l_total_pts_won"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["w_total_pts_won"]*loser_w_data["weight"]).sum()  + (loser_l_data["l_total_pts_won"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
+             
+             #### diff mean rank common adversaries
+             ((winner_w_data["loser_rank"]*winner_w_data["weight"]).sum()  + (winner_l_data["winner_rank"]*winner_l_data["weight"]).sum())/weight_winner -\
+             ((loser_w_data["loser_rank"]*loser_w_data["weight"]).sum()  + (loser_l_data["winner_rank"]*loser_l_data["weight"]).sum())/weight_loser, #### difference proportion second won
+             
+             ### diff weights
+             weight_winner - weight_loser,
+             
+             )
     
     return [count]
     

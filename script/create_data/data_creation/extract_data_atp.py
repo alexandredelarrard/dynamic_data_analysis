@@ -164,4 +164,3 @@ def walkover_retired(x, data):
         
     return w - l
 
-      
