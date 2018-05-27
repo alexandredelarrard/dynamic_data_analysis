@@ -165,14 +165,7 @@ def prep_data(data):
         dataset[col] = dataset[col].astype(float) / (dataset["l_SvGms"].astype(float))
         
     dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'],axis = 1)
-    
-    #### estimate number of days since start
-    
-#    agg = dataset[["match_num", "tourney_id"]].groupby("tourney_id").max().reset_index()
-#    agg = agg.rename(columns={"match_num" : "max_matches"})
-#    dataset = pd.merge(dataset, agg, on = "tourney_id")
-#    dataset["days_since_tourney_start"] = np.round(np.log(dataset["max_matches"]/ (dataset["max_matches"] - dataset["match_num"] + 1)) / np.log(2), 0)
-#    
+     
     print("[{0}s] 7) Create additionnal variables ".format(time.time() - t0))
         
     return dataset

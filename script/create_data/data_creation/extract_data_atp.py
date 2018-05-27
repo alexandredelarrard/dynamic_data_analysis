@@ -6,9 +6,11 @@ Created on Sat Mar 17 14:00:49 2018
 """
 
 import pandas as pd
+from datetime import timedelta
 import glob
 import time 
 import numpy as np
+import tqdm
 
 from create_data.utils.build_match_statistics_database import match_stats_main
 from create_data.data_creation.extract_players import  merge_atp_players
@@ -28,8 +30,11 @@ def import_data_atp(path, redo=False):
         else:
             data = pd.concat([data, pd.read_csv(file, encoding = "latin1")], axis=0)
             
-    data["Date"]   = pd.to_datetime(data["tourney_date"], format = "%Y%m%d")   
-    del data["tourney_date"]
+    data = data.sort_values(["tourney_date", "tourney_id", "match_num"])
+
+    data["tourney_date"]   = pd.to_datetime(data["tourney_date"], format = "%Y%m%d")   
+    data   = create_date(data)
+    print("\n [{0}s] 0) Calculate date of match ".format(time.time() - t0))
     
     data = data.sort_values(["Date", "tourney_name"])
     data["ATP_ID"] = range(len(data))
@@ -164,3 +169,25 @@ def walkover_retired(x, data):
         
     return w - l
 
+
+def create_date(data):
+    
+    def add_days(x):
+        if x[2]<128:
+            return x[0] + timedelta(days=x[1])
+        else:
+            return x[0] + timedelta(days=x[1]*2)
+    
+    #### reverse match num, 0 == final and correct it
+    match_num = []
+    for id_tourney in tqdm.tqdm(data["tourney_id"].unique()):
+        nliste= abs(data.loc[data["tourney_id"] == id_tourney, "match_num"].max() - data.loc[data["tourney_id"] == id_tourney, "match_num"])
+        match_num += list(nliste+1)
+    data["match_num"] = match_num 
+    
+    data["id_round"] = round(np.log(data["draw_size"]/data["match_num"]) / np.log(2), 0)
+    data.loc[data["id_round"]<0,"id_round"]=0
+    
+    data["Date"] =  np.apply_along_axis(add_days, 1, np.array(data[["tourney_date", "id_round", "draw_size"]])) 
+
+    return data

@@ -38,10 +38,13 @@ def elo(old, exp, score, k):
 
 
 def calculate_elo(data):
+    """
+    columns : "Date", "winner_id", "loser_id", "elo1", "elo2"
+    """
     
     data["elo1"] = 1500
     data["elo2"] = 1500
-    data = data.sort_values(["Date", "match_num"])[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy()
+    data = data[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy()
     data["index"] = range(len(data))
     data = np.array(data)
     
@@ -54,8 +57,8 @@ def calculate_elo(data):
 #        elo_winner_surface = sub_data["elo1_surface"]
 #        elo_loser_surface  = sub_data["elo2_surface"]
         
-        index_past = data[:,5]  <=i
-        index_futur = data[:,5] > i
+        index_past = data[:,0]  <= sub_data[0]
+        index_futur = data[:,0] > sub_data[0]
         
         ##### winner elo
         nbr_seen = data[((data[:,1] ==  sub_data[1]) | (data[:,2] ==  sub_data[1]))&(index_past)].shape[0]
