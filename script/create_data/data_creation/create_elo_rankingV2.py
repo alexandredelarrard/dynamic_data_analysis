@@ -39,9 +39,9 @@ def elo(old, exp, score, k):
 
 def calculate_elo(data):
     
-    data["elo1"] = 1000
-    data["elo2"] = 1000
-    data = data[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy()
+    data["elo1"] = 1500
+    data["elo2"] = 1500
+    data = data.sort_values(["Date", "match_num"])[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy()
     data["index"] = range(len(data))
     data = np.array(data)
     

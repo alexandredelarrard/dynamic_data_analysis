@@ -67,13 +67,15 @@ def weighted_statistics(x, liste_dataframe):
     corr_time = liste_dataframe[2]
     
     #### calculate weight and stats if common opponents is not empty
-    data_date = data.loc[data["Date"] < x["Date"]]
+    data_date = data.loc[(data["Date"] <= x["Date"])]
+    data_date = data_date.loc[~((data_date["Date"] == x["Date"])&(data_date["match_num"] >= x["match_num"]))]
+    
     if data_date.shape[0] > 0:
         sub_data = common_opponents(x, data_date)
         
         if sub_data.shape[0]>0:
             sub_data = add_weight(x, sub_data, corr_surface, corr_time)
-            stats    = get_stats(x, np.array(sub_data))
+            stats    = get_stats(x, sub_data)
         else:
             stats = [(0, )   + (np.nan,)*17]
     else:
@@ -168,15 +170,18 @@ def get_stats(x, sub_data):
     return [count]
     
 
-
 def execute_stats(wrong_word_dict, data):
     count = data.apply(lambda x: weighted_statistics(x, wrong_word_dict))
     return count
 
 
 def fatigue_games(x , data):
+    """
+    - x : "ref_days", "winner_id", "loser_id", "days_since_tourney_start"
+    - data: "ref_days", "winner_id", "loser_id", "total_games", "days_since_tourney_start"
+    """
 
-    index_days = np.where(((x[0] - data[:,0]) >=1)&((x[0] - data[:,0]) <=4))
+    index_days = np.where(((x[0] - data[:,0]) >=0)&((x[0] - data[:,0]) <=4)&((x[3] - data[:,4]) <= 2))
     sub_data = data[index_days]
     
     index_1 = np.where(((sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1])))
@@ -209,7 +214,7 @@ def global_stats(data):
     data["diff_rank"] = data['winner_rank'] - data['loser_rank']
     data["diff_rk_pts"] = data['winner_rank_points'] - data['loser_rank_points']
     data["diff_hand"] = data['winner_hand'] - data['loser_hand']
-    data["diff_is_birthday"] = data['w_birthday'] - data['l_birthday']
+#    data["diff_is_birthday"] = data['w_birthday'] - data['l_birthday']
     data["diff_home"] = data['w_home'] - data['l_home']
     
     return data
@@ -239,22 +244,22 @@ def create_statistics(data, redo = False):
         
     t0 = time.time()
     data["ref_days"]= (data["Date"]- pd.to_datetime("1901-01-01")).dt.days
-    data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "total_games"]]))
+    data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id","days_since_tourney_start"]]), np.array(data[["ref_days", "winner_id", "loser_id", "total_games","days_since_tourney_start"]]))
     del data["ref_days"]
     print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))
     
     data = global_stats(data)
     data["target"] = 1
     print("Created target and global_stats variables")
-    
+
     ###### calculation of statistics
     t0 = time.time()
-    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', "match_num", 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
                      'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
                      'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won']
 
-    counts = data[["Date", "winner_id", "loser_id", "surface"]].apply(lambda x : weighted_statistics(x, [data[calculate_stats], correlation_surface, correlation_time]), axis= 1)
+    counts = data[["Date", "winner_id", "loser_id", "surface","match_num"]].apply(lambda x : weighted_statistics(x, [data[calculate_stats], correlation_surface, correlation_time]), axis= 1)
     counts = list(zip(*counts["surface"]))
     
     ###### put the right name to the right column
@@ -292,6 +297,7 @@ def create_statistics(data, redo = False):
                   
     return total_data
 
+
 if __name__ == "__main__": 
     import os
     os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
@@ -300,5 +306,12 @@ if __name__ == "__main__":
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
-    tot = create_statistics(data[:10000])
+    tot = create_statistics(data)
     
+    tot[['Common_matches','days_since_tourney_start',
+         'diff_1st_serv_in',
+         'diff_1st_serv_won',
+         'diff_2nd_serv_won',
+         'diff_aces',
+         'diff_age',
+         'diff_bp']]

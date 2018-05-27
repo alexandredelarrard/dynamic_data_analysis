@@ -149,7 +149,7 @@ def match_stats_main(data_atp, redo = False):
     
     return missing_stats
     
-#if __name__ == "__main__":
-#    missing_stats = match_stats_main(data_atp, redo = False)
+if __name__ == "__main__":
+    missing_stats = match_stats_main(data_atp, redo = False)
     
     

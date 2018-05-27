@@ -124,8 +124,8 @@ def prep_data(data):
     dataset["DOB_w"] = pd.to_datetime(dataset["DOB_w"], format = "%Y-%m-%d") 
     dataset["DOB_l"] = pd.to_datetime(dataset["DOB_l"], format = "%Y-%m-%d") 
     
-    dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_w"].dt.month)&(dataset["day_of_month"] == dataset["DOB_w"].dt.day), 1, 0).astype(int)   
-    dataset["l_birthday"] =  np.where((dataset["month"] == dataset["DOB_l"].dt.month)&(dataset["day_of_month"] == dataset["DOB_l"].dt.day), 1, 0).astype(int)   
+    dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_w"].dt.month), dataset["day_of_month"] - dataset["DOB_w"].dt.day, 31).astype(int)   
+    dataset["l_birthday"] =  np.where((dataset["month"] == dataset["DOB_l"].dt.month), dataset["day_of_month"] - dataset["DOB_l"].dt.day, 31).astype(int)   
     
     ### if home country
     dataset["w_home"] = np.where(dataset["tourney_country"] == dataset["winner_ioc"],1,0)
@@ -166,6 +166,13 @@ def prep_data(data):
         
     dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'],axis = 1)
     
+    #### estimate number of days since start
+    
+#    agg = dataset[["match_num", "tourney_id"]].groupby("tourney_id").max().reset_index()
+#    agg = agg.rename(columns={"match_num" : "max_matches"})
+#    dataset = pd.merge(dataset, agg, on = "tourney_id")
+#    dataset["days_since_tourney_start"] = np.round(np.log(dataset["max_matches"]/ (dataset["max_matches"] - dataset["match_num"] + 1)) / np.log(2), 0)
+#    
     print("[{0}s] 7) Create additionnal variables ".format(time.time() - t0))
         
     return dataset

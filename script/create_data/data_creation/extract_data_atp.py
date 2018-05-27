@@ -152,13 +152,13 @@ def walkover_retired(x, data):
     
     if len(index_l[0])>0:
         ref_day = np.max(data_sub[index_l, 0])
-        l = 1 if (x[0] - ref_day) <= 10 else 0
+        l = min(x[0] - ref_day, 90)
     else:
         l=0
           
     if len(index_w[0])>0:   
         ref_day = np.max(data_sub[index_w, 0])
-        w = 1 if (x[0] - ref_day)  <= 10 else 0
+        w = min(x[0] - ref_day, 90)
     else:
         w=0
         
