@@ -11,17 +11,16 @@ import os
 
 from create_models.data_prep.filter_data import data_prep_for_modelling
 from create_models.models.xgb import modelling_xgboost
-from create_models.models.logistic import modelling_logistic
+#from create_models.models.logistic import modelling_logistic
 
 def main_modelling(params):
     
     t0 = time.time()
 
-    data =pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/total_dataset_modelling.csv")
+    data =pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv")
     
     ### data prep
     modelling_data = data_prep_for_modelling(data)
-    modelling_data.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/modelling/data_modelling_V1.csv")
     
     ### modelling _ xgb
     clf, var_imp = modelling_xgboost(modelling_data, params["date_test_start"], params["date_test_end"])
