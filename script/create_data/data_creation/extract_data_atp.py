@@ -34,6 +34,7 @@ def import_data_atp(path, redo=False):
 
     data["tourney_date"]   = pd.to_datetime(data["tourney_date"], format = "%Y%m%d")   
     data   = create_date(data)
+    del data["tourney_date"]
     print("\n [{0}s] 0) Calculate date of match ".format(time.time() - t0))
     
     data = data.sort_values(["Date", "tourney_name"])

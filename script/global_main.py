@@ -18,10 +18,11 @@ os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 if __name__ == "__main__":
     
     #### create the dataset
-    rebuild = {"redo_missing_atp_statistics" : True,
-               "create_elo" : True,
-               "create_variable" : True,
-               "create_statistics": True
+    rebuild = {"redo_missing_atp_statistics" : False,
+               "create_elo" : False,
+               "create_variable" : False,
+               "create_statistics": False,
+               "update_data": True
               }    
     
     full_data = main_creation(rebuild=rebuild)
@@ -33,6 +34,4 @@ if __name__ == "__main__":
              }
     
     clf, var_imp, modelling_data = main_modelling(params)
-    
-    ##### update dataset with latest data
     

@@ -23,7 +23,7 @@ def import_players():
     players["Strong_hand"] =  players["Strong_hand"].apply(lambda x : x.lstrip().rstrip())
     players["Nationality place"] =  players["Nationality"].apply(lambda x : x.lstrip().rstrip())
    
-    players = players[["Players_ID", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand"]]
+    players = players[["Players_ID", "Player_Name", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand"]]
     
     ### fillin missing values for turned pro as birth +18yo 490/2025
     players.loc[pd.isnull(players["Turned pro"]),"Turned pro"]  =  players.loc[pd.isnull(players["Turned pro"]), "DOB"].dt.year + 18
@@ -41,7 +41,7 @@ def import_players():
     
     players.loc[players["Birth place"] =="USA", "Birth place"] = "United States"
     
-    return players
+    return players.reset_index(drop=True)
 
 
 def dates(x):

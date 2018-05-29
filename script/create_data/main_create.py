@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 
 from create_data.data_creation.extract_data_atp import import_data_atp
 from create_data.data_creation.create_statistics_historyV2 import create_statistics
-#from create_data.data_creation.create_statistics_history import create_statistics
+from create_data.data_update.update_data import update_stable
 from create_data.data_creation.create_elo_rankingV2 import merge_data_elo
 from create_data.data_creation.create_variables import prep_data
 
@@ -60,6 +60,10 @@ def main_create_data(param):
             #### save dataset
             data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv", index= False)
             
+        if param["update_data"]:
+            extra = update_stable()
+            extra.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/updated/extracted/extracted.csv", index= False)
+            
     if not rebuild:        
         data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv")
         data_total["Date"] = pd.to_datetime(data_total["Date"], format = "%Y-%m-%d")
@@ -74,13 +78,15 @@ def main_creation(rebuild=False):
         rebuild = {"redo_missing_atp_statistics" : False,
                    "create_elo" : False,
                    "create_statistics": False,
-                   "create_variable" : False}
+                   "create_variable" : False,
+                   "update_data" : False}
         
     if rebuild == True:
          rebuild = {"redo_missing_atp_statistics" : True,
                    "create_elo" : True,
                    "create_statistics": True,
-                   "create_variable" : True}    
+                   "create_variable" : True,
+                   "update_data":True}    
    
     full_data = main_create_data(rebuild)    
     print("\n \n Global time to create data is {0}".format(time.time() - t0))

@@ -7,25 +7,31 @@ Created on Mon May 28 21:38:37 2018
 
 import pandas as pd
 import os
+import sys
 
-from extract_additionnal_data import extraction_atp
+from clean_updated_data import clean_extract
 
+sys.path.append("C:\Users\User\Documents\tennis")
+from crawling.crawling_additionnal_data import extract_additionnal_data
 
-def prepare_extraction(data_extract):
-    return data
 
 def update_stable():
     
     path = os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/total_dataset_modelling.csv"
     latest_data = pd.read_csv(path)
     latest_data = latest_data.loc[latest_data["target"] == 1]
-    latest_data = latest_data.sort_values(["tourney_date_x", "tourney_name"])
+    latest_data = latest_data.sort_values(["tourney_date", "tourney_name"])
     
-    latest = {"Date": latest_data["tourney_date_x"].max(), 
-              "tourney_name": latest_data.loc[latest_data["tourney_date_x"] == latest_data["tourney_date_x"].max(), "tourney_name"].tolist()[-1],
-              }
+    latest = {"Date": latest_data["tourney_date"].max(), 
+              "tourney_name": latest_data.loc[latest_data["tourney_date"] == latest_data["tourney_date"].max(), "tourney_name"].tolist()[-1]}
+
+    ### crawl data    
+    extra = extract_additionnal_data(latest)
     
-    return latest, latest_data
+    ### clean the crawled data
+    extra = clean_extract(extra)
+    
+    return extra
 
 if __name__ == "__main__":
     
