@@ -42,7 +42,7 @@ def update_stable():
     
     ### clean the crawled data
     t0 = time.time()
-    extra = clean_extract(latest_data)
+    extra = clean_extract(latest)
     print("time for cleaning the crawled data {0}".format(time.time() - t0))
     
     ### calculate elo
@@ -61,7 +61,7 @@ def update_stable():
                      'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won', "match_num"]
 
     liste_params = [np.array(data[calculate_stats]), correlation_surface, correlation_time]
-    total_data = create_stats(data, liste_params)
+    total_data = create_stats(extra, liste_params)
     
     files_already_there = glob.glob(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/*.csv")
     for f in files_already_there: 

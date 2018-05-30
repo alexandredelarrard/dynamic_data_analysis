@@ -248,9 +248,13 @@ def get_correlations(data, redo = False):
 
 def create_stats(data, liste_params):
     
+    data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
+    data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
+    data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
+    
     #### get differrence of fatigue between players
     t0 = time.time()
-    data["ref_days"]= (data["Date"]- pd.to_datetime("1901-01-01")).dt.days
+    data["ref_days"]= (pd.to_datetime(data["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days
     data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "total_games"]]))
     del data["ref_days"]
     print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))

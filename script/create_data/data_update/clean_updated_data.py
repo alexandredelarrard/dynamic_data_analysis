@@ -92,11 +92,17 @@ def extract_rank_and_match(x, rk_data):
     
     try:
         winner = rank_sub_df.loc[rank_sub_df["Player_name"] == x["winner_name"]][["player_rank", "player_points"]].values[0]
+    except Exception:
+        print(x)
+        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]])
+        winner = [1800, 0]    
+        
+    try:
         loser =  rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]].values[0]
     except Exception:
         print(x)
-        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["winner_name"]][["player_rank", "player_points"]])
         print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]])
+        loser = [1800, 0]
         
     return [(winner[0],winner[1],loser[0],loser[1])]
 
@@ -197,8 +203,8 @@ def clean_extract(latest):
     
     #### add rank data into it
     files_rank = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
-    files_df = pd.DataFrame(np.transpose([files_rank,  [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_rank]]), columns = ["file", "Date"])
-    files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"]) - timedelta(days=7)]
+    files_df = pd.DataFrame(np.transpose([files_rank, [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_rank]]), columns = ["file", "Date"])
+    files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"], format = "%Y-%m-%d") - timedelta(days=7)]
     
     for i, f in enumerate(files_rank["file"].tolist()):
         if i ==0:
@@ -216,6 +222,9 @@ def clean_extract(latest):
     
     for i, col in enumerate(["winner_rank", "winner_rank_points", "loser_rank", "loser_rank_points"]):
         clean2[col]  = list(list(zip(*count))[i])
+        
+    clean2["winner_id"] = clean2["Players_ID_w"]
+    clean2["loser_id"] = clean2["Players_ID_l"]
     
     return clean2
 

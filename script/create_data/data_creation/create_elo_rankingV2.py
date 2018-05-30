@@ -46,10 +46,10 @@ def fill_latest_elo(data, additionnal_data):
     
     players_ids = list(set(additionnal_data["Players_ID_w"].tolist() + additionnal_data["Players_ID_l"].tolist()))
     for pl in players_ids:
-        print(pl)
         sub_data = data[(data[:,1] == pl) |(data[:,2] == pl),:]
         nbr = sub_data.shape[0]
         if nbr ==0:
+            print("new player {0}".format(pl))
             dico_players_elo[pl] = 1500
             dico_players_nbr[pl] = 0
         else:    
