@@ -86,7 +86,19 @@ def extract_rank_and_match(x, rk_data):
     match rank with player name loser and winner based on closest date into the past
     """
     
-    return 0,1,0,0
+    dates = pd.to_datetime(rk_data.sort_values("Date")["Date"].unique())
+    date = dates[dates <= x["Date"]][-1]
+    rank_sub_df = rk_data.loc[rk_data["Date"] == date]
+    
+    try:
+        winner = rank_sub_df.loc[rank_sub_df["Player_name"] == x["winner_name"]][["player_rank", "player_points"]].values[0]
+        loser =  rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]].values[0]
+    except Exception:
+        print(x)
+        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["winner_name"]][["player_rank", "player_points"]])
+        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]])
+        
+    return [(winner[0],winner[1],loser[0],loser[1])]
 
 
 def clean_extract(latest):
@@ -185,7 +197,7 @@ def clean_extract(latest):
     
     #### add rank data into it
     files_rank = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
-    files_df = pd.DataFrame(np.transpose([files_rank,  [pd.to_datetime(os.path.splitext(os.path.basename(x))[0]) for x in files_rank]]), columns = ["file", "Date"])
+    files_df = pd.DataFrame(np.transpose([files_rank,  [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_rank]]), columns = ["file", "Date"])
     files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"]) - timedelta(days=7)]
     
     for i, f in enumerate(files_rank["file"].tolist()):
@@ -198,10 +210,16 @@ def clean_extract(latest):
             rk_data = pd.concat([rk_data, new_data],axis =0)
     rk_data= rk_data.reset_index(drop=True)
     rk_data["player_rank"] = rk_data["player_rank"].str.replace("T","").astype(int)
+    rk_data["Player_name"] = rk_data["Player_name"].apply(lambda x : x.replace("-"," ").lower())
     
-    clean[["winner_rank", "winner_rank_pts", "loser_rank", "loser_rank_pts"]] = clean[["Date", "winner_name"]].apply(lambda x: extract_rank_and_match(x, rk_data), axis =1)
+    count = clean2[["Date", "winner_name", "loser_name"]].apply(lambda x: extract_rank_and_match(x, rk_data), axis =1)["Date"]
+    
+    for i, col in enumerate(["winner_rank", "winner_rank_points", "loser_rank", "loser_rank_points"]):
+        clean2[col]  = list(list(zip(*count))[i])
     
     return clean2
 
+
 if __name__ == "__main__":
-    clean = clean_extract()
+    latest = {"Date":"2018-05-20"}
+    clean = clean_extract(latest)

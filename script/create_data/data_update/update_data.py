@@ -12,7 +12,7 @@ import time
 import numpy as np
 import glob
 
-from data_update.clean_updated_data import clean_extract
+from create_data.data_update.clean_updated_data import clean_extract
 from create_data.data_creation.create_statistics_historyV2 import get_correlations, create_stats
 from create_data.data_creation.create_elo_rankingV2 import fill_latest_elo, calculate_elo_over_the_road
 
@@ -29,7 +29,6 @@ def update_stable():
     latest_data = latest_data.sort_values(["tourney_date_x", "tourney_name"])
     
     latest = {"Date": latest_data["tourney_date_x"].max()}
-    latest= {"Date": "2018-05-21"}
     
     ### crawl rank
     t0 = time.time()
