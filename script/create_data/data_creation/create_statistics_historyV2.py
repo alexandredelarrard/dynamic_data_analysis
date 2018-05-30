@@ -173,12 +173,9 @@ def get_stats(x, sub_data):
     
     return [count]
     
-
-
 def execute_stats(wrong_word_dict, data):
     count = data.apply(lambda x: weighted_statistics(x, wrong_word_dict))
     return count
-
 
 def fatigue_games(x , data):
     """
@@ -192,7 +189,7 @@ def fatigue_games(x , data):
     index_1 = np.where(((sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1])))
     index_2 = np.where(((sub_data[:,1] == x[2]) | (sub_data[:,2] == x[1])))
     
-    ### number of games played during last days days
+    ### number of games played during last days
     fatigue_w = sub_data[index_1, 3].sum()
     fatigue_l = sub_data[index_2, 3].sum()
     
@@ -220,13 +217,11 @@ def global_stats(data):
     data["diff_rank"] = data['winner_rank'] - data['loser_rank']
     data["diff_rk_pts"] = data['winner_rank_points'] - data['loser_rank_points']
     data["diff_hand"] = data['winner_hand'] - data['loser_hand']
-#    data["diff_is_birthday"] = data['w_birthday'] - data['l_birthday']
     data["diff_home"] = data['w_home'] - data['l_home']
     
     return data
 
-
-def create_statistics(data, redo = False):
+def get_correlations(data, redo = False):
     
     if redo :
         #### calculate correlations
@@ -248,6 +243,12 @@ def create_statistics(data, redo = False):
         correlation_surface   = calculate_corr_surface(data, redo)
         correlation_time      = calculate_corr_time(data, redo)
         
+    return correlation_surface, correlation_time
+
+
+def create_stats(data, liste_params):
+    
+    #### get differrence of fatigue between players
     t0 = time.time()
     data["ref_days"]= (data["Date"]- pd.to_datetime("1901-01-01")).dt.days
     data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "total_games"]]))
@@ -258,13 +259,9 @@ def create_statistics(data, redo = False):
     data["target"] = 1
     print("Created target and global_stats variables")
     
-    ###### calculation of statistics
+    #############################  calculate all necessary stats   ##########################################
     t0 = time.time()
-    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
-                     'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
-                     'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
-                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won', "match_num"]
-    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface"]]), [np.array(data[calculate_stats]), correlation_surface, correlation_time])
+    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface"]]), liste_params)
     counts = counts.reshape(counts.shape[0], counts.shape[2])
     
     ###### put the right name to the right column
@@ -298,7 +295,24 @@ def create_statistics(data, redo = False):
         data2[col] = -1*data2[col]
         
     total_data = pd.concat([data, data2], axis= 0)
-                  
+    
+    return total_data
+    
+
+def create_statistics(data, redo = False):
+    
+    #### get correlations coefficient
+    correlation_surface, correlation_time = get_correlations(data, redo = redo)
+        
+    ############################# calculation of statistics ########################################## 
+    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+                     'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
+                     'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
+                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won', "match_num"]
+
+    liste_params = [np.array(data[calculate_stats]), correlation_surface, correlation_time]
+    total_data = create_stats(data, liste_params)
+    
     return total_data
 
 

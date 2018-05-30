@@ -97,13 +97,8 @@ def prep_data(data):
     dataset["total_games"] = dataset["score"].apply(lambda x : extract_games_number(x))
     dataset['N_set']  = dataset['score'].apply(lambda x : count_sets(x))
     dataset['score'] = dataset['score'].str.split(" ")
-    dataset["S1"] = dataset['score'].apply(lambda x : set_extract(x, 1))
-    dataset["S2"] = dataset['score'].apply(lambda x : set_extract(x, 2))
-    dataset["S3"] = dataset['score'].apply(lambda x :set_extract(x, 3))
-    dataset["S4"] = dataset['score'].apply(lambda x :set_extract(x,4))
-    dataset["S5"] = dataset['score'].apply(lambda x :set_extract(x, 5))
-    
     for i in range(1,6):
+        dataset["S%i"%i] = dataset['score'].apply(lambda x : set_extract(x, i))
         for j, w_l in enumerate(["w", "l"]):
             dataset[w_l + "_S%i"%i] = dataset["S%i"%i].apply(lambda x : games_extract(x, j))
             
@@ -111,9 +106,18 @@ def prep_data(data):
     dataset.loc[(dataset["tourney_id"] == "2017-0308")&(dataset["winner_name"] == "Hyeon Chung")&(dataset["loser_name"] == "Martin Klizan"), "minutes"] = 135
     dataset.loc[(dataset["tourney_id"] == "2016-M001")&(dataset["winner_name"] == "Gilles Muller")&(dataset["loser_name"] == "Jeremy Chardy"), "minutes"] = 90
     
-    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[~pd.isnull(dataset["w_S5"]), "minutes"].median())
-    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S4"]))&(pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S5"]))&(~pd.isnull(dataset["w_S4"])), "minutes"].median())
-    dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S3"]))&(pd.isnull(dataset["w_S4"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S4"]))&(~pd.isnull(dataset["w_S3"])), "minutes"].median())
+    try:
+        dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[~pd.isnull(dataset["w_S5"]), "minutes"].median())
+    except Exception:
+        pass
+    try:
+         dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S4"]))&(pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S5"]))&(~pd.isnull(dataset["w_S4"])), "minutes"].median())
+    except Exception:
+        pass
+    try:
+        dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S3"]))&(pd.isnull(dataset["w_S4"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S4"]))&(~pd.isnull(dataset["w_S3"])), "minutes"].median())
+    except Exception:
+        pass
     
     ### tie breaks
     dataset["Nbr_tie-breaks"]   = dataset['score'].apply(lambda x : len(re.findall('\((.*?)\)', str(x))))

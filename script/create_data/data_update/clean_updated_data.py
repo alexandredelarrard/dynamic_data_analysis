@@ -8,12 +8,14 @@ Created on Mon May 28 13:40:50 2018
 import pandas as pd
 import numpy as np
 import sys
+import os
 from dateutil import relativedelta
 
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_data.data_creation.create_variables import prep_data
 from create_data.data_creation.extract_players import import_players
+from create_data.utils.date_creation import deduce_match_date
 
 def currency_prize(x):
     
@@ -53,9 +55,34 @@ def dates(x):
     reste = (diff.months *30 + diff.days) / 365
     return years + reste
 
-def clean_extract(extract):
+def correct_score(x):
+    
+    a = x.split()
+    sortie = []
+    for el in a:
+        if el[0].isdigit() == True and el[1].isdigit() == True:
+            sortie.append(str(el[0]) + "-" + str(el[1:]))
+    return " ".join(sortie)
+
+def status(x):
+    if "RET" in x:
+        return "Retired"
+    elif "W/O" in x:
+        return "Walkover"
+    elif "DEF" in x:
+        return "Def"
+    else:
+        return "Completed"
+    
+
+
+def clean_extract():
+    
+    dico_round = {"Round of 32": "R32", "Round of 16": "R16", "Round of 64": "R64", "Round of 128":"R128", "Finals": "F", "Semi-Finals":"SF", "Quarter-Finals":"QF", "Round Robin":"RR", "Round of 96":"R96"}
+    extract = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_brute.csv")
     
     ex = extract.copy()
+    ex.columns = [str(x) for x in ex.columns]
     clean = pd.DataFrame([])
     
     ### extraction of clean info
@@ -68,18 +95,23 @@ def clean_extract(extract):
     clean["surface"] = ex["1"].apply(lambda x :x.split("\n")[1])
     clean["winner_name"] = ex["8"].apply(lambda x : x.lower().replace("-"," ").lstrip().rstrip())
     clean["loser_name"] = ex["9"].apply(lambda x : x.lower().replace("-"," ").lstrip().rstrip())
-    clean["score"]     =  ex["10"]
+    clean["status"] = ex["10"].apply(lambda x: status(x))
+    
+    clean["score"]     =  ex["10"].apply(lambda x: correct_score(x))
     clean["match_num"] =  ex["11"]
     
     list_info1 = ex["7"].apply(lambda x : liste1_extract(x))
     clean["draw_size"] = list(list(zip(*list_info1))[0])
-    clean["end_date"] = pd.to_datetime(list(list(zip(*list_info1))[1]), format="%Y.%m.%d")
+    clean["draw_size"] = clean["draw_size"].astype(int)
+    clean["tourney_end_date"] = pd.to_datetime(list(list(zip(*list_info1))[1]), format="%Y.%m.%d") 
     clean["tourney_date"] = pd.to_datetime(list(list(zip(*list_info1))[2]), format="%Y.%m.%d")
     clean["tourney_country"] = list(list(zip(*list_info1))[3])
     clean["tourney_city"] = list(list(zip(*list_info1))[4])
     clean["tourney_name"] = list(list(zip(*list_info1))[5])
     clean["round"] = ex["64"].str.replace(" H2H", "")
+    clean["round"] = clean["round"].map(dico_round)
     clean["tourney_id"] = clean["tourney_date"].dt.year.astype(str) + "-" + ex["6"].astype(str) 
+    clean["Date"] = clean[["tourney_date", "tourney_end_date", "match_num", "draw_size", "round"]].apply(lambda x: deduce_match_date(x), axis=1)
     
     #### merge player id 
     players = import_players()
@@ -133,16 +165,9 @@ def clean_extract(extract):
     clean["w_bpFaced"] = ex_stats["bp_saved_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
     clean["l_bpFaced"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
     
-    clean2 = prep_data(clean)
+    clean2 = prep_data(clean.loc[clean["status"] == "Completed"])
     
     return clean2
 
-    
 if __name__ == "__main__":
-    import os
-    os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
-    
-    path = os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/total_dataset_modelling.csv"
-    data = pd.read_csv(path)
-    
-    extract = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted\extraction_brute.csv")
+    clean = clean_extract()
