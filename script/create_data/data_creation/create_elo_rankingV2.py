@@ -9,6 +9,7 @@ import time
 import numpy as np
 import tqdm
 
+
 def elo_diff(A, B):
     """
     Calculate expected score of A in a match against B
@@ -36,7 +37,38 @@ def elo(old, exp, score, k):
 
     return old + k * (score - exp)
 
-def update_elo(data, i):
+
+def fill_latest_elo(data, additionnal_data):
+    
+    data = np.array(data.loc[data["target"]==1][["Date","Players_ID_w", "Players_ID_l", "elo1", "elo2"]].copy())
+    dico_players_elo = {}
+    dico_players_nbr = {}
+    
+    players_ids = list(set(additionnal_data["Players_ID_w"].tolist() + additionnal_data["Players_ID_l"].tolist()))
+    for pl in players_ids:
+        print(pl)
+        sub_data = data[(data[:,1] == pl) |(data[:,2] == pl),:]
+        nbr = sub_data.shape[0]
+        if nbr ==0:
+            dico_players_elo[pl] = 1500
+            dico_players_nbr[pl] = 0
+        else:    
+            index = np.where(sub_data[:,0]==np.max(sub_data[:,0]))
+            if pl == sub_data[index,1]:
+                elo = sub_data[index,3]
+            else:
+                elo = sub_data[index,4]
+                
+            dico_players_elo[pl] = elo[0][0]
+            dico_players_nbr[pl] = nbr
+        
+    additionnal_data["elo1"] = additionnal_data["Players_ID_w"].map(dico_players_elo)
+    additionnal_data["elo2"] = additionnal_data["Players_ID_l"].map(dico_players_elo)
+    
+    return additionnal_data, dico_players_nbr
+
+
+def update_elo(data, i, dico_nbr_seen = {}):
     
     sub_data = data[i, :]
 
@@ -44,16 +76,23 @@ def update_elo(data, i):
     index_futur = data[:,0] > sub_data[0]
     
     ##### winner elo
-    nbr_seen = data[((data[:,1] ==  sub_data[1]) | (data[:,2] ==  sub_data[1]))&(index_past)].shape[0]
+    if not dico_nbr_seen:
+        nbr_seen = data[((data[:,1] ==  sub_data[1]) | (data[:,2] ==  sub_data[1]))&(index_past)].shape[0]
+    else:
+        nbr_seen = dico_nbr_seen[sub_data[1]] + 1
+        
     k_winner = calculate_k(nbr_seen)
     new_elo = elo(sub_data[3], elo_diff(sub_data[3], sub_data[4]), 1, k=k_winner)
 
     data[(data[:,1] == sub_data[1])&(index_futur), 3] = new_elo
     data[(data[:,2] == sub_data[1])&(index_futur), 4] = new_elo
     
-
     ##### loser elo
-    nbr_seen = data[((data[:,1] ==  sub_data[2]) | (data[:,2] ==  sub_data[2]))&(index_past)].shape[0]
+    if not dico_nbr_seen:
+        nbr_seen = data[((data[:,1] ==  sub_data[2]) | (data[:,2] ==  sub_data[2]))&(index_past)].shape[0]
+    else:
+        nbr_seen = dico_nbr_seen[sub_data[1]] + 1
+        
     k_loser = calculate_k(nbr_seen)
     new_elo = elo(sub_data[4], elo_diff(sub_data[4], sub_data[3]), 0, k=k_loser)
     
@@ -61,6 +100,21 @@ def update_elo(data, i):
     data[(data[:,2] == sub_data[2])&(index_futur), 4] = new_elo
     
     return data
+
+
+def calculate_elo_over_the_road(data, nbr_dico):
+    
+    data2 = data.copy()
+    data_cols = np.array(data2[["Date", "Players_ID_w", "Players_ID_l", "elo1", "elo2"]])
+
+    print(" Calculate elo for each player ")
+    for i in tqdm.tqdm(range(len(data_cols))):
+        data_cols = update_elo(data_cols, i, nbr_dico)
+        
+    data2["elo1"] = data_cols[:,3]
+    data2["elo2"] = data_cols[:,4]
+        
+    return data2
 
 
 def calculate_elo(data):
@@ -71,7 +125,6 @@ def calculate_elo(data):
     data = np.array(data[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy())
 
     print(" Calculate elo for each player ")
-    
     for i in tqdm.tqdm(range(len(data))):
         data = update_elo(data, i)
         
@@ -97,6 +150,7 @@ def merge_data_elo(data):
     for i in range(2014,2019):
         print("[ELO] Error {0} is {1}".format(i, 1 - sum(1 - data.loc[data["Date"].dt.year == i, "elo_answer"])/len(data.loc[data["Date"].dt.year == i, "elo_answer"])))
             
+    del data["elo_answer"]
     print("[{0}s] 7) Calculate Elo ranking overall/surface ".format(time.time() - t0))
     
     return data

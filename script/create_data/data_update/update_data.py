@@ -14,7 +14,7 @@ import glob
 
 from data_update.clean_updated_data import clean_extract
 from create_data.data_creation.create_statistics_historyV2 import get_correlations, create_stats
-from create_data.data_creation.create_elo_rankingV2 import update_elo
+from create_data.data_creation.create_elo_rankingV2 import fill_latest_elo, calculate_elo_over_the_road
 
 sys.path.append(r"C:\Users\User\Documents\tennis")
 from crawling.crawling_additionnal_data import extract_additionnal_data
@@ -48,8 +48,10 @@ def update_stable():
     
     ### calculate elo
     data = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/total_dataset_modelling.csv")
+    
     t0 = time.time()
-    extra = update_elo(extra)
+    additionnal_data, dico_players_nbr = fill_latest_elo(data, extra)
+    extra = calculate_elo_over_the_road(additionnal_data, dico_players_nbr)
     print("Calculate elo for new match {0}".format(time.time() - t0))
     
     ### calculate the statistics on it
@@ -65,7 +67,6 @@ def update_stable():
     files_already_there = glob.glob(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/*.csv")
     for f in files_already_there: 
         os.rename(f, os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/old/%s"%os.path.basename(f))
-        
     total_data.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extraction_clean_%s.csv"%str(max_date))
     
     ### update total_data for modelling
