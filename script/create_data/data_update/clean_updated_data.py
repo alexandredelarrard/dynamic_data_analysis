@@ -10,7 +10,8 @@ import numpy as np
 import sys
 import os
 from dateutil import relativedelta
-
+from datetime import timedelta
+import glob
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_data.data_creation.create_variables import prep_data
@@ -25,6 +26,7 @@ def currency_prize(x):
             return currency, int(s[1].replace(",",""))
     return "", x.replace(",","")
 
+
 def liste1_extract(x):
     
     liste= eval(x)
@@ -38,6 +40,7 @@ def liste1_extract(x):
     
     return (draw_size, end_date, start_date, country, city, name)
 
+
 def calculate_time(x):
     x = x.replace(".00","")
     try:
@@ -49,11 +52,13 @@ def calculate_time(x):
     
     return time
 
+
 def dates(x):
     diff = relativedelta.relativedelta(x[0], x[1])
     years = diff.years
     reste = (diff.months *30 + diff.days) / 365
     return years + reste
+
 
 def correct_score(x):
     
@@ -63,6 +68,7 @@ def correct_score(x):
         if el[0].isdigit() == True and el[1].isdigit() == True:
             sortie.append(str(el[0]) + "-" + str(el[1:]))
     return " ".join(sortie)
+
 
 def status(x):
     if "RET" in x:
@@ -75,8 +81,18 @@ def status(x):
         return "Completed"
     
 
+def extract_rank_and_match(x, rk_data):
+    """
+    match rank with player name loser and winner based on closest date into the past
+    """
+    
+    return 0,1,0,0
 
-def clean_extract():
+
+def clean_extract(latest):
+    """
+    clean the new data extracted from atp website
+    """
     
     dico_round = {"Round of 32": "R32", "Round of 16": "R16", "Round of 64": "R64", "Round of 128":"R128", "Finals": "F", "Semi-Finals":"SF", "Quarter-Finals":"QF", "Round Robin":"RR", "Round of 96":"R96"}
     extract = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_brute.csv")
@@ -166,6 +182,24 @@ def clean_extract():
     clean["l_bpFaced"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
     
     clean2 = prep_data(clean.loc[clean["status"] == "Completed"])
+    
+    #### add rank data into it
+    files_rank = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
+    files_df = pd.DataFrame(np.transpose([files_rank,  [pd.to_datetime(os.path.splitext(os.path.basename(x))[0]) for x in files_rank]]), columns = ["file", "Date"])
+    files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"]) - timedelta(days=7)]
+    
+    for i, f in enumerate(files_rank["file"].tolist()):
+        if i ==0:
+            rk_data = pd.read_csv(f)
+            rk_data["Date"] = files_rank.iloc[i,1]
+        else:
+            new_data = pd.read_csv(f)
+            new_data["Date"] = files_rank.iloc[i,1]
+            rk_data = pd.concat([rk_data, new_data],axis =0)
+    rk_data= rk_data.reset_index(drop=True)
+    rk_data["player_rank"] = rk_data["player_rank"].str.replace("T","").astype(int)
+    
+    clean[["winner_rank", "winner_rank_pts", "loser_rank", "loser_rank_pts"]] = clean[["Date", "winner_name"]].apply(lambda x: extract_rank_and_match(x, rk_data), axis =1)
     
     return clean2
 

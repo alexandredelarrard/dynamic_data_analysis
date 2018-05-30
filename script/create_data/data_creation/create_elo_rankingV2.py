@@ -103,6 +103,11 @@ def update_elo(data, i, dico_nbr_seen = {}):
 
 
 def calculate_elo_over_the_road(data, nbr_dico):
+    """
+    it is used when new data crawled have to get an elo update
+    -  data = crawled data
+    -  nbr dico = dictionnary for all players that need an update, information is the number of time player has been seen
+    """
     
     data2 = data.copy()
     data_cols = np.array(data2[["Date", "Players_ID_w", "Players_ID_l", "elo1", "elo2"]])

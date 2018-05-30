@@ -43,7 +43,7 @@ def update_stable():
     
     ### clean the crawled data
     t0 = time.time()
-    extra = clean_extract()
+    extra = clean_extract(latest_data)
     print("time for cleaning the crawled data {0}".format(time.time() - t0))
     
     ### calculate elo
