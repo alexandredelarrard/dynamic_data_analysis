@@ -257,7 +257,7 @@ def create_stats(data, liste_params):
     
     data = global_stats(data)
     data["target"] = 1
-    print("Created target and global_stats variables")
+    print(" Created target and global_stats variables ")
     
     #############################  calculate all necessary stats   ##########################################
     t0 = time.time()

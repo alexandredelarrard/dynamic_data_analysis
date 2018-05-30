@@ -36,43 +36,44 @@ def elo(old, exp, score, k):
 
     return old + k * (score - exp)
 
+def update_elo(data, i):
+    
+    sub_data = data[i, :]
+
+    index_past = data[:,0]  <= sub_data[0]
+    index_futur = data[:,0] > sub_data[0]
+    
+    ##### winner elo
+    nbr_seen = data[((data[:,1] ==  sub_data[1]) | (data[:,2] ==  sub_data[1]))&(index_past)].shape[0]
+    k_winner = calculate_k(nbr_seen)
+    new_elo = elo(sub_data[3], elo_diff(sub_data[3], sub_data[4]), 1, k=k_winner)
+
+    data[(data[:,1] == sub_data[1])&(index_futur), 3] = new_elo
+    data[(data[:,2] == sub_data[1])&(index_futur), 4] = new_elo
+    
+
+    ##### loser elo
+    nbr_seen = data[((data[:,1] ==  sub_data[2]) | (data[:,2] ==  sub_data[2]))&(index_past)].shape[0]
+    k_loser = calculate_k(nbr_seen)
+    new_elo = elo(sub_data[4], elo_diff(sub_data[4], sub_data[3]), 0, k=k_loser)
+    
+    data[(data[:,1] == sub_data[2])&(index_futur), 3] = new_elo
+    data[(data[:,2] == sub_data[2])&(index_futur), 4] = new_elo
+    
+    return data
+
 
 def calculate_elo(data):
     """
     columns : "Date", "winner_id", "loser_id", "elo1", "elo2"
     """
     
-    data["elo1"] = 1500
-    data["elo2"] = 1500
-    data = data[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy()
-    data["index"] = range(len(data))
-    data = np.array(data)
-    
+    data = np.array(data[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy())
+
     print(" Calculate elo for each player ")
     
     for i in tqdm.tqdm(range(len(data))):
-        
-        sub_data = data[i, :]
-
-        index_past = data[:,0]  <= sub_data[0]
-        index_futur = data[:,0] > sub_data[0]
-        
-        ##### winner elo
-        nbr_seen = data[((data[:,1] ==  sub_data[1]) | (data[:,2] ==  sub_data[1]))&(index_past)].shape[0]
-        k_winner = calculate_k(nbr_seen)
-        new_elo = elo(sub_data[3], elo_diff(sub_data[3], sub_data[4]), 1, k=k_winner)
-
-        data[(data[:,1] == sub_data[1])&(index_futur), 3] = new_elo
-        data[(data[:,2] == sub_data[1])&(index_futur), 4] = new_elo
-        
-
-        ##### loser elo
-        nbr_seen = data[((data[:,1] ==  sub_data[2]) | (data[:,2] ==  sub_data[2]))&(index_past)].shape[0]
-        k_loser = calculate_k(nbr_seen)
-        new_elo = elo(sub_data[4], elo_diff(sub_data[4], sub_data[3]), 0, k=k_loser)
-        
-        data[(data[:,1] == sub_data[2])&(index_futur), 3] = new_elo
-        data[(data[:,2] == sub_data[2])&(index_futur), 4] = new_elo
+        data = update_elo(data, i)
         
     return data[:,3:5]
 
@@ -80,6 +81,10 @@ def calculate_elo(data):
 def merge_data_elo(data):
     
     t0 = time.time()
+    data["elo1"] = 1500
+    data["elo2"] = 1500
+    
+    #### calculate elo
     elos_extracted = calculate_elo(data)
     data["prob_elo"] = 1 / (1 + 10 ** ((elos_extracted[:,1] - elos_extracted[:,0]) / 400))
     
