@@ -37,8 +37,9 @@ def liste1_extract(x):
     country = list2[-4]
     city = liste[0].split(",")[0].split(" ")[-1]
     name = " ".join(liste[0].split(",")[0].split(" ")[:-1])
+    master = "" if liste[-1] == "atpwt" else liste[-1]
     
-    return (draw_size, end_date, start_date, country, city, name)
+    return (draw_size, end_date, start_date, country, city, name, master)
 
 
 def calculate_time(x):
@@ -107,6 +108,14 @@ def extract_rank_and_match(x, rk_data):
     return [(winner[0],winner[1],loser[0],loser[1])]
 
 
+def homogenize_prizes(x, currency):
+    x["prize"] =  int(str(x["prize"]).replace("$","").replace(",",""))
+    if x["Currency"] in ["AU$", "£", "$"]:
+        x["prize"] = x["prize"]*currency.loc[currency["Annee"]==x["tourney_year"], x["Currency"]].values[0] / 1000000
+    return  x["prize"]
+    
+
+
 def clean_extract(latest):
     """
     clean the new data extracted from atp website
@@ -119,12 +128,10 @@ def clean_extract(latest):
     ex.columns = [str(x) for x in ex.columns]
     clean = pd.DataFrame([])
     
-    ### extraction of clean info
+    # =============================================================================
+    #     ### extraction of clean info
+    # =============================================================================
     clean["indoor_flag"] = ex["1"].apply(lambda x : x.split("\r")[0])
-    
-    count = ex["2"].apply(lambda x : currency_prize(x))
-    clean["Currency"] = list(list(zip(*count))[0])
-    clean["prize"] = list(list(zip(*count))[1])
     
     clean["surface"] = ex["1"].apply(lambda x :x.split("\n")[1])
     clean["winner_name"] = ex["8"].apply(lambda x : x.lower().replace("-"," ").lstrip().rstrip())
@@ -142,12 +149,34 @@ def clean_extract(latest):
     clean["tourney_country"] = list(list(zip(*list_info1))[3])
     clean["tourney_city"] = list(list(zip(*list_info1))[4])
     clean["tourney_name"] = list(list(zip(*list_info1))[5])
+    clean["masters"] = list(list(zip(*list_info1))[6])
     clean["round"] = ex["64"].str.replace(" H2H", "")
     clean["round"] = clean["round"].map(dico_round)
     clean["tourney_id"] = clean["tourney_date"].dt.year.astype(str) + "-" + ex["6"].astype(str) 
     clean["Date"] = clean[["tourney_date", "tourney_end_date", "match_num", "draw_size", "round"]].apply(lambda x: deduce_match_date(x), axis=1)
+    clean["tourney_year"] = clean["Date"].dt.year
+    clean["best_of"] = np.where(clean["masters"] == "grandslam", 5, 3)
     
-    #### merge player id 
+    count = ex["2"].apply(lambda x : currency_prize(x))
+    
+    # =============================================================================
+    #     ### take care currency 
+    # =============================================================================
+    clean["Currency"] = list(list(zip(*count))[0])
+    clean["Currency"] = np.where(clean["Currency"].isin(["euros","€"]), "euro", clean["Currency"])
+    clean["Currency"] = np.where(clean["Currency"].isin(["AUS$","AU$","A$"]), "AU$", clean["Currency"])
+    clean["Currency"] = np.where(clean["Currency"].isin(["A£","'Â£'","£"]), "£", clean["Currency"])
+    
+    # =============================================================================
+    #     ### homogenize price
+    # =============================================================================
+    clean["prize"] = list(list(zip(*count))[1])
+    currency = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/tournament/currency_evolution.csv")
+    clean["prize"] = clean[["prize", "Currency", "tourney_year"]].apply(lambda x: homogenize_prizes(x, currency), axis=1)
+    
+    # =============================================================================
+    #     #### merge player id 
+    # =============================================================================
     players = import_players()
     
     clean = pd.merge(clean, players, left_on = "winner_name", right_on = "Player_Name", how = "left")
@@ -199,12 +228,17 @@ def clean_extract(latest):
     clean["w_bpFaced"] = ex_stats["bp_saved_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
     clean["l_bpFaced"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
     
+    # =============================================================================
+    #     #### data prep/ craetion of variables
+    # =============================================================================
     clean2 = prep_data(clean.loc[clean["status"] == "Completed"])
     
-    #### add rank data into it
+    # =============================================================================
+    #     #### add rank data into it
+    # =============================================================================
     files_rank = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
     files_df = pd.DataFrame(np.transpose([files_rank, [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_rank]]), columns = ["file", "Date"])
-    files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"], format = "%Y-%m-%d") - timedelta(days=7)]
+    files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"], format = "%Y-%m-%d") - timedelta(days=30)]
     
     for i, f in enumerate(files_rank["file"].tolist()):
         if i ==0:
@@ -230,5 +264,5 @@ def clean_extract(latest):
 
 
 if __name__ == "__main__":
-    latest = {"Date":"2018-05-20"}
+    latest = {"Date":"2018-02-05"}
     clean = clean_extract(latest)

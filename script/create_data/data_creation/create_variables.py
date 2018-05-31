@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import re
 import time
+from datetime import timedelta
 
 def set_extract(x, taille):
     if len(x)>=taille:    
@@ -51,6 +52,28 @@ def extract_games_number(x):
 def count_sets(x):
     x = re.sub(r'\([^)]*\)', '', x)
     return x.count("-")
+
+
+
+def update_match_num(data):
+    
+    def add_days(x):
+        if x[2]<128:
+            return x[0] + timedelta(days=x[1])
+        else:
+            return x[0] + timedelta(days=x[1]*2)
+    
+    #### reverse match num, 0 == final and correct it
+    match_num = []
+    for id_tourney in data["tourney_id"].unique():
+        nliste= abs(data.loc[data["tourney_id"] == id_tourney, "match_num"].max() - data.loc[data["tourney_id"] == id_tourney, "match_num"])
+        match_num += list(nliste+1)
+    data["match_num"] = match_num 
+    
+    data["id_round"] = round(np.log(data["draw_size"]/data["match_num"]) / np.log(2), 0)
+    data.loc[data["id_round"]<0,"id_round"]=0
+    
+    return data
     
     
 def prep_data(data):
@@ -69,6 +92,9 @@ def prep_data(data):
     ### dummify hand player
     dataset["winner_hand"] = np.where(dataset["winner_hand"] == "Right-Handed", 1, 0).astype(int)   
     dataset["loser_hand"] = np.where(dataset["loser_hand"] == "Right-Handed", 1, 0).astype(int)
+    
+    #### match num updated
+    data = update_match_num(data)
 
     #### date into days
     dataset["Date"] = pd.to_datetime(dataset["Date"], format = "%Y-%m-%d")

@@ -30,19 +30,21 @@ def merge_tourney(data):
     tournament.loc[pd.isnull(tournament["masters"]), "masters"] = "classic"
     tournament["Currency"] = np.where(tournament["Currency"] == "A", "AU$", 
                              np.where(tournament["Currency"] == 'Â£', "£", 
-                             np.where(tournament["Currency"] == 'euro', "euro", "$")))
+                             np.where(tournament["Currency"].isin(['euro',"€"]), "euro", "$")))
     
     ### homogenize and clean prize
     tournament["prize"] = tournament["prize"].apply(lambda x : x.replace("$","").replace(".",""))
     currency = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/tournament/currency_evolution.csv")
     tournament["prize"] = tournament[["prize", "Currency", "tourney_year"]].apply(lambda x: homogenize_prizes(x, currency), axis=1)
+    tournament = tournament.drop(['tourney_name',"surface", 'tourney_date', "tourney_id_atp", "tourney_year"],axis=1)
+    tournament["tourney_end_date"] = pd.to_datetime(tournament["tourney_end_date"], format = "%Y-%m-%d")
 
     data_merge = pd.merge(data, tournament, on = "tourney_id", how = "left")
-    data_merge = data_merge.drop(["tourney_name", "surface_y", "tourney_id_atp", "tourney_year"], axis=1)
     
     data_merge.loc[data_merge["tourney_country"] == "Netherland", "tourney_country"] = "Netherlands"
     data_merge.loc[data_merge["tourney_country"] == "England", "tourney_country"] = "Great Britain"
     data_merge["tourney_country"] = data_merge["tourney_country"].map(country)
+    
     
     return data_merge
 

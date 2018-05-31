@@ -25,10 +25,6 @@ def main_create_data(param):
     
     if rebuild:
             
-        if param["update_data"]:
-            extra = update_stable()
-            extra.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/updated/extracted/extracted.csv", index= False)
-            
         if param["redo_missing_atp_statistics"]:
             ### read atp data and clean it / redo = build from scratch with the matching algo with stats match from atp 
             path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
@@ -64,6 +60,10 @@ def main_create_data(param):
              
             #### save dataset
             data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv", index= False)
+            
+        if param["update_data"]:
+            extra = update_stable()
+            extra.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/updated/extracted/extracted.csv", index= False)
         
     if not rebuild:        
         data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv")
@@ -102,7 +102,7 @@ if __name__ == "__main__":
                    "create_variable" : False,
                    "update_data":True}    
      
-    full_data = main_creation(rebuild=rebuild)
+    full_data = main_creation(rebuild=True)
     
     
     

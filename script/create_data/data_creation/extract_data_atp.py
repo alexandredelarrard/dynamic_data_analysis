@@ -10,13 +10,13 @@ from datetime import timedelta
 import glob
 import time 
 import numpy as np
-import tqdm
 
 from create_data.utils.build_match_statistics_database import match_stats_main
 from create_data.data_creation.extract_players import  merge_atp_players
 from create_data.data_creation.missing_rank  import fill_ranks_based_origin
 from create_data.data_creation.missing_stats  import fillin_missing_stats
 from create_data.data_creation.merge_tourney  import merge_tourney
+from create_data.utils.date_creation import deduce_match_date
 
 
 def import_data_atp(path, redo=False):
@@ -32,11 +32,24 @@ def import_data_atp(path, redo=False):
             
     data = data.sort_values(["tourney_date", "tourney_id", "match_num"])
 
-    data["tourney_date"]   = pd.to_datetime(data["tourney_date"], format = "%Y%m%d")   
-    data   = create_date(data)
+    # =============================================================================
+    #     #### merge with tourney database 
+    # =============================================================================
+    data["tourney_date"]   = pd.to_datetime(data["tourney_date"], format = "%Y%m%d")  
+    t0 = time.time()
+    data = merge_tourney(data)
+    print("[{0}s] -1) Merge with tourney database ".format(time.time() - t0))
+    
+    # =============================================================================
+    #     #### deduce the date
+    # =============================================================================
+    data["Date"]  = data[["tourney_date", "tourney_end_date", "match_num", "draw_size", "round"]].apply(lambda x : deduce_match_date(x), axis=1)
     del data["tourney_date"]
     print("\n [{0}s] 0) Calculate date of match ".format(time.time() - t0))
     
+    # =============================================================================
+    #     #### correct little error
+    # =============================================================================
     data = data.sort_values(["Date", "tourney_name"])
     data["ATP_ID"] = range(len(data))
     
@@ -107,16 +120,11 @@ def fill_in_missing_values(total_data, redo):
     t0 = time.time()
     total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)
     print("[{0}s] 4) fill missing stats based on previous matches ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
-    
-    #### merge with tourney ddb
-    t0 = time.time()
-    total_data_wrank_stats_tourney = merge_tourney(total_data_wrank_stats)
-    print("[{0}s] 5) Merge with tourney database ".format(time.time() - t0))
-    
+  
     #### merge players info and replace missing values
     t0 = time.time()
-    total_data_wrank_stats_tourney_players = merge_atp_players(total_data_wrank_stats_tourney)
-    print("[{0}s] 6) Merge with players and fillin missing values (ht : {1}/{2}; age: {3}/{2})".format(time.time() - t0, mvs["winner_ht"] + mvs["loser_ht"], total_data.shape[0], mvs["winner_age"] + mvs["loser_age"]))
+    total_data_wrank_stats_tourney_players = merge_atp_players(total_data_wrank_stats)
+    print("[{0}s] 5) Merge with players and fillin missing values (ht : {1}/{2}; age: {3}/{2})".format(time.time() - t0, mvs["winner_ht"] + mvs["loser_ht"], total_data.shape[0], mvs["winner_age"] + mvs["loser_age"]))
     print(pd.isnull(total_data_wrank_stats_tourney_players).sum())
     
     total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.rename(columns = {"surface_x": "surface", "tourney_name_x" : "tourney_name"})
@@ -169,26 +177,3 @@ def walkover_retired(x, data):
         w=0
         
     return w - l
-
-
-def create_date(data):
-    
-    def add_days(x):
-        if x[2]<128:
-            return x[0] + timedelta(days=x[1])
-        else:
-            return x[0] + timedelta(days=x[1]*2)
-    
-    #### reverse match num, 0 == final and correct it
-    match_num = []
-    for id_tourney in tqdm.tqdm(data["tourney_id"].unique()):
-        nliste= abs(data.loc[data["tourney_id"] == id_tourney, "match_num"].max() - data.loc[data["tourney_id"] == id_tourney, "match_num"])
-        match_num += list(nliste+1)
-    data["match_num"] = match_num 
-    
-    data["id_round"] = round(np.log(data["draw_size"]/data["match_num"]) / np.log(2), 0)
-    data.loc[data["id_round"]<0,"id_round"]=0
-    
-    data["Date"] =  np.apply_along_axis(add_days, 1, np.array(data[["tourney_date", "id_round", "draw_size"]])) 
-
-    return data

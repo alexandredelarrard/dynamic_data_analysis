@@ -47,6 +47,9 @@ def update_stable():
     
     ### calculate elo
     data = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/total_dataset_modelling.csv")
+    data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
+    data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
+    data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
     
     t0 = time.time()
     additionnal_data, dico_players_nbr = fill_latest_elo(data, extra)
