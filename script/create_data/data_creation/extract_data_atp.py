@@ -44,7 +44,6 @@ def import_data_atp(path, redo=False):
     #     #### deduce the date
     # =============================================================================
     data["Date"]  = data[["tourney_date", "tourney_end_date", "match_num", "draw_size", "round"]].apply(lambda x : deduce_match_date(x), axis=1)
-    del data["tourney_date"]
     print("\n [{0}s] 0) Calculate date of match ".format(time.time() - t0))
     
     # =============================================================================

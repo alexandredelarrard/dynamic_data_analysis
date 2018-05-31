@@ -26,9 +26,9 @@ def update_stable():
     path = os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/total_dataset_modelling.csv"
     latest_data = pd.read_csv(path)
     latest_data = latest_data.loc[latest_data["target"] == 1]
-    latest_data = latest_data.sort_values(["tourney_date_x", "tourney_name"])
+    latest_data = latest_data.sort_values(["tourney_date", "tourney_name"])
     
-    latest = {"Date": latest_data["tourney_date_x"].max()}
+    latest = {"Date": latest_data["tourney_date"].max()}
     
     ### crawl rank
     t0 = time.time()
