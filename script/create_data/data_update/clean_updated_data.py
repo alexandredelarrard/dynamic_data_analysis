@@ -111,9 +111,8 @@ def extract_rank_and_match(x, rk_data):
 def homogenize_prizes(x, currency):
     x["prize"] =  int(str(x["prize"]).replace("$","").replace(",",""))
     if x["Currency"] in ["AU$", "£", "$"]:
-        x["prize"] = x["prize"]*currency.loc[currency["Annee"]==x["tourney_year"], x["Currency"]].values[0] / 1000000
+        x["prize"] = x["prize"]*currency.loc[currency["Annee"]==x["tourney_year"], x["Currency"]].values[0]
     return  x["prize"]
-    
 
 
 def clean_extract(latest):
@@ -181,6 +180,7 @@ def clean_extract(latest):
     
     clean = pd.merge(clean, players, left_on = "winner_name", right_on = "Player_Name", how = "left")
     clean = pd.merge(clean, players, left_on = "loser_name", right_on = "Player_Name", how = "left", suffixes= ("_w","_l"))
+    clean = clean.drop(["Player_Name_w", "Player_Name_l"], axis=1)
     
     clean = clean.rename(columns = {"Height_l": "loser_ht", 
                                     "Height_w": "winner_ht", 
@@ -257,8 +257,7 @@ def clean_extract(latest):
     for i, col in enumerate(["winner_rank", "winner_rank_points", "loser_rank", "loser_rank_points"]):
         clean2[col]  = list(list(zip(*count))[i])
         
-    clean2["winner_id"] = clean2["Players_ID_w"]
-    clean2["loser_id"] = clean2["Players_ID_l"]
+    clean2 = clean2.rename(columns = {"Players_ID_w":"winner_id", "Players_ID_l":"loser_id"})
     
     return clean2
 

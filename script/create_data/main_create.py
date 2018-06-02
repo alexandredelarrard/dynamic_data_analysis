@@ -59,14 +59,13 @@ def main_create_data(param):
             data_total = create_statistics(data2, redo= False)
              
             #### save dataset
-            data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv", index= False)
+            data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv", index= False)
             
         if param["update_data"]:
-            extra = update_stable()
-            extra.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/updated/extracted/extracted.csv", index= False)
-        
+            data_total = update_stable()
+           
     if not rebuild:        
-        data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv")
+        data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/updated/latest/total_dataset_modelling.csv")
         data_total["Date"] = pd.to_datetime(data_total["Date"], format = "%Y-%m-%d")
             
     return data_total

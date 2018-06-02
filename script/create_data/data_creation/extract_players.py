@@ -9,13 +9,13 @@ import pandas as pd
 import os
 from dateutil import relativedelta
 
-def import_players():
+def make_players():
     
-    players1 = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv")
+    players1 = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/old/players_desc.csv")
     del players1["Unnamed: 12"]
     players1["DOB"] = pd.to_datetime(players1["DOB"], format = "%d/%m/%Y")
     
-    players2 = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc_V2.csv")
+    players2 = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/old/players_desc_V2.csv")
     players2["DOB"] = pd.to_datetime(players2["DOB"], format = "%Y-%m-%d")
     players = pd.concat([players1, players2], axis=0)
     
@@ -23,8 +23,6 @@ def import_players():
     players["Strong_hand"] =  players["Strong_hand"].apply(lambda x : x.lstrip().rstrip())
     players["Nationality place"] =  players["Nationality"].apply(lambda x : x.lstrip().rstrip())
    
-    players = players[["Players_ID", "Player_Name", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand"]]
-    
     ### fillin missing values for turned pro as birth +18yo 490/2025
     players.loc[pd.isnull(players["Turned pro"]),"Turned pro"]  =  players.loc[pd.isnull(players["Turned pro"]), "DOB"].dt.year + 18
     
@@ -41,8 +39,15 @@ def import_players():
     
     players.loc[players["Birth place"] =="USA", "Birth place"] = "United States"
     
-    return players.reset_index(drop=True)
+    players.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv", index= False)
+    
+    
 
+def import_players():
+    players = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv")
+    players = players[["Players_ID", "Player_Name", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand"]]
+    return players.reset_index(drop=True)
+    
 
 def dates(x):
     
@@ -57,19 +62,20 @@ def dates(x):
 def fillin_missing_values(data):
     
     data_merged = data.copy()
-    data_merged["age_winner"] = data_merged[["Date", "DOB_w"]].apply(lambda x : dates(x), axis=1)
-    data_merged["age_loser"] = data_merged[["Date", "DOB_l"]].apply(lambda x : dates(x), axis=1)
-    
-    data_merged["winner_age"] = data_merged["age_winner"].tolist()
-    data_merged["loser_age"] = data_merged["age_loser"].tolist()
+    data_merged["winner_age"] = data_merged[["Date", "DOB_w"]].apply(lambda x : dates(x), axis=1)
+    data_merged["loser_age"] = data_merged[["Date", "DOB_l"]].apply(lambda x : dates(x), axis=1)
     
     data_merged["winner_ht"] = data_merged["Height_w"].tolist()
     data_merged["loser_ht"] = data_merged["Height_l"].tolist()
     
     data_merged["winner_hand"] = data_merged["Strong_hand_w"].tolist()
     data_merged["loser_hand"] = data_merged["Strong_hand_l"].tolist()
-
-    data_merged = data_merged.drop(["age_winner" , "age_loser", "Height_w", "Height_l", "Strong_hand_l", "Strong_hand_w",
+    
+    #### turned pro as  age
+    data_merged["Turned pro_w"] = data_merged["Turned pro_w"] - data_merged["DOB_w"].dt.year
+    data_merged["Turned pro_l"] = data_merged["Turned pro_l"] - data_merged["DOB_l"].dt.year
+    
+    data_merged = data_merged.drop(["Height_w", "Height_l", "Strong_hand_l", "Strong_hand_w",
                                     "Birth place_l", "Birth place_w", "Strong_hand_l", "Strong_hand_w", "Nationality_w", "Nationality_l"], axis=1)
     
     return data_merged

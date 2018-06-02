@@ -49,6 +49,7 @@ def add_weight(x, sub_data, corr_surface, corr_time):
     
     weight = list(diff_month(x[0], pd.to_datetime(sub_data[:,0])))
     weight = pd.DataFrame(sub_data[:,3])[0].map(corr_surface[x[3]])*pd.DataFrame(weight)[0].map(corr_time)
+    weight = np.where(pd.isnull(weight), 0 , weight)
     weight = np.where(sub_data[:,5] ==1, weight*0.5, weight)
     b= np.concatenate((sub_data, np.expand_dims(weight, 1)), axis=1)
 
@@ -69,7 +70,8 @@ def weighted_statistics(x, liste_dataframe):
         
         if sub_data.shape[0]>0:
             sub_data = add_weight(x, sub_data, corr_surface, corr_time)
-            stats    = get_stats(x, np.array(sub_data))
+            sub_data = sub_data[np.where(sub_data[:,-1] >0)]
+            stats    = get_stats(x, sub_data)
         else:
             stats = [(0, )   + (np.nan,)*17]
     else:
@@ -246,8 +248,9 @@ def get_correlations(data, redo = False):
     return correlation_surface, correlation_time
 
 
-def create_stats(data, liste_params):
+def create_stats(data, liste_dataframe):
     
+    data = data.copy()
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
@@ -265,7 +268,7 @@ def create_stats(data, liste_params):
     
     #############################  calculate all necessary stats   ##########################################
     t0 = time.time()
-    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface"]]), liste_params)
+    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface"]]), liste_dataframe)
     counts = counts.reshape(counts.shape[0], counts.shape[2])
     
     ###### put the right name to the right column

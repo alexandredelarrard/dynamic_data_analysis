@@ -50,7 +50,6 @@ def import_data_atp(path, redo=False):
     #     #### correct little error
     # =============================================================================
     data = data.sort_values(["Date", "tourney_name"])
-    data["ATP_ID"] = range(len(data))
     
     ### identify a game as retired:  Andreas Seppi  Mario Ancic 2007-02-12    Marseille
     data.loc[(data["Date"] == "2007-02-12")&(data["winner_name"] == "Andreas Seppi")&(data["loser_name"] == "Mario Ancic"), "score"] = "RET"
@@ -103,30 +102,38 @@ def import_data_atp(path, redo=False):
 def fill_in_missing_values(total_data, redo):
     
     mvs = pd.isnull(total_data).sum()
-    #### fill in missing ranks and points
+    # =============================================================================
+    #     #### replace missing ranks and points based on closest value past / present
+    # =============================================================================
     t0 = time.time()
     total_data_wrank = fill_ranks_based_origin(total_data)
     total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
     print("[{0}s] 2) fill missing rank based on closest info ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     
-    #### add match stats missing
+    # =============================================================================
+    #     #### add match stats missing based on atp crawling
+    # =============================================================================
     t0 = time.time()
     total_data_wrank_stats = merge_atp_missing_stats(total_data_wrank, redo)
     print("[{0}s] 3) fill missing stats based on atp crawling matching  ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
     
-    #### fill in irreductible missing values based on history
+    # =============================================================================
+    #     #### fill in irreductible missing values based on history average for player stats in past / present
+    #     #### then correct weird stats with model and rules
+    # =============================================================================
     mvs = pd.isnull(total_data_wrank_stats).sum()
     t0 = time.time()
     total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)
     print("[{0}s] 4) fill missing stats based on previous matches ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
   
-    #### merge players info and replace missing values
+    # =============================================================================
+    #     #### merge players dataset to atp history
+    # =============================================================================
     t0 = time.time()
     total_data_wrank_stats_tourney_players = merge_atp_players(total_data_wrank_stats)
+    total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.drop(["Players_ID_w", "Player_Name_w","Players_ID_l", "Player_Name_l"], axis=1)
     print("[{0}s] 5) Merge with players and fillin missing values (ht : {1}/{2}; age: {3}/{2})".format(time.time() - t0, mvs["winner_ht"] + mvs["loser_ht"], total_data.shape[0], mvs["winner_age"] + mvs["loser_age"]))
     print(pd.isnull(total_data_wrank_stats_tourney_players).sum())
-    
-    total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.rename(columns = {"surface_x": "surface", "tourney_name_x" : "tourney_name"})
     
     #### remaining mvs for time of match
     total_data_wrank_stats_tourney_players.loc[pd.isnull(total_data_wrank_stats_tourney_players["minutes"]), "minutes"] = 90

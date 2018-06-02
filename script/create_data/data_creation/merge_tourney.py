@@ -28,8 +28,8 @@ def merge_tourney(data):
     ### create currency
     tournament = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/tournament/tourney.csv", encoding = "latin1")
     tournament.loc[pd.isnull(tournament["masters"]), "masters"] = "classic"
-    tournament["Currency"] = np.where(tournament["Currency"] == "A", "AU$", 
-                             np.where(tournament["Currency"] == 'Â£', "£", 
+    tournament["Currency"] = np.where(tournament["Currency"].isin(['A',"AU$", "A$"]), "AU$", 
+                             np.where(tournament["Currency"].isin(['Â£',"£"]), "£", 
                              np.where(tournament["Currency"].isin(['euro',"€"]), "euro", "$")))
     
     ### homogenize and clean prize
@@ -45,13 +45,12 @@ def merge_tourney(data):
     data_merge.loc[data_merge["tourney_country"] == "England", "tourney_country"] = "Great Britain"
     data_merge["tourney_country"] = data_merge["tourney_country"].map(country)
     
-    
     return data_merge
 
 
 def homogenize_prizes(x, currency):
     x["prize"] =  int(str(x["prize"]).replace("$","").replace(",",""))
     if x["Currency"] in ["AU$", "£", "$"]:
-        x["prize"] = x["prize"]*currency.loc[currency["Annee"]==x["tourney_year"], x["Currency"]].values[0] / 1000000
+        x["prize"] = x["prize"]*currency.loc[currency["Annee"]==x["tourney_year"], x["Currency"]].values[0]
     return  x["prize"]
     
