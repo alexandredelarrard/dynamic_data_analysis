@@ -39,6 +39,25 @@ def win_tb(x):
     return count
 
 
+def total_win_tb(x, i):
+    count = 0
+    for se in x:
+        if "(" in se:
+            if int(se.split("-")[0]) > int(re.sub(r'\([^)]*\)', '', se.split("-")[1])):
+                if i ==1:
+                    count += int(re.search(r'\((.*?)\)', se).group(1))
+                else:
+                    count += 2 + int(re.search(r'\((.*?)\)', se).group(1))
+            else:
+                if i ==0:
+                    count += int(re.search(r'\((.*?)\)', se).group(1))
+                else:
+                    count += 2 + int(re.search(r'\((.*?)\)', se).group(1))
+                    
+    return count
+
+
+
 def extract_games_number(x):
     try:
         x = re.sub(r'\([^)]*\)', '', x)
@@ -149,6 +168,8 @@ def prep_data(data):
     dataset["Nbr_tie-breaks"]   = dataset['score'].apply(lambda x : len(re.findall('\((.*?)\)', str(x))))
     dataset["w_tie-breaks_won"] = dataset['score'].apply(lambda x : win_tb(x))
     dataset["l_tie-breaks_won"] = dataset["Nbr_tie-breaks"] - dataset["w_tie-breaks_won"]
+    dataset["total_tie_break_w"] = dataset['score2'].apply(lambda x : total_win_tb(x,0))/dataset["Nbr_tie-breaks"]
+    dataset["total_tie_break_l"] = dataset['score2'].apply(lambda x : total_win_tb(x,1))/dataset["Nbr_tie-breaks"]
     
     ### is birthday
     dataset["DOB_w"] = pd.to_datetime(dataset["DOB_w"], format = "%Y-%m-%d") 
@@ -194,7 +215,7 @@ def prep_data(data):
     for col in ["l_bp_converted", "l_bpSaved", "l_bpFaced"]:    
         dataset[col] = dataset[col].astype(float) / (dataset["l_SvGms"].astype(float))
         
-    dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'],axis = 1)
+    dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'], axis = 1)
      
     print("[{0}s] 7) Create additionnal variables ".format(time.time() - t0))
         

@@ -15,9 +15,10 @@ from prepare_data_modelling_mvs import import_data_atp
 
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import KFold
+from sklearn.externals import joblib
 
 
-def minutes_modelling(data, test, Y_label, params):
+def minutes_modelling(data, test, Y_label, params, path_save):
     
     keep = ["month", "year", "day_of_year", "day_of_month", 'round_F', 'round_QF',
            'round_R128', 'round_R16', 'round_R32', 'round_R64', 'round_RR',
@@ -88,6 +89,7 @@ def minutes_modelling(data, test, Y_label, params):
         avg_mape.append((abs(pp["true"] - pp["pred"])*100/pp["true"]).mean())
         avg_rmse.append(np.sqrt(mean_squared_error(pp["true"], pp["pred"]) ))
         avg_mae.append(abs(pp["true"] - pp["pred"]).mean())
+        joblib.dump(model, path_save + "/minutes_%i.joblib.dat"%i)
         
 #        sample_submission['minutes'] += np.exp(clf.predict(test.drop("minutes",axis=1))) #### predict for the submission set : test
          
@@ -98,7 +100,7 @@ def minutes_modelling(data, test, Y_label, params):
     
     dataset_importance["average_importance"] = dataset_importance[["importance_%i"%i for i in range(k_fold)]].mean(axis=1)
   
-    return clf, pp, dataset_importance.sort_values("importance"), sample_submission
+    return clf, pp, dataset_importance.sort_values("average_importance"), sample_submission
 
 
 def results_analysis(preds):
@@ -123,22 +125,32 @@ def results_analysis(preds):
 if __name__ == "__main__":
     os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
     path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
-    train, test, train_minutes, test_minutes = import_data_atp(path)
+    train_stats, test_stats, train_minutes, test_minutes = import_data_atp(path)
+
+    params = {"objective" : 'reg:linear',
+              "n_estimators": 2000, 
+              "learning_rate": 0.07,
+              "subsample": 0.85,
+              "colsample_bytree":0.85,
+              "max_depth":4,
+              "gamma":0, 
+              "reg_alpha" :1,
+              "reg_lambda" : 1,
+              "min_child_weight":3,
+              "seed" : 7666,
+              "k_fold": 5,
+              "n_thread" : -1}
+        
+    model, results, importance, test_predictions = minutes_modelling(train_minutes, test_minutes, Y_label = "minutes", params= params, path_save =  r"C:\Users\User\Documents\tennis\models\stats_infering\minutes")
+    results_analysis(results)
+        
     
-    for lr in [0.03,0.04,0.05,0.06,0.07]:
-        params = {"objective" : 'reg:linear',
-                  "n_estimators": 2000, 
-                  "learning_rate": lr,
-                  "subsample": 0.8,
-                  "colsample_bytree":0.8,
-                  "max_depth":4,
-                  "gamma":0, 
-                  "reg_alpha" :1,
-                  "reg_lambda" : 1,
-                  "min_child_weight":3,
-                  "seed" : 7666,
-                  "k_fold": 5}
-        
-        model, results, importance, test_predictions = minutes_modelling(train_minutes, test_minutes, Y_label = "minutes", params= params)
-        results_analysis(results)
-        
+# =============================================================================
+# [Fold 0] MAPE : 9.29, RMSE : 12.39, MAE 8.98
+# [Fold 1] MAPE : 9.02, RMSE : 12.19, MAE 8.92
+# [Fold 2] MAPE : 9.03, RMSE : 12.76, MAE 8.93
+# [Fold 3] MAPE : 9.09, RMSE : 12.38, MAE 9.06
+# [Fold 4] MAPE : 8.99, RMSE : 12.49, MAE 8.91
+# ________________________________________
+# [OVERALL] MAPE : 9.09, RMSE : 12.44, MAE 8.96
+# =============================================================================

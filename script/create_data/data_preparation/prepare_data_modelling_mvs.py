@@ -178,7 +178,6 @@ def import_data_atp(path):
     data.loc[data["surface"] == "Carpet_0", "surface"] = "Carpet_1"
     data.loc[data["surface"] == "Clay_1", "surface"] = "Clay_0"
     
-    
     ### imc
     data["w_imc"] = data["Weight_w"] / (data["winner_ht"]/100)**2
     data["l_imc"] = data["Weight_l"] / (data["loser_ht"]/100)**2

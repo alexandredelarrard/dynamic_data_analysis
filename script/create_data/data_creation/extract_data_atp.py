@@ -12,7 +12,7 @@ import numpy as np
 
 from create_data.utils.build_match_statistics_database import match_stats_main
 from create_data.data_creation.extract_players import  merge_atp_players
-from create_data.data_creation.missing_rank  import fill_ranks_based_origin
+from create_data.data_creation.missing_rank  import deduce_rank_from_atp
 from create_data.data_creation.merge_tourney  import merge_tourney
 from create_data.utils.date_creation import deduce_match_date
 
@@ -101,13 +101,12 @@ def import_data_atp(path, redo=False):
 def fill_in_missing_values(total_data, redo):
     
     mvs = pd.isnull(total_data).sum()
-
     
     # =============================================================================
-    #     #### replace missing ranks and points based on closest value past / present
+    #     #### replace missing ranks and points based on atp crawling
     # =============================================================================
     t0 = time.time()
-    total_data_wrank = fill_ranks_based_origin(total_data)
+    total_data_wrank = deduce_rank_from_atp(total_data)
     total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
     print("[{0}s] 3) fill missing rank based on closest info ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     

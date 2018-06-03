@@ -215,9 +215,10 @@ def global_stats(data):
     data["diff_weight"] = data["Weight_w"] - data["Weight_l"]
     data["diff_year_turned_pro"] = data['Turned pro_w'] - data['Turned pro_l']
     
-    data["diff_elo"] = data['elo1'] - data['elo2']
+    #### normalize rank points and elo over time with a difference impact more important when pts and elo are low (concav impact)
+    data["diff_elo"] = (data['elo1'] - data['elo2'])/np.log((data['elo1'] + data['elo2'])*0.5)
     data["diff_rank"] = data['winner_rank'] - data['loser_rank']
-    data["diff_rk_pts"] = data['winner_rank_points'] - data['loser_rank_points']
+    data["diff_rk_pts"] = (data['winner_rank_points'] - data['loser_rank_points'])/np.log((data['winner_rank'] + data['loser_rank'])*0.5)
     data["diff_hand"] = data['winner_hand'] - data['loser_hand']
     data["diff_home"] = data['w_home'] - data['l_home']
     
