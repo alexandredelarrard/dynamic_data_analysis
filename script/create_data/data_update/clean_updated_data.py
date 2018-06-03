@@ -18,6 +18,7 @@ from create_data.data_creation.create_variables import prep_data
 from create_data.data_creation.extract_players import import_players
 from create_data.utils.date_creation import deduce_match_date
 
+
 def currency_prize(x):
     
     for currency in ["€", "A$", "$", "£"]:

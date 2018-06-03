@@ -44,8 +44,9 @@ def make_players():
     
 
 def import_players():
-    players = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv")
+    players = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv", encoding = "latin1")
     players = players[["Players_ID", "Player_Name", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand"]]
+    
     return players.reset_index(drop=True)
     
 
@@ -88,10 +89,11 @@ def merge_atp_players(data_merge):
     
     data_merged = pd.merge(data, players, left_on = "winner_id", right_on="Players_ID", how= "left")
     data_merged = pd.merge(data_merged, players, left_on = "loser_id", right_on="Players_ID",  how= "left", suffixes = ["_w","_l"])
-    
-    data_merged = data_merged.sort_values("ATP_ID")
+    data_merged["DOB_w"] = pd.to_datetime(data_merged["DOB_w"], format = "%Y-%m-%d")
+    data_merged["DOB_l"] = pd.to_datetime(data_merged["DOB_l"], format = "%Y-%m-%d")
     
     data_merged_missing_added = fillin_missing_values(data_merged)
+    data_merged_missing_added = data_merged_missing_added.sort_values(["tourney_id", "Date"])
     
     return data_merged_missing_added
     

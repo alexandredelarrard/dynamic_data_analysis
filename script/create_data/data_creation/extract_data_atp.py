@@ -6,7 +6,6 @@ Created on Sat Mar 17 14:00:49 2018
 """
 
 import pandas as pd
-from datetime import timedelta
 import glob
 import time 
 import numpy as np
@@ -14,7 +13,6 @@ import numpy as np
 from create_data.utils.build_match_statistics_database import match_stats_main
 from create_data.data_creation.extract_players import  merge_atp_players
 from create_data.data_creation.missing_rank  import fill_ranks_based_origin
-from create_data.data_creation.missing_stats  import fillin_missing_stats
 from create_data.data_creation.merge_tourney  import merge_tourney
 from create_data.utils.date_creation import deduce_match_date
 
@@ -38,13 +36,13 @@ def import_data_atp(path, redo=False):
     data["tourney_date"]   = pd.to_datetime(data["tourney_date"], format = "%Y%m%d")  
     t0 = time.time()
     data = merge_tourney(data)
-    print("[{0}s] -1) Merge with tourney database ".format(time.time() - t0))
+    print("[{0}s] 0) Merge with tourney database ".format(time.time() - t0))
     
     # =============================================================================
     #     #### deduce the date
     # =============================================================================
     data["Date"]  = data[["tourney_date", "tourney_end_date", "match_num", "draw_size", "round"]].apply(lambda x : deduce_match_date(x), axis=1)
-    print("\n [{0}s] 0) Calculate date of match ".format(time.time() - t0))
+    print("\n [{0}s] 1) Calculate date of match ".format(time.time() - t0))
     
     # =============================================================================
     #     #### correct little error
@@ -74,13 +72,14 @@ def import_data_atp(path, redo=False):
     index = data["score"].apply(lambda x : "W/O" in str(x) or "W/O " in str(x) or " W/O" in str(x))
     data.loc[index, "status"] = "Walkover"
     
-    #### create variable nbr days since retired / walkover
-    
-    t0 = time.time()
-    data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
-    data["diff_days_since_stop"] = np.apply_along_axis(walkover_retired, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "status"]]))
-    del data["ref_days"]
-    print(" --- calculate return after walkover or retired : {0} ".format(time.time() - t0))
+    # =============================================================================
+    #     #### create variable nbr days since retired / walkover
+    # =============================================================================
+#    t0 = time.time()
+#    data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
+#    data["diff_days_since_stop"] = np.apply_along_axis(walkover_retired, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "status"]]))
+#    del data["ref_days"]
+#    print(" --- calculate return after walkover or retired : {0} ".format(time.time() - t0))
 
     ### suppress not completed match
     data = data.loc[~data["status"].isin(["Retired", "Walkover", "Def"])]
@@ -92,7 +91,7 @@ def import_data_atp(path, redo=False):
     data.loc[data["winner_name"] == "joshua goodall", "winner_name"] = "josh goodall"
     data.loc[data["loser_name"] == "joshua goodall", "loser_name"] = "josh goodall"
     data = data.reset_index(drop=True)
-    print("\n [{0}s] 1) Import ATP dataset ".format(time.time() - t0))
+    print("\n [{0}s] 2) Import ATP dataset ".format(time.time() - t0))
 
     total_data = fill_in_missing_values(data, redo)
             
@@ -102,30 +101,25 @@ def import_data_atp(path, redo=False):
 def fill_in_missing_values(total_data, redo):
     
     mvs = pd.isnull(total_data).sum()
+
+    
     # =============================================================================
     #     #### replace missing ranks and points based on closest value past / present
     # =============================================================================
     t0 = time.time()
     total_data_wrank = fill_ranks_based_origin(total_data)
     total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
-    print("[{0}s] 2) fill missing rank based on closest info ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
+    print("[{0}s] 3) fill missing rank based on closest info ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     
     # =============================================================================
-    #     #### add match stats missing based on atp crawling
-    # =============================================================================
-    t0 = time.time()
-    total_data_wrank_stats = merge_atp_missing_stats(total_data_wrank, redo)
-    print("[{0}s] 3) fill missing stats based on atp crawling matching  ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
-    
-    # =============================================================================
+    #     #### add match stats missing based on atp crawling / 
     #     #### fill in irreductible missing values based on history average for player stats in past / present
     #     #### then correct weird stats with model and rules
     # =============================================================================
-    mvs = pd.isnull(total_data_wrank_stats).sum()
     t0 = time.time()
-    total_data_wrank_stats = fillin_missing_stats(total_data_wrank_stats)
-    print("[{0}s] 4) fill missing stats based on previous matches ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
-  
+    total_data_wrank_stats = match_stats_main(total_data_wrank, redo)
+    print("[{0}s] 4) fill missing stats based on atp crawling matching  ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
+   
     # =============================================================================
     #     #### merge players dataset to atp history
     # =============================================================================
@@ -139,24 +133,6 @@ def fill_in_missing_values(total_data, redo):
     total_data_wrank_stats_tourney_players.loc[pd.isnull(total_data_wrank_stats_tourney_players["minutes"]), "minutes"] = 90
     
     return total_data_wrank_stats_tourney_players
-
-
-def merge_atp_missing_stats(total_data, redo = False):
-    
-    data = total_data.copy()
-    missing_match_stats= match_stats_main(data, redo = redo)
-    
-    for i in missing_match_stats["ATP_ID"].tolist():
-        try:
-            if pd.isnull(data.loc[data["ATP_ID"] == i, "w_ace"].values[0]):
-                for col in ["w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced",\
-                            "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced", "minutes"]:
-                    data.loc[data["ATP_ID"] == i, col] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, col].values[0]
-            else:
-                data.loc[data["ATP_ID"] == i, "minutes"] = missing_match_stats.loc[missing_match_stats["ATP_ID"] == i, "minutes"].values[0]
-        except Exception:
-           data.loc[data["ATP_ID"] == i, "w_ace"]
-    return data
 
 
 def walkover_retired(x, data):
