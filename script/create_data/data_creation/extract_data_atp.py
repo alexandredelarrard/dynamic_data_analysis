@@ -108,7 +108,7 @@ def fill_in_missing_values(total_data, redo):
     t0 = time.time()
     total_data_wrank = deduce_rank_from_atp(total_data)
     total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
-    print("[{0}s] 3) fill missing rank based on closest info ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
+    print("[{0}s] 3) fill missing rank based on atp crawling ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     
     # =============================================================================
     #     #### add match stats missing based on atp crawling / 

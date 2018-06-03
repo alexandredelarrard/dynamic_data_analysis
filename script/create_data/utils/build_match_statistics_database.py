@@ -142,6 +142,7 @@ def match_stats_main(data_atp, redo = False):
     
     ##### 
     data_atp["missing_stats"] = np.where(index, 1,0)
+    data_atp = data_atp.loc[data_atp["missing_stats"] !=1]
     
     return data_atp
     

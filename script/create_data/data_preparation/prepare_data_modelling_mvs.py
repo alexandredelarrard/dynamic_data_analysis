@@ -206,7 +206,7 @@ def import_data_atp(path):
     test_minutes = data.loc[(pd.isnull(data["minutes"]))|((data["minutes"]/data["total_games"]<2)|(data["minutes"]/data["total_games"]>12))]
     train_minutes =data.loc[~(pd.isnull(data["minutes"]))|((data["minutes"]/data["total_games"]<2)|(data["minutes"]/data["total_games"]>12))]
     
-    return train, test, train_minutes, test_minutes
+    return data, train, test, train_minutes, test_minutes
 
 
 def data_analysis(data):
@@ -218,6 +218,6 @@ def data_analysis(data):
 if __name__ == "__main__":
     os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
     path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
-    train, test, train_minutes, test_minutes = import_data_atp(path)
+    overall, train, test, train_minutes, test_minutes = import_data_atp(path)
 
     
