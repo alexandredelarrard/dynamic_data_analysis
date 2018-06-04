@@ -62,7 +62,6 @@ def deduce_rank_from_atp(total_data):
     rk_pts_missing.index = missing_data_rank.index
     data.loc[(pd.isnull(data["winner_rank"]))|(pd.isnull(data["loser_rank"])), columns] = rk_pts_missing
     
-    
     # =============================================================================
     #     #### handle missing values as no rank so 1800 (wors as being new)
     # =============================================================================
@@ -72,6 +71,6 @@ def deduce_rank_from_atp(total_data):
     # =============================================================================
     #     #### before 1996-08-12 all points are null ----> fill in with average pts same rank 
     # =============================================================================
-    
+    data_futur = data.loc[(data["Date"]>="1996-08-12")&(data["Date"]<= "2003-12-31")]
     
     return data 

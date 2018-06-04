@@ -25,7 +25,7 @@ def main_create_data(param):
     
     if rebuild:
             
-        if param["redo_missing_atp_statistics"]:
+        if param["redo_missing_atp_statistics"]: #// 10 min 
             ### read atp data and clean it / redo = build from scratch with the matching algo with stats match from atp 
             path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
             data_atp = import_data_atp(path, redo = False) ### redo the stats match with crawled matches from atp
@@ -34,7 +34,7 @@ def main_create_data(param):
             data_atp["Date"]= pd.to_datetime(data_atp["Date"], format = "%Y-%m-%d")
 
         if param["create_elo"]:
-            ### add elo system ranking
+            ### add elo system ranking # // 20 min 
             data_merge_player_elo = merge_data_elo(data_atp)
             data_merge_player_elo.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_V1.csv", index= False)
         
@@ -45,8 +45,8 @@ def main_create_data(param):
             data_merge_player_elo["DOB_l"] = pd.to_datetime(data_merge_player_elo["DOB_l"], format = "%Y-%m-%d")
             
         ### create value added variables/lean dataset and irregularities
-        if param["create_variable"]:
-            data2 = prep_data(data_merge_player_elo)
+        if param["create_variable"]: #// 0.5 min 
+            data2 = prep_data(data_merge_player_elo, verbose=0)
             data2.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv", index= False)
         else:
             data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
@@ -55,7 +55,7 @@ def main_create_data(param):
             data2["DOB_l"] = pd.to_datetime(data2["DOB_l"], format = "%Y-%m-%d")
         
         ### create counting past historical data
-        if param["create_statistics"]:
+        if param["create_statistics"]: #// 200 min 
             data_total = create_statistics(data2, redo= False)
              
             #### save dataset

@@ -66,11 +66,17 @@ def weighted_statistics(x, liste_dataframe):
     data_date = data[np.where((data[:,0] < x[0]))]
    
     if data_date.shape[0] > 0:
-        sub_data = common_opponents(x, data_date)
+        
+        sub_data = add_weight(x, data, corr_surface, corr_time)
+        sub_data = sub_data[np.where(sub_data[:,-1] >0)]
+        #### each players stat on historic only
+        
+        
+        #### second part on common opponents
+        sub_data = common_opponents(x, sub_data)
         
         if sub_data.shape[0]>0:
-            sub_data = add_weight(x, sub_data, corr_surface, corr_time)
-            sub_data = sub_data[np.where(sub_data[:,-1] >0)]
+            
             stats    = get_stats(x, sub_data)
         else:
             stats = [(0, )   + (np.nan,)*17]

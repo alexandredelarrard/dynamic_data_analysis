@@ -52,6 +52,14 @@ def import_data_atp(path, redo=False):
     ### identify a game as retired:  Andreas Seppi  Mario Ancic 2007-02-12    Marseille
     data.loc[(data["Date"] == "2007-02-12")&(data["winner_name"] == "Andreas Seppi")&(data["loser_name"] == "Mario Ancic"), "score"] = "RET"
     
+    #### handle negative break points
+    data["l_bpSaved"]  = np.where(data["l_bpSaved"]<0, 0,  data["l_bpSaved"])
+    data["w_bpSaved"]  = np.where(data["w_bpSaved"]<0, 0,  data["w_bpSaved"])
+    
+    ### correct/match minutes
+    data.loc[(data["tourney_id"] == "2017-0308")&(data["winner_name"] == "Hyeon Chung")&(data["loser_name"] == "Martin Klizan"), "minutes"] = 135
+    data.loc[(data["tourney_id"] == "2016-M001")&(data["winner_name"] == "Gilles Muller")&(data["loser_name"] == "Jeremy Chardy"), "minutes"] = 90
+   
     #### suppress davis cup and JO
     sp = data.shape[0] 
     not_davis_index = data["tourney_name"].apply(lambda x : "Davis Cup" not in x and "Olympic" not in x)
@@ -103,7 +111,7 @@ def fill_in_missing_values(total_data, redo):
     mvs = pd.isnull(total_data).sum()
     
     # =============================================================================
-    #     #### replace missing ranks and points based on atp crawling
+    #     #### replace missing ranks and points based on atp crawling / 10 min
     # =============================================================================
     t0 = time.time()
     total_data_wrank = deduce_rank_from_atp(total_data)
@@ -111,26 +119,22 @@ def fill_in_missing_values(total_data, redo):
     print("[{0}s] 3) fill missing rank based on atp crawling ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     
     # =============================================================================
-    #     #### add match stats missing based on atp crawling / 
+    #     #### add match stats missing based on atp crawling /  0.01 min
     #     #### fill in irreductible missing values based on history average for player stats in past / present
-    #     #### then correct weird stats with model and rules
     # =============================================================================
     t0 = time.time()
     total_data_wrank_stats = match_stats_main(total_data_wrank, redo)
     print("[{0}s] 4) fill missing stats based on atp crawling matching  ({1}/{2})".format(time.time() - t0, mvs["w_ace"], total_data.shape[0]))
    
     # =============================================================================
-    #     #### merge players dataset to atp history
+    #     #### merge players dataset to atp history /  0.2 min
     # =============================================================================
     t0 = time.time()
     total_data_wrank_stats_tourney_players = merge_atp_players(total_data_wrank_stats)
     total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.drop(["Players_ID_w", "Player_Name_w","Players_ID_l", "Player_Name_l"], axis=1)
     print("[{0}s] 5) Merge with players and fillin missing values (ht : {1}/{2}; age: {3}/{2})".format(time.time() - t0, mvs["winner_ht"] + mvs["loser_ht"], total_data.shape[0], mvs["winner_age"] + mvs["loser_age"]))
     print(pd.isnull(total_data_wrank_stats_tourney_players).sum())
-    
-    #### remaining mvs for time of match
-    total_data_wrank_stats_tourney_players.loc[pd.isnull(total_data_wrank_stats_tourney_players["minutes"]), "minutes"] = 90
-    
+        
     return total_data_wrank_stats_tourney_players
 
 

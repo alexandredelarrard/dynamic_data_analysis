@@ -11,6 +11,11 @@ import numpy as np
 import re
 import time
 from datetime import timedelta
+import glob
+import joblib
+import seaborn as sns
+
+from create_data.data_creation.extract_data_atp import import_data_atp
 
 def set_extract(x, taille):
     if len(x)>=taille:    
@@ -26,6 +31,7 @@ def games_extract(x, w_l):
             return x.split("-")[w_l]
         else:
             return np.nan
+        
     except Exception:
         print(x)
         
@@ -95,10 +101,26 @@ def update_match_num(data):
     return data
     
     
-def prep_data(data):
+def prep_data(data, verbose=0):
     
     t0 = time.time()
     dataset = data.copy()
+    
+    #### create score variables
+    dataset["total_games"] = dataset["score"].apply(lambda x : extract_games_number(x))
+    dataset['N_set']  = dataset['score'].apply(lambda x : count_sets(x))
+    dataset['score2'] = dataset['score'].str.split(" ")
+    
+    for i in range(1,6):
+        dataset["S%i"%i] = dataset['score2'].apply(lambda x : set_extract(x, i))
+        for j, w_l in enumerate(["w", "l"]):
+            dataset[w_l + "_S%i"%i] = dataset["S%i"%i].apply(lambda x : games_extract(x, j)).fillna(-1).astype(int)
+            
+    ##### flag wrong stats as missing stats for suppression in the creation variable part 
+    ratio = np.where((dataset["l_svpt"]/dataset["total_games"] <= 2) | (dataset["l_svpt"]/dataset["total_games"]>=6), 1 ,0)
+    dataset["missing_stats"] = np.where((pd.isnull(dataset["w_ace"]))|(dataset["w_SvGms"] == 0)|(dataset["l_SvGms"] == 0)|(ratio==1), 1, 0)
+    
+    dataset = dataset.loc[dataset["missing_stats"] !=1]
          
     ### dummify court
     dataset["indoor_flag"] = np.where(dataset["indoor_flag"] == "Outdoor", 0,1).astype(int)
@@ -113,7 +135,7 @@ def prep_data(data):
     dataset["loser_hand"] = np.where(dataset["loser_hand"] == "Right-Handed", 1, 0).astype(int)
     
     #### match num updated
-    data = update_match_num(data)
+    dataset = update_match_num(dataset)
 
     #### date into days
     dataset["Date"] = pd.to_datetime(dataset["Date"], format = "%Y-%m-%d")
@@ -138,35 +160,13 @@ def prep_data(data):
     dataset["l_total_srv_won"]   = dataset["l_1stWon"].astype(int) + dataset["l_2ndWon"].astype(int)
     dataset["l_total_ret_won"]   = dataset["l_1st_srv_ret_won"].astype(int) + dataset["l_2nd_srv_ret_won"].astype(int)
     
-    #### create score variables
-    dataset["total_games"] = dataset["score"].apply(lambda x : extract_games_number(x))
-    dataset['N_set']  = dataset['score'].apply(lambda x : count_sets(x))
-    dataset['score'] = dataset['score'].str.split(" ")
-    for i in range(1,6):
-        dataset["S%i"%i] = dataset['score'].apply(lambda x : set_extract(x, i))
-        for j, w_l in enumerate(["w", "l"]):
-            dataset[w_l + "_S%i"%i] = dataset["S%i"%i].apply(lambda x : games_extract(x, j))
-            
-    ### correct/match minutes
-    dataset.loc[(dataset["tourney_id"] == "2017-0308")&(dataset["winner_name"] == "Hyeon Chung")&(dataset["loser_name"] == "Martin Klizan"), "minutes"] = 135
-    dataset.loc[(dataset["tourney_id"] == "2016-M001")&(dataset["winner_name"] == "Gilles Muller")&(dataset["loser_name"] == "Jeremy Chardy"), "minutes"] = 90
-    
-    try:
-        dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[~pd.isnull(dataset["w_S5"]), "minutes"].median())
-    except Exception:
-        pass
-    try:
-         dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S4"]))&(pd.isnull(dataset["w_S5"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S5"]))&(~pd.isnull(dataset["w_S4"])), "minutes"].median())
-    except Exception:
-        pass
-    try:
-        dataset.loc[(dataset["minutes"] <20)&(~pd.isnull(dataset["w_S3"]))&(pd.isnull(dataset["w_S4"])), "minutes"] = int(dataset.loc[(pd.isnull(dataset["w_S4"]))&(~pd.isnull(dataset["w_S3"])), "minutes"].median())
-    except Exception:
-        pass
-    
+    #### handle serv games not close to 0.5
+    dataset["w_SvGms"] = np.where((dataset["w_SvGms"]/dataset["total_games"] <= 0.4) | (dataset["w_SvGms"]/dataset["total_games"]>=0.6), dataset["total_games"]*0.5, dataset["w_SvGms"])
+    dataset["l_SvGms"] = np.where((dataset["l_SvGms"]/dataset["total_games"] <= 0.4) | (dataset["l_SvGms"]/dataset["total_games"]>=0.6), dataset["total_games"]*0.5, dataset["l_SvGms"])
+     
     ### tie breaks
-    dataset["Nbr_tie-breaks"]   = dataset['score'].apply(lambda x : len(re.findall('\((.*?)\)', str(x))))
-    dataset["w_tie-breaks_won"] = dataset['score'].apply(lambda x : win_tb(x))
+    dataset["Nbr_tie-breaks"]   = dataset['score2'].apply(lambda x : len(re.findall('\((.*?)\)', str(x))))
+    dataset["w_tie-breaks_won"] = dataset['score2'].apply(lambda x : win_tb(x))
     dataset["l_tie-breaks_won"] = dataset["Nbr_tie-breaks"] - dataset["w_tie-breaks_won"]
     dataset["total_tie_break_w"] = dataset['score2'].apply(lambda x : total_win_tb(x,0))/dataset["Nbr_tie-breaks"]
     dataset["total_tie_break_l"] = dataset['score2'].apply(lambda x : total_win_tb(x,1))/dataset["Nbr_tie-breaks"]
@@ -214,10 +214,43 @@ def prep_data(data):
         
     for col in ["l_bp_converted", "l_bpSaved", "l_bpFaced"]:    
         dataset[col] = dataset[col].astype(float) / (dataset["l_SvGms"].astype(float))
+         
+    ### predict  minutes for mvs
+    if pd.isnull(dataset["minutes"]).sum()>0:
+        index = (pd.isnull(dataset["minutes"]))|((dataset["minutes"]/dataset["total_games"]<2)|(dataset["minutes"]/dataset["total_games"]>12))
         
-    dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score'], axis = 1)
+        models_minutes = glob.glob(r"C:\Users\User\Documents\tennis\models\stats_infering\minutes\*.dat")
+        
+        X = dataset.loc[index, ['N_set', 'day_of_month', 'day_of_year', 'draw_size', 'indoor_flag', 'l_S1', 'l_S2',
+                                'l_S3', 'l_S4', 'l_S5', 'l_imc', 'loser_age', 'loser_hand', 'loser_ht', 'loser_rank', 
+                                'loser_rank_points', 'month', 'round_F', 'round_QF', 'round_R128', 'round_R16', 'round_R32',
+                                'round_R64', 'round_RR', 'round_SF', 'surface_Carpet_1', 'surface_Clay_0', 'surface_Grass_0',
+                                'surface_Hard_0', 'surface_Hard_1', 'total_games', 'total_tie_break_l', 'total_tie_break_w', 'w_S1',
+                                'w_S2', 'w_S3', 'w_S4', 'w_S5', 'w_imc', 'winner_age', 'winner_hand', 'winner_ht', 'winner_rank', 
+                                'winner_rank_points', 'year']]
+        
+        dataset.loc[index, "minutes"] = 0
+        for model in models_minutes:
+            clf = joblib.load(model)
+            dataset.loc[index, "minutes"] += np.exp(clf.predict(X))
+            
+        dataset.loc[index, "minutes"] = dataset.loc[index, "minutes"] /5.0
+    
+    if verbose ==1:
+        dataset["missing"] = np.where(index, 1,0)
+        sns.lmplot(x = "minutes", y = "total_games", data = dataset, hue = "missing")
+        del dataset["missing"]
+        
+    dataset = dataset.drop(["S1", "S2","S3", "S4", "S5", 'score2', "missing_stats"], axis = 1)
      
-    print("[{0}s] 7) Create additionnal variables ".format(time.time() - t0))
+    print("[{0}s] 6) Create additionnal variables ".format(time.time() - t0))
         
     return dataset
 
+
+if __name__ == "__main__":
+#    import os
+#    os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
+#    path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
+#    data_atp = import_data_atp(path, redo = False)
+    data = prep_data(data_atp, verbose =1)
