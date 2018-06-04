@@ -69,21 +69,54 @@ def weighted_statistics(x, liste_dataframe):
         
         sub_data = add_weight(x, data, corr_surface, corr_time)
         sub_data = sub_data[np.where(sub_data[:,-1] >0)]
-        #### each players stat on historic only
         
+        #### each players stat on historic only
+        if sub_data.shape[0]>0:
+            stats1 = get_player_stat(x, sub_data)
+        else:
+            stats1 = (np.nan,)*4
         
         #### second part on common opponents
         sub_data = common_opponents(x, sub_data)
         
         if sub_data.shape[0]>0:
-            
             stats    = get_stats(x, sub_data)
+            stats = stats + stats1
         else:
-            stats = [(0, )   + (np.nan,)*17]
+            stats = [(0, )   + (np.nan,)*17 + stats1]
     else:
-        stats = [(0, )   + (np.nan,)*17]
+        stats = [(0, )   + (np.nan,)*21]
     
     return stats
+
+
+def get_player_stat(x, sub_data):
+    
+    w_index= (sub_data[:,1] == x[1])|(sub_data[:,2] == x[1])
+    l_index = (sub_data[:,1] == x[2])|(sub_data[:,2] == x[2])
+    
+    best_rank_winner = np.min(sub_data[w_index, 6])
+    best_rank_loser  = np.min(sub_data[l_index, 7])
+    
+    prop_victory_surface_winner = sub_data[(sub_data[:,1] == x[1])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(w_index)&(sub_data[:,3] == x[3])].shape[0]
+    prop_victory_surface_loser  = sub_data[(sub_data[:,2] == x[2])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(l_index)&(sub_data[:,3] == x[3])].shape[0]
+
+#    delta_rank_1mois_winner = 
+#    delta_rank_1mois_loser  = 
+    
+#    jeu_consecutif_10_match_w = 
+#    jeu_consecutif_10_match_l =
+    
+#    delta_rank_1mois_winner = 
+#    delta_rank_1mois_loser  = 
+    
+#    prop_match_3_set_gagne_w = 
+#    prop_match_3_set_gagne_l =   
+    
+#    nbr_de_fois_atteint_level_trns_w = 
+#    nbr_de_fois_atteint_level_trns_l =   
+
+    return (best_rank_winner, best_rank_loser, prop_victory_surface_winner, prop_victory_surface_loser)
 
 
 def get_stats(x, sub_data):
@@ -93,7 +126,7 @@ def get_stats(x, sub_data):
                       'w_svpt','w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced','l_ace', 'l_df', 'l_svpt',
                       'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won',
                       'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted','l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set",
-                      'l_total_pts_won', 'w_total_pts_won', "match_num"
+                      'l_total_pts_won', 'w_total_pts_won'
                       
      x : "Date", "winner_id", "loser_id", "surface"
     """
@@ -176,6 +209,15 @@ def get_stats(x, sub_data):
              
              ### diff weights
              weight_winner - weight_loser,
+             
+             #    prop_1er_set_gagne_surface_w = 
+             #    prop_1er_set_gagne_surface_l =   
+             
+             #    prop_2eme_set_gagne_surface_w = 
+             #    prop_2eme_set_gagne_surface_l =   
+             
+             #    prop_3eme_set_gagne_surface_w = 
+             #    prop_3eme_set_gagne_surface_l =   
              
              )
     
@@ -281,7 +323,8 @@ def create_stats(data, liste_dataframe):
     ###### put the right name to the right column
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
-                 "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "diff_weights"]
+                 "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "diff_weights",
+                 "bst_rk_w", "bst_rk_l", "prop_victory_surface_w", "prop_victory_surface_l"]
     stats = pd.DataFrame(counts, columns = stats_cols)
     data = pd.concat([data, stats], axis = 1)
 
@@ -322,7 +365,7 @@ def create_statistics(data, redo = False):
     calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                      'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
                      'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
-                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won', "match_num"]
+                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won']
 
     liste_params = [np.array(data[calculate_stats]), correlation_surface, correlation_time]
     total_data = create_stats(data, liste_params)
