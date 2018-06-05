@@ -249,8 +249,8 @@ def prep_data(data, verbose=0):
 
 
 if __name__ == "__main__":
-#    import os
-#    os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
-#    path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
-#    data_atp = import_data_atp(path, redo = False)
+    import os
+    os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
+    path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
+    data_atp = import_data_atp(path, redo = False)
     data = prep_data(data_atp, verbose =1)

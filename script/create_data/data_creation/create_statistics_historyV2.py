@@ -50,7 +50,6 @@ def add_weight(x, sub_data, corr_surface, corr_time):
     weight = list(diff_month(x[0], pd.to_datetime(sub_data[:,0])))
     weight = pd.DataFrame(sub_data[:,3])[0].map(corr_surface[x[3]])*pd.DataFrame(weight)[0].map(corr_time)
     weight = np.where(pd.isnull(weight), 0 , weight)
-    weight = np.where(sub_data[:,5] ==1, weight*0.5, weight)
     b= np.concatenate((sub_data, np.expand_dims(weight, 1)), axis=1)
 
     return b
@@ -67,26 +66,26 @@ def weighted_statistics(x, liste_dataframe):
    
     if data_date.shape[0] > 0:
         
-        sub_data = add_weight(x, data, corr_surface, corr_time)
+        sub_data = add_weight(x, data_date, corr_surface, corr_time)
         sub_data = sub_data[np.where(sub_data[:,-1] >0)]
         
         #### each players stat on historic only
         if sub_data.shape[0]>0:
             stats1 = get_player_stat(x, sub_data)
         else:
-            stats1 = (np.nan,)*4
-        
+            stats1 = (np.nan,)*8
+
         #### second part on common opponents
         sub_data = common_opponents(x, sub_data)
         
         if sub_data.shape[0]>0:
             stats    = get_stats(x, sub_data)
-            stats = stats + stats1
+            stats = [(stats) + (stats1)]
         else:
-            stats = [(0, )   + (np.nan,)*17 + stats1]
+            stats = [(0,)   + (np.nan,)*17+ (stats1)]
     else:
-        stats = [(0, )   + (np.nan,)*21]
-    
+        stats = [(0, )   + (np.nan,)*25]
+    print(stats) 
     return stats
 
 
@@ -95,38 +94,64 @@ def get_player_stat(x, sub_data):
     w_index= (sub_data[:,1] == x[1])|(sub_data[:,2] == x[1])
     l_index = (sub_data[:,1] == x[2])|(sub_data[:,2] == x[2])
     
-    best_rank_winner = np.min(sub_data[w_index, 6])
-    best_rank_loser  = np.min(sub_data[l_index, 7])
+    try:
+        best_rank_winner = np.min(sub_data[w_index, 6])
+    except Exception:
+        best_rank_winner = -1
+        pass
     
-    prop_victory_surface_winner = sub_data[(sub_data[:,1] == x[1])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(w_index)&(sub_data[:,3] == x[3])].shape[0]
-    prop_victory_surface_loser  = sub_data[(sub_data[:,2] == x[2])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(l_index)&(sub_data[:,3] == x[3])].shape[0]
+    try:
+        best_rank_loser  = np.min(sub_data[l_index, 7])
+    except Exception:
+        best_rank_loser = -1
+        pass
 
+    try:
+        prop_victory_surface_winner = sub_data[(sub_data[:,1] == x[1])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(w_index)&(sub_data[:,3] == x[3])].shape[0]
+    except Exception:
+        prop_victory_surface_winner = -1
+        pass
+    
+    try:
+        prop_victory_surface_loser  = sub_data[(sub_data[:,2] == x[2])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(l_index)&(sub_data[:,3] == x[3])].shape[0]
+    except Exception:
+        prop_victory_surface_loser = -1
+        pass
+        
 #    delta_rank_1mois_winner = 
 #    delta_rank_1mois_loser  = 
     
 #    jeu_consecutif_10_match_w = 
-#    jeu_consecutif_10_match_l =
+#    jeu_consecutif_10_match_l = 
     
-#    delta_rank_1mois_winner = 
-#    delta_rank_1mois_loser  = 
+    ### 39 = N_set  6 = best_of 
+    try:
+        prop_last_set_gagne_w =  sub_data[(sub_data[:,1] == x[1])&(sub_data[:,39] == x[6])].shape[0] / sub_data[(w_index)&(sub_data[:,39] == x[6])].shape[0]
+    except Exception:
+        prop_last_set_gagne_w = -1
+        pass
     
-#    prop_match_3_set_gagne_w = 
-#    prop_match_3_set_gagne_l =   
-    
-#    nbr_de_fois_atteint_level_trns_w = 
-#    nbr_de_fois_atteint_level_trns_l =   
+    try:
+        prop_last_set_gagne_l =  sub_data[(sub_data[:,1] == x[2])&(sub_data[:,39] == x[6])].shape[0] / sub_data[(l_index)&(sub_data[:,39] == x[6])].shape[0] 
+    except Exception:
+        prop_last_set_gagne_l = -1
+        pass
+        
+    nbr_same_level_trns_w = sub_data[(w_index)&(sub_data[:,42] == x[4])&(x[5]>=sub_data[:,43])].shape[0]
+    nbr_same_level_trns_l = sub_data[(l_index)&(sub_data[:,42] == x[4])&(x[5]>=sub_data[:,43])].shape[0]  
 
-    return (best_rank_winner, best_rank_loser, prop_victory_surface_winner, prop_victory_surface_loser)
+    return (best_rank_winner, best_rank_loser, prop_victory_surface_winner, prop_victory_surface_loser,
+            nbr_same_level_trns_w, nbr_same_level_trns_l, prop_last_set_gagne_w, prop_last_set_gagne_l)
 
 
 def get_stats(x, sub_data):
     
     """
-    columns order :   'Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df',  
+    columns order :   'Date', 'winner_id', 'loser_id', "surface", 'minutes', 'best_of', "winner_rank", 'loser_rank', 'w_ace', 'w_df',  
                       'w_svpt','w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced','l_ace', 'l_df', 'l_svpt',
                       'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won',
                       'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted','l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set",
-                      'l_total_pts_won', 'w_total_pts_won'
+                      'l_total_pts_won', 'w_total_pts_won', 'tourney_id', "id_round", 'weight'
                       
      x : "Date", "winner_id", "loser_id", "surface"
     """
@@ -136,37 +161,37 @@ def get_stats(x, sub_data):
     loser_w_data = sub_data[sub_data[:,1] == x[2]]
     loser_l_data = sub_data[sub_data[:,2] == x[2]]
     
-    weight_winner = winner_w_data[:,43].sum() + winner_l_data[:,43].sum()
-    weight_loser = loser_w_data[:,43].sum() + loser_l_data[:,43].sum()
+    weight_winner = winner_w_data[:,-1].sum() + winner_l_data[:,-1].sum()
+    weight_loser = loser_w_data[:,-1].sum() + loser_l_data[:,-1].sum()
     
-    ws1 = (((winner_w_data[:,11]*winner_w_data[:,12] + (1-winner_w_data[:,11])*winner_w_data[:,13])*winner_w_data[:,43]).sum() 
-             + ((winner_l_data[:,20]*winner_l_data[:,21] + (1-winner_l_data[:,20])*winner_l_data[:,22])*winner_l_data[:,43]).sum())/weight_winner 
+    ws1 = (((winner_w_data[:,11]*winner_w_data[:,12] + (1-winner_w_data[:,11])*winner_w_data[:,13])*winner_w_data[:,-1]).sum() 
+             + ((winner_l_data[:,20]*winner_l_data[:,21] + (1-winner_l_data[:,20])*winner_l_data[:,22])*winner_l_data[:,-1]).sum())/weight_winner 
     
-    ws2 = (((loser_w_data[:,11]*loser_w_data[:,12] + (1-loser_w_data[:,11])*loser_w_data[:,13])*loser_w_data[:,43]).sum()
-             + ((loser_l_data[:,20]*loser_l_data[:,21] + (1-loser_l_data[:,20])*loser_l_data[:,22])*loser_l_data[:,43]).sum())/weight_loser 
+    ws2 = (((loser_w_data[:,11]*loser_w_data[:,12] + (1-loser_w_data[:,11])*loser_w_data[:,13])*loser_w_data[:,-1]).sum()
+             + ((loser_l_data[:,20]*loser_l_data[:,21] + (1-loser_l_data[:,20])*loser_l_data[:,22])*loser_l_data[:,-1]).sum())/weight_loser 
     
-    wr1 = (((winner_w_data[:,26]*winner_w_data[:,20] + (1-winner_w_data[:,20])*winner_w_data[:,27])*winner_w_data[:,43]).sum() 
-             + ((winner_l_data[:,31]*winner_l_data[:,11] + (1-winner_l_data[:,11])*winner_l_data[:,32])*winner_l_data[:,43]).sum())/weight_winner 
+    wr1 = (((winner_w_data[:,26]*winner_w_data[:,20] + (1-winner_w_data[:,20])*winner_w_data[:,27])*winner_w_data[:,-1]).sum() 
+             + ((winner_l_data[:,31]*winner_l_data[:,11] + (1-winner_l_data[:,11])*winner_l_data[:,32])*winner_l_data[:,-1]).sum())/weight_winner 
     
-    wr2 = (((loser_w_data[:,26]*loser_w_data[:,20] + (1-loser_w_data[:,20])*loser_w_data[:,27])*loser_w_data[:,43]).sum() 
-             + ((loser_l_data[:,31]*loser_l_data[:,11] + (1-loser_l_data[:,11])*loser_l_data[:,32])*loser_l_data[:,43]).sum())/weight_loser
+    wr2 = (((loser_w_data[:,26]*loser_w_data[:,20] + (1-loser_w_data[:,20])*loser_w_data[:,27])*loser_w_data[:,-1]).sum() 
+             + ((loser_l_data[:,31]*loser_l_data[:,11] + (1-loser_l_data[:,11])*loser_l_data[:,32])*loser_l_data[:,-1]).sum())/weight_loser
     
     count = (sub_data.shape[0], ### confidence on stat
              
-             ((winner_w_data[:,8]*winner_w_data[:,43]).sum()  + (winner_l_data[:,17]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,8]*loser_w_data[:,43]).sum()  + (loser_l_data[:,17]*loser_l_data[:,43]).sum())/weight_loser, #### difference proportion aces
+             ((winner_w_data[:,8]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,17]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,8]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,17]*loser_l_data[:,-1]).sum())/weight_loser, #### difference proportion aces
              
-             ((winner_w_data[:,9]*winner_w_data[:,43]).sum()  + (winner_l_data[:,18]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,9]*loser_w_data[:,43]).sum()  + (loser_l_data[:,18]*loser_l_data[:,43]).sum())/weight_loser, #### difference proportion df
+             ((winner_w_data[:,9]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,18]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,9]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,18]*loser_l_data[:,-1]).sum())/weight_loser, #### difference proportion df
              
-             ((winner_w_data[:,11]*winner_w_data[:,43]).sum()  + (winner_l_data[:,20]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,11]*loser_w_data[:,43]).sum()  + (loser_l_data[:,20]*loser_l_data[:,43]).sum())/weight_loser, #### difference proportion first serv
+             ((winner_w_data[:,11]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,20]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,11]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,20]*loser_l_data[:,-1]).sum())/weight_loser, #### difference proportion first serv
              
-             ((winner_w_data[:,12]*winner_w_data[:,43]).sum()  + (winner_l_data[:,21]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,12]*loser_w_data[:,43]).sum()  + (loser_l_data[:,21]*loser_l_data[:,43]).sum())/weight_loser, #### difference proportion first won
+             ((winner_w_data[:,12]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,21]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,12]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,21]*loser_l_data[:,-1]).sum())/weight_loser, #### difference proportion first won
              
-             ((winner_w_data[:,13]*winner_w_data[:,43]).sum()  + (winner_l_data[:,22]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,13]*loser_w_data[:,43]).sum()  + (loser_l_data[:,22]*loser_l_data[:,43]).sum())/weight_loser, #### difference proportion second won
+             ((winner_w_data[:,13]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,22]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,13]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,22]*loser_l_data[:,-1]).sum())/weight_loser, #### difference proportion second won
              
              #### overall skill on serv =  w1sp*fs + (1-fs)*w2sp
              ws1 - ws2, 
@@ -184,12 +209,12 @@ def get_stats(x, sub_data):
              ws2- wr1,
              
              ### break point competencies  = bp_saved * bp_converted
-             ((winner_w_data[:,15]*winner_w_data[:,28]*winner_w_data[:,43]).sum() + (winner_l_data[:,24]*winner_l_data[:,33]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,15]*loser_w_data[:,28]*loser_w_data[:,43]).sum()  + (loser_l_data[:,24]*loser_l_data[:,33]*loser_l_data[:,43]).sum())/weight_loser, 
+             ((winner_w_data[:,15]*winner_w_data[:,28]*winner_w_data[:,-1]).sum() + (winner_l_data[:,24]*winner_l_data[:,33]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,15]*loser_w_data[:,28]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,24]*loser_l_data[:,33]*loser_l_data[:,-1]).sum())/weight_loser, 
              
              ### tie break competencies 
-             ((winner_w_data[:,36]*winner_w_data[:,43]/winner_w_data[:,39]).sum() + (winner_l_data[:,37]*winner_l_data[:,43]/winner_l_data[:,39]).sum())/weight_winner -  
-             ((loser_w_data[:,36]*loser_w_data[:,43]/loser_w_data[:,39]).sum() + (loser_l_data[:,37]*loser_l_data[:,43]/loser_l_data[:,39]).sum())/weight_loser,
+             ((winner_w_data[:,36]*winner_w_data[:,-1]/winner_w_data[:,39]).sum() + (winner_l_data[:,37]*winner_l_data[:,-1]/winner_l_data[:,39]).sum())/weight_winner -  
+             ((loser_w_data[:,36]*loser_w_data[:,-1]/loser_w_data[:,39]).sum() + (loser_l_data[:,37]*loser_l_data[:,-1]/loser_l_data[:,39]).sum())/weight_loser,
              
              ### proportion victory 1 vs 2 
              (sub_data[(sub_data[:,1] == x[1]) & (sub_data[:,2] == x[1])].shape[0] - 
@@ -200,12 +225,12 @@ def get_stats(x, sub_data):
               sub_data[(sub_data[:,1] == x[2])].shape[0])/ sub_data.shape[0],
              
              ### proportion points won common adversaries
-             ((winner_w_data[:,41]*winner_w_data[:,43]).sum()  + (winner_l_data[:,40]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,41]*loser_w_data[:,43]).sum()  + (loser_l_data[:,40]*loser_l_data[:,43]).sum())/weight_loser, #### difference proportion second won
+             ((winner_w_data[:,41]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,40]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,41]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,40]*loser_l_data[:,-1]).sum())/weight_loser, #### difference proportion second won
              
              #### diff mean rank common adversaries
-             ((winner_w_data[:,7]*winner_w_data[:,43]).sum()  + (winner_l_data[:,6]*winner_l_data[:,43]).sum())/weight_winner -\
-             ((loser_w_data[:,7]*loser_w_data[:,43]).sum()  + (loser_l_data[:,6]*loser_l_data[:,43]).sum())/weight_loser, #### difference proportion second won
+             ((winner_w_data[:,7]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,6]*winner_l_data[:,-1]).sum())/weight_winner -\
+             ((loser_w_data[:,7]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,6]*loser_l_data[:,-1]).sum())/weight_loser, #### difference proportion second won
              
              ### diff weights
              weight_winner - weight_loser,
@@ -221,7 +246,7 @@ def get_stats(x, sub_data):
              
              )
     
-    return [count]
+    return count
     
 def execute_stats(wrong_word_dict, data):
     count = data.apply(lambda x: weighted_statistics(x, wrong_word_dict))
@@ -317,14 +342,15 @@ def create_stats(data, liste_dataframe):
     
     #############################  calculate all necessary stats   ##########################################
     t0 = time.time()
-    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface"]]), liste_dataframe)
+    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "id_round", 'best_of']]), liste_dataframe)
     counts = counts.reshape(counts.shape[0], counts.shape[2])
     
     ###### put the right name to the right column
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
                  "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "diff_weights",
-                 "bst_rk_w", "bst_rk_l", "prop_victory_surface_w", "prop_victory_surface_l"]
+                 "bst_rk_w", "bst_rk_l", "prop_victory_surface_w", "prop_victory_surface_l",  "nbr_reach_level_tourney_w", 
+                 "nbr_reach_level_tourney_l", "prop_last_set_gagne_w", "prop_last_set_gagne_l"]
     stats = pd.DataFrame(counts, columns = stats_cols)
     data = pd.concat([data, stats], axis = 1)
 
@@ -360,12 +386,16 @@ def create_statistics(data, redo = False):
     
     #### get correlations coefficient
     correlation_surface, correlation_time = get_correlations(data, redo = redo)
-        
+    data["tourney_id_wo_year"] = list(list(zip(*data["tourney_id"].str.split("-")))[1])
+    
     ############################# calculation of statistics ########################################## 
-    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
-                     'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
-                     'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
-                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won']
+    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'best_of', "winner_rank", 'loser_rank', 
+                       'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+                       'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced',
+                       'w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 
+                       'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted', 'l_total_srv_won', 'l_total_ret_won',
+                       'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
+                       'tourney_id_wo_year', "id_round"]
 
     liste_params = [np.array(data[calculate_stats]), correlation_surface, correlation_time]
     total_data = create_stats(data, liste_params)

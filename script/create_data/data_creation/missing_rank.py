@@ -71,6 +71,17 @@ def deduce_rank_from_atp(total_data):
     # =============================================================================
     #     #### before 1996-08-12 all points are null ----> fill in with average pts same rank 
     # =============================================================================
-    data_futur = data.loc[(data["Date"]>="1996-08-12")&(data["Date"]<= "2003-12-31")]
-    
+#    data["weeks"] = data["Date"].dt.week
+#    data_futur = data.loc[(data["Date"]>="1996-08-12")&(data["Date"]<= "2003-12-31")].copy()
+#    data_futur = pd.concat([pd.DataFrame(np.array(data_futur[["winner_rank", "winner_rank_points", "weeks"]])), 
+#                            pd.DataFrame(np.array(data_futur[["loser_rank", "loser_rank_points", "weeks"]]))], axis=0)
+#    data_futur.columns = ["rank","rank_points","week"]
+#    aggregation = data_futur[["rank","rank_points","week"]].groupby(["rank","week"]).mean().reset_index()
+#    
+#    for player in ["winner", "loser"]:
+#        fillin_rank_pts_w = data.loc[(data["%s_rank_points"%player] == 0)&(data["Date"]<"1996-08-12"), ["%s_rank"%player, "weeks"]]
+#        fillin_rank_pts_w = pd.merge(fillin_rank_pts_w, aggregation, left_on = ["weeks", "%s_rank"%player], right_on = ["week", "rank"], how="left")
+#        data.loc[(data["%s_rank_points"%player] == 0)&(data["Date"]<"1996-08-12"), "%s_rank_points"%player] = fillin_rank_pts_w["rank_points"]
+#        
+#    print(pd.isnull(data).sum())
     return data 

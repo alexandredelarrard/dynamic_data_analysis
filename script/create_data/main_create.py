@@ -97,11 +97,11 @@ def main_creation(rebuild=False):
 if __name__ == "__main__":
     rebuild = {"redo_missing_atp_statistics" : False,
                    "create_elo" : False,
-                   "create_statistics": False,
+                   "create_statistics": True,
                    "create_variable" : False,
                    "update_data":True}    
      
-    full_data = main_creation(rebuild=True)
+    full_data = main_creation(rebuild=rebuild)
     
     
     
