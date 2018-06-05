@@ -156,6 +156,7 @@ def clean_extract(latest):
     clean["Date"] = clean[["tourney_date", "tourney_end_date", "match_num", "draw_size", "round"]].apply(lambda x: deduce_match_date(x), axis=1)
     clean["tourney_year"] = clean["Date"].dt.year
     clean["best_of"] = np.where(clean["masters"] == "grandslam", 5, 3)
+    clean["tourney_id_wo_year"] = ex["6"].astype(str) 
     
     count = ex["2"].apply(lambda x : currency_prize(x))
     

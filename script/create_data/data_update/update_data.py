@@ -53,19 +53,28 @@ def update_stable():
     t0 = time.time()
     additionnal_data, dico_players_nbr = fill_latest_elo(latest_data, extra)
     extra = calculate_elo_over_the_road(additionnal_data, dico_players_nbr)
+    extra = extra.sort_values(["Date", "tourney_id"])
     print("Calculate elo for new match {0}".format(time.time() - t0))
     
     # =============================================================================
     #     ### calculate the statistics on it
     # =============================================================================
     correlation_surface, correlation_time = get_correlations(extra, redo = False)
-    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'missing_stats', "winner_rank", 'loser_rank', 'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
-                     'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won',
-                     'w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted',
-                     'l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won', "match_num"]
+    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'best_of', "winner_rank", 'loser_rank', 
+                       'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+                       'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced',
+                       'w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 
+                       'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted', 'l_total_srv_won', 'l_total_ret_won',
+                       'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
+                       'tourney_id_wo_year', "id_round"]
 
-    liste_dataframe = [np.array(latest_data.loc[latest_data["target"] == 1, calculate_stats]), correlation_surface, correlation_time]
-    total_data = create_stats(extra, liste_dataframe)
+    total_data = latest_data.copy()
+    for tourney in extra["tourney_id"].unique():
+        print(" additionnal stats on {0}".format(tourney))
+        liste_dataframe = [np.array(total_data.loc[total_data["target"] == 1, calculate_stats]), correlation_surface, correlation_time]
+        addi = create_stats(extra.loc[extra["tourney_id"] == tourney], liste_dataframe)
+        total_data = pd.concat([total_data, addi], axis=0)
+                        
     total_data.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_clean.csv", index = False)
     total_data.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_%s.csv"%str(max_date), index = False)
     

@@ -85,7 +85,7 @@ def weighted_statistics(x, liste_dataframe):
             stats = [(0,)   + (np.nan,)*17+ (stats1)]
     else:
         stats = [(0, )   + (np.nan,)*25]
-    print(stats) 
+
     return stats
 
 
