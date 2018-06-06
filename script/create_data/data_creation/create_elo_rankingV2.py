@@ -127,6 +127,7 @@ def calculate_elo(data):
     columns : "Date", "winner_id", "loser_id", "elo1", "elo2"
     """
     
+    data = data.sort_values(["tourney_date", "Date"])
     data = np.array(data[["Date", "winner_id", "loser_id", "elo1", "elo2"]].copy())
 
     print(" Calculate elo for each player ")

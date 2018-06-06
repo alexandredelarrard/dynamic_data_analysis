@@ -23,8 +23,14 @@ from crawling.crawling_atp_ranking import atp_crawl
 
 def update_stable():
     
-    path = os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/latest/total_dataset_modelling.csv"
-    latest_data = pd.read_csv(path)
+    try:
+        path = os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/latest/total_dataset_modelling.csv"
+        latest_data = pd.read_csv(path)
+    except Exception:
+        path = os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv"
+        latest_data = pd.read_csv(path)
+        pass
+        
     latest_data = latest_data.loc[latest_data["target"] == 1]
     latest_data = latest_data.sort_values(["tourney_date", "tourney_name"])
     
@@ -89,7 +95,6 @@ def update_stable():
     new_data_modelling.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/latest/total_dataset_modelling.csv", index = False)
     
     return new_data_modelling
-
 
 if __name__ == "__main__":
     extra = update_stable()
