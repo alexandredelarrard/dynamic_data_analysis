@@ -174,7 +174,7 @@ def clean_extract(latest):
     clean["prize"] = list(list(zip(*count))[1])
     currency = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/tournament/currency_evolution.csv")
     clean["prize"] = clean[["prize", "Currency", "tourney_year"]].apply(lambda x: homogenize_prizes(x, currency), axis=1)
-    
+    del clean["tourney_year"]
     # =============================================================================
     #     #### merge player id 
     # =============================================================================
@@ -182,7 +182,9 @@ def clean_extract(latest):
     
     clean = pd.merge(clean, players, left_on = "winner_name", right_on = "Player_Name", how = "left")
     clean = pd.merge(clean, players, left_on = "loser_name", right_on = "Player_Name", how = "left", suffixes= ("_w","_l"))
-    clean = clean.drop(["Player_Name_w", "Player_Name_l"], axis=1)
+    clean = clean.drop(["Player_Name_w", "Player_Name_l", "Birth place_l", "Birth place_w"], axis=1)
+    clean["DOB_w"] = pd.to_datetime(clean["DOB_w"], format="%Y-%m-%d")
+    clean["DOB_l"] = pd.to_datetime(clean["DOB_l"], format="%Y-%m-%d")
     
     clean = clean.rename(columns = {"Height_l": "loser_ht", 
                                     "Height_w": "winner_ht", 
@@ -214,21 +216,21 @@ def clean_extract(latest):
     clean["w_df"] = ex_stats["df_player1"].astype(int)
     clean["l_df"] = ex_stats["df_player2"].astype(int)
     
-    clean["w_svpt"] = ex_stats["1serv_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
-    clean["l_svpt"] = ex_stats["1serv_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
-    clean["w_1stIn"] = ex_stats["1serv_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
-    clean["l_1stIn"] = ex_stats["1serv_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
-    clean["w_1stWon"] = ex_stats["1serv_won_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
-    clean["l_1stWon"] = ex_stats["1serv_won_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
-    clean["w_2ndWon"] = ex_stats["2serv_won_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
-    clean["l_2ndWon"] = ex_stats["2serv_won_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
+    clean["w_svpt"] = ex_stats["1serv_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1]).astype(int)
+    clean["l_svpt"] = ex_stats["1serv_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1]).astype(int)
+    clean["w_1stIn"] = ex_stats["1serv_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
+    clean["l_1stIn"] = ex_stats["1serv_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
+    clean["w_1stWon"] = ex_stats["1serv_won_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
+    clean["l_1stWon"] = ex_stats["1serv_won_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
+    clean["w_2ndWon"] = ex_stats["2serv_won_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
+    clean["l_2ndWon"] = ex_stats["2serv_won_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
     clean["w_SvGms"] = ex_stats["serv_games_player1"].astype(int)
     clean["l_SvGms"] = ex_stats["serv_games_player2"].astype(int)
     
-    clean["w_bpSaved"] = ex_stats["bp_saved_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
-    clean["l_bpSaved"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0])
-    clean["w_bpFaced"] = ex_stats["bp_saved_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
-    clean["l_bpFaced"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1])
+    clean["w_bpSaved"] = ex_stats["bp_saved_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
+    clean["l_bpSaved"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[0]).astype(int)
+    clean["w_bpFaced"] = ex_stats["bp_saved_player1"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1]).astype(int)
+    clean["l_bpFaced"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1]).astype(int)
     
     # =============================================================================
     #     #### data prep/ craetion of variables
@@ -260,6 +262,7 @@ def clean_extract(latest):
         clean2[col]  = list(list(zip(*count))[i])
         
     clean2 = clean2.rename(columns = {"Players_ID_w":"winner_id", "Players_ID_l":"loser_id"})
+    clean2 = clean2.sort_values(["Date", "tourney_id"]).reset_index(drop=True)
     
     return clean2
 

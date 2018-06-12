@@ -20,16 +20,24 @@ sys.path.append(r"C:\Users\User\Documents\tennis")
 from crawling.crawling_additionnal_data import extract_additionnal_data
 from crawling.crawling_atp_ranking import atp_crawl
 
-
-def update_stable():
+def import_data():
     
     try:
         path = os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/latest/total_dataset_modelling.csv"
         latest_data = pd.read_csv(path)
+        print("from updated/latest")
     except Exception:
+        print("from stable/historical")
         path = os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv"
         latest_data = pd.read_csv(path)
         pass
+    
+    return latest_data
+
+
+def update_stable():
+    
+    latest_data = import_data()
         
     latest_data = latest_data.loc[latest_data["target"] == 1]
     latest_data = latest_data.sort_values(["tourney_date", "tourney_name"])
@@ -53,13 +61,13 @@ def update_stable():
     
     ### calculate elo
     latest_data["Date"] = pd.to_datetime(latest_data["Date"], format = "%Y-%m-%d")
+    latest_data["tourney_date"] = pd.to_datetime(latest_data["tourney_date"], format = "%Y-%m-%d")
     latest_data["DOB_w"] = pd.to_datetime(latest_data["DOB_w"], format = "%Y-%m-%d")
     latest_data["DOB_l"] = pd.to_datetime(latest_data["DOB_l"], format = "%Y-%m-%d")
     
     t0 = time.time()
     additionnal_data, dico_players_nbr = fill_latest_elo(latest_data, extra)
     extra = calculate_elo_over_the_road(additionnal_data, dico_players_nbr)
-    extra = extra.sort_values(["Date", "tourney_id"])
     print("Calculate elo for new match {0}".format(time.time() - t0))
     
     # =============================================================================
@@ -74,20 +82,26 @@ def update_stable():
                        'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
                        'tourney_id_wo_year', "id_round"]
 
-    total_data = latest_data.copy()
-    for tourney in extra["tourney_id"].unique():
-        print(" additionnal stats on {0}".format(tourney))
-        liste_dataframe = [np.array(total_data.loc[total_data["target"] == 1, calculate_stats]), correlation_surface, correlation_time]
-        addi = create_stats(extra.loc[extra["tourney_id"] == tourney], liste_dataframe)
-        total_data = pd.concat([total_data, addi], axis=0)
-                        
-    total_data.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_clean.csv", index = False)
-    total_data.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_%s.csv"%str(max_date), index = False)
+    for i, tourney in enumerate(extra["tourney_id"].unique()):
+        print(" additionnal stats on {0} start date {1} end date {2}".format(tourney, extra.loc[extra["tourney_id"] == tourney, "tourney_date"].unique()[0], extra.loc[extra["tourney_id"] == tourney, "tourney_end_date"].unique()[0]))
+        liste_dataframe = [np.array(latest_data.loc[calculate_stats]), correlation_surface, correlation_time]
+        addi = create_stats(extra.loc[extra["tourney_id"] == tourney].reset_index(drop=True), liste_dataframe)
+        
+        if i ==0:
+            extraction_total = addi
+        else:
+            extraction_total = pd.concat([extraction_total, addi], axis =0)
+            
+    extraction_total = extraction_total.reset_index(drop=False)
+                   
+    extraction_total.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_clean.csv", index = False)
+    extraction_total.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_%s.csv"%str(max_date), index = False)
     
     # =============================================================================
     #     ##### merge with new updated data and new update, move the previous most updated data to old folder
     # =============================================================================
-    new_data_modelling = pd.concat([latest_data, total_data],axis=0)
+    latest_data = import_data()
+    new_data_modelling = pd.concat([latest_data, extraction_total], axis=0)
     files_already_there = glob.glob(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/latest/*.csv")
     for f in files_already_there: 
         os.rename(f, os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/latest/old/{0}_total_dataset_modelling.csv".format(latest["Date"]))
@@ -97,5 +111,7 @@ def update_stable():
     return new_data_modelling
 
 if __name__ == "__main__":
+    
+    os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
     extra = update_stable()
     

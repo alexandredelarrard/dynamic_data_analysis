@@ -119,8 +119,10 @@ def prep_data(data, verbose=0):
     ##### flag wrong stats as missing stats for suppression in the creation variable part 
     ratio = np.where((dataset["l_svpt"]/dataset["total_games"] <= 2) | (dataset["l_svpt"]/dataset["total_games"]>=6), 1 ,0)
     dataset["missing_stats"] = np.where((pd.isnull(dataset["w_ace"]))|(dataset["w_SvGms"] == 0)|(dataset["l_SvGms"] == 0)|(ratio==1), 1, 0)
-    
+
+    forme = dataset.shape[0]
     dataset = dataset.loc[dataset["missing_stats"] !=1]
+    print(" Suppressed missing or wrong stats : {0} rows suppressed".format(dataset.shape[0] - forme))
          
     ### dummify court
     dataset["indoor_flag"] = np.where(dataset["indoor_flag"] == "Outdoor", 0,1).astype(int)

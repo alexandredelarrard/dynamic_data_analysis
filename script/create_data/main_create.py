@@ -101,7 +101,7 @@ if __name__ == "__main__":
                    "create_variable" : False,
                    "update_data":True}    
      
-    full_data = main_creation(rebuild=rebuild)
+    full_data = main_creation(rebuild=True)
     
     
     

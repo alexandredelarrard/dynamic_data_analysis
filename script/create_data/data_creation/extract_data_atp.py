@@ -133,7 +133,6 @@ def fill_in_missing_values(total_data, redo):
     total_data_wrank_stats_tourney_players = merge_atp_players(total_data_wrank_stats)
     total_data_wrank_stats_tourney_players = total_data_wrank_stats_tourney_players.drop(["Players_ID_w", "Player_Name_w","Players_ID_l", "Player_Name_l"], axis=1)
     print("[{0}s] 5) Merge with players and fillin missing values (ht : {1}/{2}; age: {3}/{2})".format(time.time() - t0, mvs["winner_ht"] + mvs["loser_ht"], total_data.shape[0], mvs["winner_age"] + mvs["loser_age"]))
-    print(pd.isnull(total_data_wrank_stats_tourney_players).sum())
         
     return total_data_wrank_stats_tourney_players
 

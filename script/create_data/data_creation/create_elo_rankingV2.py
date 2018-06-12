@@ -40,11 +40,11 @@ def elo(old, exp, score, k):
 
 def fill_latest_elo(data, additionnal_data):
     
-    data = np.array(data.loc[data["target"]==1][["Date","Players_ID_w", "Players_ID_l", "elo1", "elo2"]].copy())
+    data = np.array(data.loc[data["target"]==1][["Date","winner_id", "loser_id", "elo1", "elo2"]].copy())
     dico_players_elo = {}
     dico_players_nbr = {}
     
-    players_ids = list(set(additionnal_data["Players_ID_w"].tolist() + additionnal_data["Players_ID_l"].tolist()))
+    players_ids = list(set(additionnal_data["winner_id"].tolist() + additionnal_data["loser_id"].tolist()))
     for pl in players_ids:
         sub_data = data[(data[:,1] == pl) |(data[:,2] == pl),:]
         nbr = sub_data.shape[0]
@@ -62,8 +62,8 @@ def fill_latest_elo(data, additionnal_data):
             dico_players_elo[pl] = elo[0][0]
             dico_players_nbr[pl] = nbr
         
-    additionnal_data["elo1"] = additionnal_data["Players_ID_w"].map(dico_players_elo)
-    additionnal_data["elo2"] = additionnal_data["Players_ID_l"].map(dico_players_elo)
+    additionnal_data["elo1"] = additionnal_data["winner_id"].map(dico_players_elo)
+    additionnal_data["elo2"] = additionnal_data["loser_id"].map(dico_players_elo)
     
     return additionnal_data, dico_players_nbr
 
@@ -110,7 +110,7 @@ def calculate_elo_over_the_road(data, nbr_dico):
     """
     
     data2 = data.copy()
-    data_cols = np.array(data2[["Date", "Players_ID_w", "Players_ID_l", "elo1", "elo2"]])
+    data_cols = np.array(data2[["Date", "winner_id", "loser_id", "elo1", "elo2"]])
 
     print(" Calculate elo for each player ")
     for i in tqdm.tqdm(range(len(data_cols))):

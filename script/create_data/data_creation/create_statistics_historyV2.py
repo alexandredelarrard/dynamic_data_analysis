@@ -55,6 +55,15 @@ def add_weight(x, sub_data, corr_surface, corr_time):
     return b
 
 
+def convert(x):
+    try:
+        x = str(int(x))
+    except Exception:
+        x = str(x)
+        
+    return x
+
+
 def weighted_statistics(x, liste_dataframe):
     
     data = liste_dataframe[0].copy()
@@ -85,6 +94,7 @@ def weighted_statistics(x, liste_dataframe):
             stats = [(0,)   + (np.nan,)*17+ (stats1)]
     else:
         stats = [(0, )   + (np.nan,)*25]
+        print(x)
 
     return stats
 
@@ -94,17 +104,15 @@ def get_player_stat(x, sub_data):
     w_index= (sub_data[:,1] == x[1])|(sub_data[:,2] == x[1])
     l_index = (sub_data[:,1] == x[2])|(sub_data[:,2] == x[2])
     
-    try:
+    if sub_data[w_index].shape[0] > 0:
         best_rank_winner = np.min(sub_data[w_index, 6])
-    except Exception:
+    else:
         best_rank_winner = -1
-        pass
     
-    try:
+    if sub_data[l_index].shape[0] > 0:
         best_rank_loser  = np.min(sub_data[l_index, 7])
-    except Exception:
+    else:
         best_rank_loser = -1
-        pass
 
     try:
         prop_victory_surface_winner = sub_data[(sub_data[:,1] == x[1])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(w_index)&(sub_data[:,3] == x[3])].shape[0]
@@ -153,7 +161,7 @@ def get_stats(x, sub_data):
                       'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted','l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set",
                       'l_total_pts_won', 'w_total_pts_won', 'tourney_id', "id_round", 'weight'
                       
-     x : "Date", "winner_id", "loser_id", "surface"
+     x : "Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "id_round", 'best_of'
     """
     
     winner_w_data = sub_data[sub_data[:,1] == x[1]]
@@ -322,12 +330,15 @@ def get_correlations(data, redo = False):
     return correlation_surface, correlation_time
 
 
-def create_stats(data, liste_dataframe):
+def create_stats(data, liste_params):
     
-    data = data.copy()
+    mvs = pd.isnull(data).sum()
+    print(mvs)
+
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
+    data["prob_elo"] = 1 / (1 + 10 ** ((data["elo2"] - data["elo1"]) / 400))
     
     #### get differrence of fatigue between players
     t0 = time.time()
@@ -338,11 +349,12 @@ def create_stats(data, liste_dataframe):
     
     data = global_stats(data)
     data["target"] = 1
+    data = data.reset_index(drop=True)
     print(" Created target and global_stats variables ")
     
     #############################  calculate all necessary stats   ##########################################
     t0 = time.time()
-    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "id_round", 'best_of']]), liste_dataframe)
+    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "id_round", 'best_of']]), liste_params)
     counts = counts.reshape(counts.shape[0], counts.shape[2])
     
     ###### put the right name to the right column
@@ -384,11 +396,14 @@ def create_stats(data, liste_dataframe):
 
 def create_statistics(data, redo = False):
     
+    
     #### get correlations coefficient
     correlation_surface, correlation_time = get_correlations(data, redo = redo)
-    data["tourney_id_wo_year"] = list(list(zip(*data["tourney_id"].str.split("-")))[1])
-    
+    data["tourney_id_wo_year"] =   list(list(zip(*data["tourney_id"].str.split("-")))[1])
+    data["tourney_id_wo_year"] = "_" + data["tourney_id_wo_year"]
+  
     ############################# calculation of statistics ########################################## 
+    ### we use tourney date instead of date because wont have last statistics of tourney match, atp crawl them and give them later
     calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'best_of', "winner_rank", 'loser_rank', 
                        'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
                        'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced',
@@ -409,8 +424,9 @@ if __name__ == "__main__":
 
     data = pd.read_csv(r"C:\Users\User\Documents\tennis\data\clean_datasets\historical\matches_elo_variables_V1.csv")
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
+    data["tourney_date"] = pd.to_datetime(data["tourney_date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
-   
-    tot = create_statistics(data)
+    data = data.sort_values(["Date", "tourney_id"])
     
+    tot = create_statistics(data)
