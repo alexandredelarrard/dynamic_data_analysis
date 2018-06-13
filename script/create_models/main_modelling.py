@@ -5,31 +5,29 @@ Created on Fri May 11 14:51:18 2018
 @author: JARD
 """
 
-import time
-import pandas as pd
-import os
+import sys
 
-from create_models.data_prep.filter_data import data_prep_for_modelling
-from create_models.models.xgb import modelling_xgboost
-#from create_models.models.logistic import modelling_logistic
+sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script\create_models")
+from data_prep.filter_data import data_prep_for_modelling
+from models.xgb import modelling_xgboost
+from models.logistic import modelling_logistic
 
 def main_modelling(params):
     
-    t0 = time.time()
-
-    data =pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/total_dataset_modelling.csv")
-    
     ### data prep
-    modelling_data = data_prep_for_modelling(data)
+    modelling_data = data_prep_for_modelling()
     
     ### modelling _ xgb
-    clf, var_imp = modelling_xgboost(modelling_data, params["date_test_start"], params["date_test_end"])
+    clf, var_imp, predictions_overall_xgb = modelling_xgboost(modelling_data, params["date_test_start"], params["date_test_end"])
     
     ### modelling logistic
-#    clf, var_imp = modelling_xgboost(modelling_data, date_test_start = "2017-01-01", date_test_end="2017-12-31")
-    
-    print("Total time for data preparation for modelling {0}".format(time.time() - t0))
-    return clf, var_imp, modelling_data
+    clf, var_imp, predictions_overall_lg = modelling_logistic(modelling_data, params["date_test_start"], params["date_test_end"])
+
+    return clf, var_imp, predictions_overall_xgb, predictions_overall_lg
 
 if __name__ == "__main__":
-    clf, var_imp, modelling_data = main_modelling(retrain=False)
+    params = {
+            "date_test_start" : "2017-05-01", 
+            "date_test_end"   : "2018-06-13"
+             }
+    clf, var_imp, predictions_overall_xgb, predictions_overall_lg = main_modelling(params)

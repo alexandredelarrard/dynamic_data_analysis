@@ -91,9 +91,9 @@ def weighted_statistics(x, liste_dataframe):
             stats    = get_stats(x, sub_data)
             stats = [(stats) + (stats1)]
         else:
-            stats = [(0,)   + (np.nan,)*17+ (stats1)]
+            stats = [(0,)   + (np.nan,)*18+ (stats1)]
     else:
-        stats = [(0, )   + (np.nan,)*25]
+        stats = [(0, )   + (np.nan,)*26]
         print(x)
 
     return stats
@@ -243,6 +243,10 @@ def get_stats(x, sub_data):
              ### diff weights
              weight_winner - weight_loser,
              
+             ### diff average time per set
+             ((winner_w_data[:,4]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,4]*winner_l_data[:,-1]).sum())/((sub_data[(sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1]), 39].sum())*weight_winner) -\
+             ((loser_w_data[:,4]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,4]*loser_l_data[:,-1]).sum())/((sub_data[(sub_data[:,1] == x[2]) | (sub_data[:,2] == x[2]), 39].sum())*weight_loser)
+             
              #    prop_1er_set_gagne_surface_w = 
              #    prop_1er_set_gagne_surface_l =   
              
@@ -305,6 +309,7 @@ def global_stats(data):
     
     return data
 
+
 def get_correlations(data, redo = False):
     
     if redo :
@@ -361,6 +366,7 @@ def create_stats(data, liste_params):
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
                  "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "diff_weights",
+                 "diff_time_set",
                  "bst_rk_w", "bst_rk_l", "prop_victory_surface_w", "prop_victory_surface_l",  "nbr_reach_level_tourney_w", 
                  "nbr_reach_level_tourney_l", "prop_last_set_gagne_w", "prop_last_set_gagne_l"]
     stats = pd.DataFrame(counts, columns = stats_cols)

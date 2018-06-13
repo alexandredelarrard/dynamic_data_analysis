@@ -93,8 +93,6 @@ def update_stable():
             extraction_total = pd.concat([extraction_total, addi], axis =0)
             
     extraction_total = extraction_total.reset_index(drop=False)
-                   
-    extraction_total.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_clean.csv", index = False)
     extraction_total.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_%s.csv"%str(max_date), index = False)
     
     # =============================================================================

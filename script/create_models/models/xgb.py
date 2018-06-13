@@ -26,6 +26,14 @@ def modelling_xgboost(data, date_test_start, date_test_end):
     avg_log_loss = 0
     for i, tourney in enumerate(test_tot.sort_values("Date")["tourney_name"].unique()):
         test = test_tot.loc[test_tot["tourney_name"]== tourney]
+        date_ref = test["Date"].min()
+        
+         
+        if i == 0:
+            predictions_overall = test[["target", "id_round", "tourney_name", "Date"]]
+        else:
+            predictions_overall = pd.concat([predictions_overall, test[["target", "id_round", "tourney_name", "Date"]]], axis=0).reset_index(drop=True)
+        
         
         if i >0:
             train= pd.concat([train, addi_train], axis=0)
@@ -54,9 +62,15 @@ def modelling_xgboost(data, date_test_start, date_test_end):
                          )
             
         preds=  clf.predict_proba(x_test)[:,1]
+        
+        if i ==0:
+            predictions =  pd.DataFrame(preds, columns= ["preds"])
+        else:
+            predictions = pd.concat([predictions, pd.DataFrame(preds)], axis=0)
+        
         auc = roc_auc_score(y_test,preds)
         accuracy = accuracy_score(y_test, clf.predict(x_test))
-        print("[{0: <15}] : [AUC] {1:.3f} / [Accuracy] {2:.3f} / [logloss] {3:.3f} /  [Match Nbr] {4}".format(tourney, auc, accuracy, log_loss(y_test, preds), len(x_test)))
+        print("[{0: <16}][{5}] : [AUC] {1:.3f} / [Accuracy] {2:.3f} / [logloss] {3:.3f} /  [Match Nbr] {4}".format(tourney, auc, accuracy, log_loss(y_test, preds), len(x_test), date_ref))
         
         avg_auc += auc*len(x_test) 
         avg_acc += accuracy*len(x_test) 
@@ -64,11 +78,12 @@ def modelling_xgboost(data, date_test_start, date_test_end):
         var_imp = pd.DataFrame(np.array(clf.feature_importances_), columns = ["importance"], index= x_train.columns).sort_values("importance")
         addi_train = test
         
-    plot_importance(clf)
+        plot_importance(clf)
         
+    predictions_overall["preds"] = predictions[0].tolist()
     print("_"*40)
     print("[AUC avg: <15] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
-    return clf, var_imp
+    return clf, var_imp, predictions_overall
 
 
 def split_train_test(data, date_test_start, date_test_end):
@@ -86,5 +101,5 @@ if __name__ == "__main__":
     data0 = data0.loc[(~pd.isnull(data0["diff_aces"]))&(data0["Common_matches"]>5)]
     data0["Date"]= pd.to_datetime(data0["Date"], format = "%Y-%m-%d")
     
-    clf, var_imp = modelling_xgboost(data0, date_test_start = "2017-01-01", date_test_end="2017-12-31")
+    clf, var_imp, predictions_overall = modelling_xgboost(data0, date_test_start = "2017-01-01", date_test_end="2017-12-31")
     

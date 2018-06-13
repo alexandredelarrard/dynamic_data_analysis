@@ -29,7 +29,8 @@ def import_data_atp(path, redo=False):
             data = pd.concat([data, pd.read_csv(file, encoding = "latin1")], axis=0)
             
     data = data.sort_values(["tourney_date", "tourney_id", "match_num"])
-
+    del data["tourney_level"]
+    
     # =============================================================================
     #     #### merge with tourney database 
     # =============================================================================

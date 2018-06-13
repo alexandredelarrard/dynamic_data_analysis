@@ -7,50 +7,62 @@ Created on Sun May 13 09:02:29 2018
 
 import pandas as pd
 import numpy as np
+import os
+from matplotlib import pyplot as plt
+from create_data.utils.plot_lib import var_vs_target
 
-def data_prep_for_modelling(data):
+def data_prep_for_modelling():
+    """
+    filter data for modelling 
+    - 138092, 145 variables
+    """
     
-    full_data = data.copy()
+    full_data = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/updated/latest/total_dataset_modelling.csv")
+    
     full_data["Date"]= pd.to_datetime(full_data["Date"], format = "%Y-%m-%d")
     
     shape0 = full_data.shape[0]
-    full_data = full_data.loc[~pd.isnull(full_data["diff_aces"])&(full_data["Common_matches"]>=5)&(full_data["Date"].dt.year>= 1992)]
+    full_data = full_data.loc[~pd.isnull(full_data["diff_aces"])&(full_data["Common_matches"]>=2)&(full_data["Date"].dt.year>= 1990)]
+    full_data = full_data.loc[~pd.isnull(full_data["l_2nd_srv_ret_won"])]
+    full_data = full_data.loc[~pd.isnull(full_data["w_2nd_srv_ret_won"])]
+    full_data = full_data.loc[~pd.isnull(full_data["diff_overall_skill"])]
     print("[0] Suppressed missing values : {} suppressed".format(full_data.shape[0] - shape0))
     
-    shape0 = full_data.shape[0]
-    full_data = full_data.loc[full_data['missing_stats'] !=1]
-    print("[0] Suppressed missing_stats = 1 : {} suppressed".format(full_data.shape[0] - shape0))
-
-    ### filter interesting columns
-    columns_to_keep = list(set(['diff_fatigue_games', 'Common_matches', 'diff_aces', 'diff_df', 'diff_1st_serv_in', 'diff_1st_serv_won', 'diff_2nd_serv_won', 
-                     'diff_skill_serv', 'diff_skill_ret', 'indoor_flag', 'diff_days_since_stop', 'diff_hand', "w_birthday", "l_birthday",
-                     'diff_overall_skill', 'diff_serv1_ret2', 'diff_serv2_ret1', 'diff_bp', 'diff_tie_break', 'diff_victories_12', 'diff_victories_common_matches', 
-                     'diff_pts_common_matches', 'diff_mean_rank_adversaries', 'diff_age', 'diff_ht', 'diff_imc', 'diff_weight', 'diff_year_turned_pro', 'diff_elo',
-                     'diff_rank', 'diff_rk_pts', 'diff_home', 'target', 'masters', 'round', 'winner_rank',  'loser_rank','week', 'best_of', 'match_num', 'prize',
-                     'month',  'day_of_year', 'day_of_month', 'day_week']))
+# =============================================================================
+#     ###fill na to -1 or delete observations
+# =============================================================================
+    full_data["total_tie_break_l"] =  full_data["total_tie_break_l"].fillna(-1)
+    full_data["total_tie_break_w"] =  full_data["total_tie_break_w"].fillna(-1)
+    full_data["diff_serv2_ret1"]   =  full_data["diff_serv2_ret1"].fillna(-1)
+    full_data["diff_skill_ret"]    =  full_data["diff_skill_ret"].fillna(-1)
+    
+# =============================================================================
+#     ### filter interesting columns
+# =============================================================================
+    columns_to_keep = ["tourney_name", "Date", 'target',  ### for filter or output
+                      'Common_matches', 'best_of', 'bst_rk_l', 'bst_rk_w', 'day_week', 'day_of_year', 'diff_1st_serv_in',
+                     'diff_1st_serv_won', 'diff_2nd_serv_won', 'diff_aces', 'diff_age', 'diff_bp', 'diff_df', 'diff_elo', 'diff_fatigue_games', 'diff_hand',
+                     'diff_home', 'diff_ht', 'diff_imc', 'diff_mean_rank_adversaries', 'diff_overall_skill', 'diff_pts_common_matches', 'diff_rank', 'diff_rk_pts',
+                     'diff_serv1_ret2', 'diff_serv2_ret1', 'diff_skill_ret', 'diff_skill_serv', 'diff_tie_break',  'diff_victories_common_matches',
+                     'diff_weight', 'diff_weights', 'diff_year_turned_pro', 'draw_size', 'id_round', 'nbr_reach_level_tourney_l',
+                     'nbr_reach_level_tourney_w', 'prize',  'prop_last_set_gagne_l', 'prop_last_set_gagne_w', 'prop_victory_surface_l', 'prop_victory_surface_w',
+                     'surface', 'winner_rank', 'winner_rank_points', 'loser_rank', 'loser_rank_points', 'w_birthday', 'l_birthday', 'masters', 'round',
+                     ####'prob_elo', 'elo1', 'elo2',  maybe suppress 'diff_victories_12',  'indoor_flag',
+                     ]
    
-    full_data2 = full_data[columns_to_keep].copy()
+    full_data = full_data[columns_to_keep]
     
-    ### take care of round
-    dico = {"R32": 32, "R16": 16, "R64": 64, "R128":128, "QF": 8, "SF": 4, "F":2, "RR": 4 }
-    full_data2['round'] = full_data2['round'].map(dico).astype(int)  
-    
-    for col in ['masters']:
+# =============================================================================
+#     ### take care of object variables
+# =============================================================================
+    for col in ['masters', 'round', "surface"]:
         a = pd.get_dummies(full_data[col], prefix = col)
-        full_data2 = pd.concat([full_data2, a], axis=1)
-        del full_data2[col]
+        full_data = pd.concat([full_data, a], axis=1)
+        del full_data[col]
         
-    ### keep for training filtering
-    full_data2["Date"] = full_data["Date"]
-    full_data2["tourney_name"] = full_data["tourney_name"]
-    
-#    full_data2["prob_elo"] =  1 / (1 + 10 ** ((full_data2["diff_elo"]) / 400))
-    
-    return full_data2
+    return full_data
 
-
-def data_analysis(full_data):
+if __name__ == "__main__": 
     
-    ### people with fewer service point than the minimum with game numbers
-    full_data.loc[full_data["w_svpt"] < full_data["total_games"]*4/2].drop_duplicates().to_csv(r"C:\Users\User\Documents\tennis\data\to_check\winner_service_weird.csv")
-    
+    os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
+    full = data_prep_for_modelling()

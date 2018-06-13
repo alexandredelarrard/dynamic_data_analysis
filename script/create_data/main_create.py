@@ -26,6 +26,13 @@ def main_create_data(param):
     if rebuild:
             
         if param["redo_missing_atp_statistics"]: #// 10 min 
+            
+            try:
+                os.remove(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv")
+                os.remove(os.environ["DATA_PATH"]  + "/clean_datasets/overall/updated/latest/total_dataset_modelling.csv")
+            except Exception:
+                pass
+            
             ### read atp data and clean it / redo = build from scratch with the matching algo with stats match from atp 
             path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
             data_atp = import_data_atp(path, redo = False) ### redo the stats match with crawled matches from atp
