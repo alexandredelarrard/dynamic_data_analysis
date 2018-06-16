@@ -7,7 +7,8 @@ Created on Mon Mar 26 21:39:18 2018
 
 import pandas as pd
 import os
-from dateutil import relativedelta
+
+from create_train.utils.utils_data_prep import dates
 
 def make_players():
     
@@ -49,16 +50,6 @@ def import_players():
     
     return players.reset_index(drop=True)
     
-
-def dates(x):
-    
-    diff = relativedelta.relativedelta(x[0], x[1])
-    
-    years = diff.years
-    reste = (diff.months *30 + diff.days) / 365
-    
-    return years + reste
-
 
 def fillin_missing_values(data):
     

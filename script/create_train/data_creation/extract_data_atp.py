@@ -31,6 +31,17 @@ def import_data_atp(path, redo=False):
     data = data.sort_values(["tourney_date", "tourney_id", "match_num"])
     
     # =============================================================================
+    #     ### correct tourney_id not merging or too old for atp
+    # =============================================================================
+    data["tourney_id"] = np.where(data["tourney_id"] == '2018-0301', '2018-301', 
+                         np.where(data["tourney_id"] == '2018-M020', '2018-339',
+                         np.where(data["tourney_id"] == '2018-0451', '2018-451',
+                         np.where(data["tourney_id"] == '2018-0375', '2018-375',
+                         np.where(data["tourney_id"] == '2018-0891', '2018-891',
+                         np.where(data["tourney_id"] == '2018-M001', '2018-338',
+                         data["tourney_id"]))))))
+    
+    # =============================================================================
     #     #### merge with tourney database 
     # =============================================================================
     data["tourney_date"]   = pd.to_datetime(data["tourney_date"], format = "%Y%m%d")  
