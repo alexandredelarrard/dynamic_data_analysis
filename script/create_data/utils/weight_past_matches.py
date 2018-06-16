@@ -133,5 +133,30 @@ def calculate_corr_opponents(tot, remake = False, start_year=1990, end_year=2016
         
     else:
         return pd.DataFrame([1, 0.9, 0.3], index= ["1v1", "1Vsub", "1Vall"], columns = ["correlation"])
+
+
+def get_correlations(data, redo = False):
+    
+    if redo :
+        #### calculate correlations
+        data1 = data[["Date", "winner_id", "loser_id", "surface", "tourney_id"]].copy()
+        data1["target"] = 1
+        
+        data2 = data1.copy()
+        data2 = data2.rename(columns = {"winner_id" : "loser_id", "loser_id" : "winner_id"})
+        data2["target"] = 0
+        data2 = data2[["winner_id", "loser_id", "Date", "target", "surface", "tourney_id"]]
+        
+        tot = pd.concat([data1, data2], axis= 0)
+        tot["Date"] = pd.to_datetime(tot["Date"], format = "%Y-%m-%d")
+        
+        correlation_surface   = calculate_corr_surface(tot, start_year=1990, end_year=2016, redo=redo)
+        correlation_time      = calculate_corr_time(tot, start_year=1990, end_year=2016, redo=redo)
+        
+    else:    
+        correlation_surface   = calculate_corr_surface(data, redo)
+        correlation_time      = calculate_corr_time(data, redo)
+        
+    return correlation_surface, correlation_time
     
     

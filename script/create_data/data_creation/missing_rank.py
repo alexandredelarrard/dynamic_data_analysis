@@ -10,7 +10,6 @@ import numpy as np
 import glob
 import os
 
-
 def match_rank_missing(x, rk_data):
     """
     x : 0,1,2 = "Date","winner_name","loser_name"

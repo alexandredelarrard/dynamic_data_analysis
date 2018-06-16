@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-from dateutil import relativedelta
 from datetime import timedelta
 import glob
 
@@ -17,16 +16,7 @@ sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_data.data_creation.create_variables import prep_data
 from create_data.data_creation.extract_players import import_players
 from create_data.utils.date_creation import deduce_match_date
-
-
-def currency_prize(x):
-    
-    for currency in ["€", "A$", "$", "£"]:
-        s = x.split(currency)
-        if len(s)>1:
-            return currency, int(s[1].replace(",",""))
-    return "", x.replace(",","")
-
+from create_data.utils.utils_data_prep import dates,currency_prize,homogenize_prizes,extract_rank_and_match,calculate_time,status,correct_score
 
 def liste1_extract(x):
     
@@ -41,79 +31,6 @@ def liste1_extract(x):
     master = "" if liste[-1] == "atpwt" else liste[-1]
     
     return (draw_size, end_date, start_date, country, city, name, master)
-
-
-def calculate_time(x):
-    x = x.replace(".00","")
-    try:
-         x = pd.to_datetime(str(x).replace("Time: ",""), format = "%H:%M:%S")
-         time = x.hour * 60 + x.minute
-         
-    except Exception:
-       return np.nan
-    
-    return time
-
-
-def dates(x):
-    diff = relativedelta.relativedelta(x[0], x[1])
-    years = diff.years
-    reste = (diff.months *30 + diff.days) / 365
-    return years + reste
-
-
-def correct_score(x):
-    
-    a = x.split()
-    sortie = []
-    for el in a:
-        if el[0].isdigit() == True and el[1].isdigit() == True:
-            sortie.append(str(el[0]) + "-" + str(el[1:]))
-    return " ".join(sortie)
-
-
-def status(x):
-    if "RET" in x:
-        return "Retired"
-    elif "W/O" in x:
-        return "Walkover"
-    elif "DEF" in x:
-        return "Def"
-    else:
-        return "Completed"
-    
-
-def extract_rank_and_match(x, rk_data):
-    """
-    match rank with player name loser and winner based on closest date into the past
-    """
-    
-    dates = pd.to_datetime(rk_data.sort_values("Date")["Date"].unique())
-    date = dates[dates <= x["Date"]][-1]
-    rank_sub_df = rk_data.loc[rk_data["Date"] == date]
-    
-    try:
-        winner = rank_sub_df.loc[rank_sub_df["Player_name"] == x["winner_name"]][["player_rank", "player_points"]].values[0]
-    except Exception:
-        print(x)
-        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]])
-        winner = [1800, 0]    
-        
-    try:
-        loser =  rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]].values[0]
-    except Exception:
-        print(x)
-        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]])
-        loser = [1800, 0]
-        
-    return [(winner[0],winner[1],loser[0],loser[1])]
-
-
-def homogenize_prizes(x, currency):
-    x["prize"] =  int(str(x["prize"]).replace("$","").replace(",",""))
-    if x["Currency"] in ["AU$", "£", "$"]:
-        x["prize"] = x["prize"]*currency.loc[currency["Annee"]==x["tourney_year"], x["Currency"]].values[0]
-    return  x["prize"]
 
 
 def clean_extract(latest):
@@ -157,12 +74,11 @@ def clean_extract(latest):
     clean["tourney_year"] = clean["Date"].dt.year
     clean["best_of"] = np.where(clean["masters"] == "grandslam", 5, 3)
     clean["tourney_id_wo_year"] = ex["6"].astype(str) 
-    
-    count = ex["2"].apply(lambda x : currency_prize(x))
-    
+
     # =============================================================================
     #     ### take care currency 
     # =============================================================================
+    count = ex["2"].apply(lambda x : currency_prize(x))
     clean["Currency"] = list(list(zip(*count))[0])
     clean["Currency"] = np.where(clean["Currency"].isin(["euros","€"]), "euro", clean["Currency"])
     clean["Currency"] = np.where(clean["Currency"].isin(["AUS$","AU$","A$"]), "AU$", clean["Currency"])
@@ -175,6 +91,7 @@ def clean_extract(latest):
     currency = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/tournament/currency_evolution.csv")
     clean["prize"] = clean[["prize", "Currency", "tourney_year"]].apply(lambda x: homogenize_prizes(x, currency), axis=1)
     del clean["tourney_year"]
+    
     # =============================================================================
     #     #### merge player id 
     # =============================================================================
@@ -208,7 +125,7 @@ def clean_extract(latest):
                         "36": "bp_converted_player1", "38": "bp_converted_player2", "39": "return_games_player1", "41": "return_games_player2",
                         "53": "player1", "54" : "score_player1", "55":"player2", "56": "score_player2", "57": "time"})
     
-    clean["minutes"] = ex_stats["time"].fillna("0:0:0").apply(lambda x :calculate_time(x))
+    clean["minutes"] = ex_stats["time"].fillna("0:0:0").apply(lambda x : calculate_time(x))
     clean["minutes"] = clean["minutes"].replace(0, np.nan).astype(int)
     
     clean["w_ace"] = ex_stats["aces_player1"].astype(int)
@@ -233,7 +150,7 @@ def clean_extract(latest):
     clean["l_bpFaced"] = ex_stats["bp_saved_player2"].apply(lambda x : x.split("(")[1].split(")")[0].split("/")[1]).astype(int)
     
     # =============================================================================
-    #     #### data prep/ craetion of variables
+    #     #### data prep/ creation of variables
     # =============================================================================
     clean2 = prep_data(clean.loc[clean["status"] == "Completed"])
     

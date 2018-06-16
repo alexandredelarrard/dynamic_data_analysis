@@ -10,97 +10,58 @@ import pandas as pd
 import numpy as np
 import re
 import time
-from datetime import timedelta
 import glob
 import joblib
 import seaborn as sns
 
 from create_data.data_creation.extract_data_atp import import_data_atp
+from create_data.utils.utils_data_prep import set_extract,games_extract,win_tb,total_win_tb,extract_games_number,count_sets,\
+                                                update_match_num, feature_round
+    
+    
+def create_basic_features(dataset):
+    dataset["round"] = dataset[["round", "draw_size"]].apply(lambda x : feature_round(x) ,axis=1) 
+    
+    ### dummify court
+    dataset["indoor_flag"] = np.where(dataset["indoor_flag"] == "Outdoor", 0,1).astype(int)
+    
+    ### create hard indoor and hard outdoor as two different surfaces
+    dataset["surface"] = dataset["surface"] + "_" + dataset["indoor_flag"].astype(str)
+    dataset.loc[dataset["surface"] == "Carpet_0", "surface"] = "Carpet_1"
+    dataset.loc[dataset["surface"] == "Clay_1", "surface"] = "Clay_0"
 
-def set_extract(x, taille):
-    if len(x)>=taille:    
-        return re.sub(r'\([^)]*\)', '', x[taille-1])
-    else:
-        return np.nan
+    ### dummify hand player
+    dataset["winner_hand"] = np.where(dataset["winner_hand"] == "Right-Handed", 1, 0).astype(int)   
+    dataset["loser_hand"] = np.where(dataset["loser_hand"] == "Right-Handed", 1, 0).astype(int)
     
+    #### date into days
+    dataset["Date"] = pd.to_datetime(dataset["Date"], format = "%Y-%m-%d")
     
-def games_extract(x, w_l):
+    dataset["day_week"] = dataset["Date"].dt.dayofweek
+    dataset["month"] = dataset["Date"].dt.month
+    dataset["year"] = dataset["Date"].dt.year
+    dataset["week"] = dataset["Date"].dt.week
+    dataset["day_of_year"] = dataset["Date"].dt.dayofyear
+    dataset["day_of_month"] = dataset["Date"].dt.day
     
-    try:
-        if x != "RET" and x != "W/O" and x != "W/O " and x != "DEF" and pd.isnull(x) == False and x != "":
-            return x.split("-")[w_l]
-        else:
-            return np.nan
-        
-    except Exception:
-        print(x)
-        
-        
-def win_tb(x):
-    count = 0
-    for se in x:
-        if "(" in se:
-            if int(se.split("-")[0]) > int(re.sub(r'\([^)]*\)', '', se.split("-")[1])):
-                count +=1
-    return count
+    ### is birthday
+    dataset["DOB_w"] = pd.to_datetime(dataset["DOB_w"], format = "%Y-%m-%d") 
+    dataset["DOB_l"] = pd.to_datetime(dataset["DOB_l"], format = "%Y-%m-%d") 
+    
+    dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_w"].dt.month), dataset["day_of_month"] - dataset["DOB_w"].dt.day, 31).astype(int)   
+    dataset["l_birthday"] =  np.where((dataset["month"] == dataset["DOB_l"].dt.month), dataset["day_of_month"] - dataset["DOB_l"].dt.day, 31).astype(int)   
+    
+    ### if home country
+    dataset["w_home"] = np.where(dataset["tourney_country"] == dataset["winner_ioc"],1,0)
+    dataset["l_home"] = np.where(dataset["tourney_country"] == dataset["loser_ioc"],1,0)
+    
+    ### imc
+    dataset["w_imc"] = dataset["Weight_w"] / (dataset["winner_ht"]/100)**2
+    dataset["l_imc"] = dataset["Weight_l"] / (dataset["loser_ht"]/100)**2
+    
+    return dataset
+    
 
-
-def total_win_tb(x, i):
-    count = 0
-    for se in x:
-        if "(" in se:
-            if int(se.split("-")[0]) > int(re.sub(r'\([^)]*\)', '', se.split("-")[1])):
-                if i ==1:
-                    count += int(re.search(r'\((.*?)\)', se).group(1))
-                else:
-                    count += 2 + int(re.search(r'\((.*?)\)', se).group(1))
-            else:
-                if i ==0:
-                    count += int(re.search(r'\((.*?)\)', se).group(1))
-                else:
-                    count += 2 + int(re.search(r'\((.*?)\)', se).group(1))
-                    
-    return count
-
-
-
-def extract_games_number(x):
-    try:
-        x = re.sub(r'\([^)]*\)', '', x)
-        x = x.replace(" ",",").replace("-",",").split(",")
-        return sum([int(a) for a in x if a !=""])
-    
-    except Exception:
-        print(x)
-        
-        
-def count_sets(x):
-    x = re.sub(r'\([^)]*\)', '', x)
-    return x.count("-")
-
-
-
-def update_match_num(data):
-    
-    def add_days(x):
-        if x[2]<128:
-            return x[0] + timedelta(days=x[1])
-        else:
-            return x[0] + timedelta(days=x[1]*2)
-    
-    #### reverse match num, 0 == final and correct it
-    match_num = []
-    for id_tourney in data["tourney_id"].unique():
-        nliste= abs(data.loc[data["tourney_id"] == id_tourney, "match_num"].max() - data.loc[data["tourney_id"] == id_tourney, "match_num"])
-        match_num += list(nliste+1)
-    data["match_num"] = match_num 
-    
-    data["id_round"] = round(np.log(data["draw_size"]/data["match_num"]) / np.log(2), 0)
-    data.loc[data["id_round"]<0,"id_round"]=0
-    
-    return data
-    
-    
 def prep_data(data, verbose=0):
     
     t0 = time.time()
@@ -124,30 +85,11 @@ def prep_data(data, verbose=0):
     dataset = dataset.loc[dataset["missing_stats"] !=1]
     print(" Suppressed missing or wrong stats : {0} rows suppressed".format(dataset.shape[0] - forme))
          
-    ### dummify court
-    dataset["indoor_flag"] = np.where(dataset["indoor_flag"] == "Outdoor", 0,1).astype(int)
-    
-    ### create hard indoor and hard outdoor as two different surfaces
-    dataset["surface"] = dataset["surface"] + "_" + dataset["indoor_flag"].astype(str)
-    dataset.loc[dataset["surface"] == "Carpet_0", "surface"] = "Carpet_1"
-    dataset.loc[dataset["surface"] == "Clay_1", "surface"] = "Clay_0"
-
-    ### dummify hand player
-    dataset["winner_hand"] = np.where(dataset["winner_hand"] == "Right-Handed", 1, 0).astype(int)   
-    dataset["loser_hand"] = np.where(dataset["loser_hand"] == "Right-Handed", 1, 0).astype(int)
+    ### create_basic_features
+    dataset = create_basic_features(dataset)
     
     #### match num updated
     dataset = update_match_num(dataset)
-
-    #### date into days
-    dataset["Date"] = pd.to_datetime(dataset["Date"], format = "%Y-%m-%d")
-    
-    dataset["day_week"] = dataset["Date"].dt.dayofweek
-    dataset["month"] = dataset["Date"].dt.month
-    dataset["year"] = dataset["Date"].dt.year
-    dataset["week"] = dataset["Date"].dt.week
-    dataset["day_of_year"] = dataset["Date"].dt.dayofyear
-    dataset["day_of_month"] = dataset["Date"].dt.day
     
     #### return stats
     dataset["w_1st_srv_ret_won"] = dataset["l_1stIn"].astype(int) - dataset["l_1stWon"].astype(int)
@@ -172,21 +114,6 @@ def prep_data(data, verbose=0):
     dataset["l_tie-breaks_won"] = dataset["Nbr_tie-breaks"] - dataset["w_tie-breaks_won"]
     dataset["total_tie_break_w"] = dataset['score2'].apply(lambda x : total_win_tb(x,0))/dataset["Nbr_tie-breaks"]
     dataset["total_tie_break_l"] = dataset['score2'].apply(lambda x : total_win_tb(x,1))/dataset["Nbr_tie-breaks"]
-    
-    ### is birthday
-    dataset["DOB_w"] = pd.to_datetime(dataset["DOB_w"], format = "%Y-%m-%d") 
-    dataset["DOB_l"] = pd.to_datetime(dataset["DOB_l"], format = "%Y-%m-%d") 
-    
-    dataset["w_birthday"] =  np.where((dataset["month"] == dataset["DOB_w"].dt.month), dataset["day_of_month"] - dataset["DOB_w"].dt.day, 31).astype(int)   
-    dataset["l_birthday"] =  np.where((dataset["month"] == dataset["DOB_l"].dt.month), dataset["day_of_month"] - dataset["DOB_l"].dt.day, 31).astype(int)   
-    
-    ### if home country
-    dataset["w_home"] = np.where(dataset["tourney_country"] == dataset["winner_ioc"],1,0)
-    dataset["l_home"] = np.where(dataset["tourney_country"] == dataset["loser_ioc"],1,0)
-    
-    ### imc
-    dataset["w_imc"] = dataset["Weight_w"] / (dataset["winner_ht"]/100)**2
-    dataset["l_imc"] = dataset["Weight_l"] / (dataset["loser_ht"]/100)**2
     
     ### nbr proportion total points won
     dataset['w_total_pts_won'] = (dataset['w_2ndWon'].astype(float) + dataset['w_1stWon'].astype(float) + dataset['w_total_ret_won'].astype(float)) / (dataset["l_svpt"].astype(float) + dataset["w_svpt"].astype(float))

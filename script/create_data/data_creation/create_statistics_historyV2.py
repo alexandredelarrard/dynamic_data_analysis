@@ -7,25 +7,11 @@ Created on Wed Apr  4 13:38:19 2018
 
 import pandas as pd
 import numpy as np
-from multiprocessing import Pool
-from functools import partial
 import time
 import sys
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
-from create_data.utils.weight_past_matches import calculate_corr_surface, calculate_corr_time
-
-def parallelize_dataframe(df, function, dictionnary, njobs):
-    df_split = np.array_split(df, njobs)
-    pool = Pool(njobs)
-    func = partial(function, dictionnary)
-    df2 = pd.concat(pool.map(func, df_split))
-    
-    pool.close()
-    pool.join()
-    
-    return df2
-
+from create_data.utils.weight_past_matches import get_correlations
 
 def common_opponents(x, data):
     
@@ -159,9 +145,9 @@ def get_stats(x, sub_data):
                       'w_svpt','w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced','l_ace', 'l_df', 'l_svpt',
                       'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won',
                       'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted','l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set",
-                      'l_total_pts_won', 'w_total_pts_won', 'tourney_id', "id_round", 'weight'
+                      'l_total_pts_won', 'w_total_pts_won', 'tourney_id', "round", 'weight'
                       
-     x : "Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "id_round", 'best_of'
+     x : "Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of'
     """
     
     winner_w_data = sub_data[sub_data[:,1] == x[1]]
@@ -225,8 +211,8 @@ def get_stats(x, sub_data):
              ((loser_w_data[:,36]*loser_w_data[:,-1]/loser_w_data[:,39]).sum() + (loser_l_data[:,37]*loser_l_data[:,-1]/loser_l_data[:,39]).sum())/weight_loser,
              
              ### proportion victory 1 vs 2 
-             (sub_data[(sub_data[:,1] == x[1]) & (sub_data[:,2] == x[1])].shape[0] - 
-             sub_data[(sub_data[:,1] == x[2]) & (sub_data[:,2] == x[2])].shape[0])/ sub_data.shape[0], 
+             (sub_data[(sub_data[:,1] == x[1]) & (sub_data[:,2] == x[2])].shape[0] - 
+              sub_data[(sub_data[:,1] == x[2]) & (sub_data[:,2] == x[1])].shape[0]) / sub_data[((sub_data[:,1] == x[1])&(sub_data[:,2] == x[2])) | ((sub_data[:,1] == x[2])&(sub_data[:,2] == x[1]))].shape[0], 
              
               ### proportion victory common adversories
              (sub_data[(sub_data[:,1] == x[1])].shape[0] - 
@@ -259,10 +245,7 @@ def get_stats(x, sub_data):
              )
     
     return count
-    
-def execute_stats(wrong_word_dict, data):
-    count = data.apply(lambda x: weighted_statistics(x, wrong_word_dict))
-    return count
+
 
 def fatigue_games(x , data):
     """
@@ -310,31 +293,6 @@ def global_stats(data):
     return data
 
 
-def get_correlations(data, redo = False):
-    
-    if redo :
-        #### calculate correlations
-        data1 = data[["Date", "winner_id", "loser_id", "surface", "tourney_id"]].copy()
-        data1["target"] = 1
-        
-        data2 = data1.copy()
-        data2 = data2.rename(columns = {"winner_id" : "loser_id", "loser_id" : "winner_id"})
-        data2["target"] = 0
-        data2 = data2[["winner_id", "loser_id", "Date", "target", "surface", "tourney_id"]]
-        
-        tot = pd.concat([data1, data2], axis= 0)
-        tot["Date"] = pd.to_datetime(tot["Date"], format = "%Y-%m-%d")
-        
-        correlation_surface   = calculate_corr_surface(tot, start_year=1990, end_year=2016, redo=redo)
-        correlation_time      = calculate_corr_time(tot, start_year=1990, end_year=2016, redo=redo)
-        
-    else:    
-        correlation_surface   = calculate_corr_surface(data, redo)
-        correlation_time      = calculate_corr_time(data, redo)
-        
-    return correlation_surface, correlation_time
-
-
 def create_stats(data, liste_params):
     
     mvs = pd.isnull(data).sum()
@@ -359,7 +317,7 @@ def create_stats(data, liste_params):
     
     #############################  calculate all necessary stats   ##########################################
     t0 = time.time()
-    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "id_round", 'best_of']]), liste_params)
+    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of']]), liste_params)
     counts = counts.reshape(counts.shape[0], counts.shape[2])
     
     ###### put the right name to the right column
@@ -416,7 +374,7 @@ def create_statistics(data, redo = False):
                        'w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 
                        'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted', 'l_total_srv_won', 'l_total_ret_won',
                        'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
-                       'tourney_id_wo_year', "id_round"]
+                       'tourney_id_wo_year', "round"]
 
     liste_params = [np.array(data[calculate_stats]), correlation_surface, correlation_time]
     total_data = create_stats(data, liste_params)
