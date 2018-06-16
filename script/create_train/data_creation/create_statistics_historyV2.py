@@ -8,10 +8,8 @@ Created on Wed Apr  4 13:38:19 2018
 import pandas as pd
 import numpy as np
 import time
-import sys
 
-sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
-from create_data.utils.weight_past_matches import get_correlations
+from create_train.utils.weight_past_matches import get_correlations
 
 def common_opponents(x, data):
     
@@ -253,7 +251,7 @@ def fatigue_games(x , data):
     - data: "ref_days", "winner_id", "loser_id", "total_games"
     """
 
-    index_days = np.where(((x[0] - data[:,0]) >0)&((x[0] - data[:,0]) <=3))
+    index_days = np.where((data[:,0] < x[0])&((x[0] - data[:,0]) <=3))
     sub_data = data[index_days]
     
     index_1 = np.where(((sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1])))
@@ -273,6 +271,21 @@ def total_score(x):
         print(x)
         return 0
 
+def correlation_subset_data(data, redo):
+    
+    #### get correlations coefficient
+    correlation_surface, correlation_time = get_correlations(data, redo = redo)
+    ############################# calculation of statistics ########################################## 
+    ### we use tourney date instead of date because wont have last statistics of tourney match, atp crawl them and give them later
+    cols_stat = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'best_of', "winner_rank", 'loser_rank', 
+                       'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+                       'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced',
+                       'w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 
+                       'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted', 'l_total_srv_won', 'l_total_ret_won',
+                       'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
+                       'tourney_id_wo_year', "round", "total_games"]
+    
+    return cols_stat, correlation_surface, correlation_time
 
 def global_stats(data):
     
@@ -305,9 +318,12 @@ def create_stats(data, liste_params):
     
     #### get differrence of fatigue between players
     t0 = time.time()
+    liste_params[0]["ref_days"]= (pd.to_datetime(liste_params[0]["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days
     data["ref_days"]= (pd.to_datetime(data["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days
-    data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "total_games"]]))
+    data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(liste_params[0][["ref_days", "winner_id", "loser_id", "total_games"]]))
     del data["ref_days"]
+    liste_params[0] = liste_params[0].drop(["total_games", "ref_days"],axis=1)
+
     print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))
     
     data = global_stats(data)
@@ -317,6 +333,7 @@ def create_stats(data, liste_params):
     
     #############################  calculate all necessary stats   ##########################################
     t0 = time.time()
+    liste_params[0] = np.array(liste_params[0])
     counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of']]), liste_params)
     counts = counts.reshape(counts.shape[0], counts.shape[2])
     
@@ -360,23 +377,12 @@ def create_stats(data, liste_params):
 
 def create_statistics(data, redo = False):
     
-    
-    #### get correlations coefficient
-    correlation_surface, correlation_time = get_correlations(data, redo = redo)
     data["tourney_id_wo_year"] =   list(list(zip(*data["tourney_id"].str.split("-")))[1])
     data["tourney_id_wo_year"] = "_" + data["tourney_id_wo_year"]
   
-    ############################# calculation of statistics ########################################## 
-    ### we use tourney date instead of date because wont have last statistics of tourney match, atp crawl them and give them later
-    calculate_stats = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'best_of', "winner_rank", 'loser_rank', 
-                       'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
-                       'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced',
-                       'w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 
-                       'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted', 'l_total_srv_won', 'l_total_ret_won',
-                       'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
-                       'tourney_id_wo_year', "round"]
+    cols_stat, correlation_surface, correlation_time = correlation_subset_data(data, redo)
 
-    liste_params = [np.array(data[calculate_stats]), correlation_surface, correlation_time]
+    liste_params = [data[cols_stat], correlation_surface, correlation_time]
     total_data = create_stats(data, liste_params)
     
     return total_data

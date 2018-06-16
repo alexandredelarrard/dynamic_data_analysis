@@ -9,6 +9,7 @@ import pandas as pd
 import os
 import numpy as np
 
+from create_train.utils.utils_data_prep import homogenize_prizes
 
 def merge_tourney(data):
     
@@ -34,9 +35,10 @@ def merge_tourney(data):
     
     ### homogenize and clean prize
     tournament["prize"] = tournament["prize"].apply(lambda x : x.replace("$","").replace(".",""))
+    
     currency = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/tournament/currency_evolution.csv")
     tournament["prize"] = tournament[["prize", "Currency", "tourney_year"]].apply(lambda x: homogenize_prizes(x, currency), axis=1)
-    tournament = tournament.drop(['tourney_name',"surface", 'tourney_date', "tourney_id_atp", "tourney_year"],axis=1)
+    tournament = tournament.drop(['tourney_name',"surface", 'tourney_date', "tourney_year"],axis=1)
     tournament["tourney_end_date"] = pd.to_datetime(tournament["tourney_end_date"], format = "%Y-%m-%d")
 
     data_merge = pd.merge(data, tournament, on = "tourney_id", how = "left")
@@ -47,10 +49,4 @@ def merge_tourney(data):
     
     return data_merge
 
-
-def homogenize_prizes(x, currency):
-    x["prize"] =  int(str(x["prize"]).replace("$","").replace(",",""))
-    if x["Currency"] in ["AU$", "£", "$"]:
-        x["prize"] = x["prize"]*currency.loc[currency["Annee"]==x["tourney_year"], x["Currency"]].values[0]
-    return  x["prize"]
     

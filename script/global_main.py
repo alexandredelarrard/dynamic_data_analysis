@@ -9,7 +9,7 @@ import os
 import warnings
 warnings.filterwarnings("ignore")
 
-from create_data.main_create import main_creation
+from create_train.main_create_train import main_create_train
 from create_models.main_modelling import main_modelling
 #from create_finance.main_finance import main_finance
 
@@ -18,14 +18,10 @@ os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 if __name__ == "__main__":
     
     #### create the dataset
-    rebuild = {"redo_missing_atp_statistics" : False,
-               "create_elo" : False,
-               "create_variable" : False,
-               "create_statistics": False,
-               "update_data": True
-              }    
+    params= {"rebuild" : False,
+              "update": True}    
     
-    full_data = main_creation(rebuild=rebuild)
+    full_data = main_create_train(params)
     
     #### model from the dataset
     params = {

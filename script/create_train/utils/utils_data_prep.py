@@ -141,31 +141,35 @@ def calculate_time(x):
 
 def feature_round(x):
     
-    if x[0] == "F":
+    if x[0] in ["Finals", "SF"]:
         return 2/x[1]
     
-    if x[1] == "SF":
+    if x[0] in ["Semi-Finals", "SF"]:
         return 4/x[1]
     
-    if x[0] == "QF":
+    if x[0] in ["Quarter-Finals", "QF"]:
         return 8/x[1]
     
-    if x[1] == "RR":
+    if x[0] in ["Round Robin", "RR"]:
         return x[1]/x[1]
     
-    if x[0] == "R16":
+    if x[0] in ["Round of 16", "R16"]:
         return 16/x[1]
     
-    if x[1] == "R32":
+    if x[0] in ["Round of 32", "R32"]:
         return 32/x[1]
     
-    if x[0] == "R64":
+    if x[0] in ["Round of 64", "R64"]:
         return 64/x[1]
     
-    if x[1] == "R128":
+    if x[0] in ["Round of 128", "R128"]:
         return 128/x[1]
-    else:
-        return np.nan
+    
+    if x[0] in ["Q-1st", "Q-2nd"]:
+        return 1.5
+    
+    return np.nan
+    
  
 def dates(x):
     diff = relativedelta.relativedelta(x[0], x[1])

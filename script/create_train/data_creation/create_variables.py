@@ -14,12 +14,14 @@ import glob
 import joblib
 import seaborn as sns
 
-from create_data.data_creation.extract_data_atp import import_data_atp
-from create_data.utils.utils_data_prep import set_extract,games_extract,win_tb,total_win_tb,extract_games_number,count_sets,\
+from create_train.data_creation.extract_data_atp import import_data_atp
+from create_train.utils.utils_data_prep import set_extract,games_extract,win_tb,total_win_tb,extract_games_number,count_sets,\
                                                 update_match_num, feature_round
     
     
 def create_basic_features(dataset):
+    
+    ### round into float variable nbr players/draw size
     dataset["round"] = dataset[["round", "draw_size"]].apply(lambda x : feature_round(x) ,axis=1) 
     
     ### dummify court

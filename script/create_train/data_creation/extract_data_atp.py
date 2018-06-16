@@ -10,11 +10,11 @@ import glob
 import time 
 import numpy as np
 
-from create_data.utils.build_match_statistics_database import match_stats_main
-from create_data.data_creation.extract_players import  merge_atp_players
-from create_data.data_creation.missing_rank  import deduce_rank_from_atp
-from create_data.data_creation.merge_tourney  import merge_tourney
-from create_data.utils.date_creation import deduce_match_date
+from create_train.utils.build_match_statistics_database import match_stats_main
+from create_train.data_creation.extract_players import  merge_atp_players
+from create_train.data_creation.missing_rank  import deduce_rank_from_atp
+from create_train.data_creation.merge_tourney  import merge_tourney
+from create_train.utils.date_creation import deduce_match_date
 
 
 def import_data_atp(path, redo=False):
@@ -29,7 +29,6 @@ def import_data_atp(path, redo=False):
             data = pd.concat([data, pd.read_csv(file, encoding = "latin1")], axis=0)
             
     data = data.sort_values(["tourney_date", "tourney_id", "match_num"])
-    del data["tourney_level"]
     
     # =============================================================================
     #     #### merge with tourney database 
@@ -70,6 +69,7 @@ def import_data_atp(path, redo=False):
     #### suppress challenger matches
     sp = data.shape[0] 
     data = data.loc[data["tourney_level"] != "C"]
+    del data["tourney_level"]
     print(" --- Suppress challenger matches : {0} ".format(sp - data.shape[0]))
     
     ### create status of match
