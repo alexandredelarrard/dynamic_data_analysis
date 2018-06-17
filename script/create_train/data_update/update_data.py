@@ -83,7 +83,7 @@ def clean_new_matches(historical_data):
             else:
                 extraction_total = pd.concat([extraction_total, addi], axis =0)
                 
-    extraction_total = extraction_total.reset_index(drop=False)
+    extraction_total = extraction_total.reset_index(drop=True)
     
     if os.path.isfile(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d"))):
         current_extra_day = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d")))

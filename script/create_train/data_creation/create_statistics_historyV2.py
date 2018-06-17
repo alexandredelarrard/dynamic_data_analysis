@@ -89,23 +89,25 @@ def get_player_stat(x, sub_data):
     l_index = (sub_data[:,1] == x[2])|(sub_data[:,2] == x[2])
     
     if sub_data[w_index].shape[0] > 0:
-        best_rank_winner = np.min(sub_data[w_index, 6])
+        best_rank_winner = np.min(sub_data[sub_data[:,1] == x[1], 6].tolist() + sub_data[sub_data[:,2] == x[1], 7].tolist())
     else:
         best_rank_winner = -1
     
     if sub_data[l_index].shape[0] > 0:
-        best_rank_loser  = np.min(sub_data[l_index, 7])
+        best_rank_loser  = np.min(sub_data[sub_data[:,1] == x[2], 6].tolist() + sub_data[sub_data[:,2] == x[2], 7].tolist())
     else:
         best_rank_loser = -1
 
+    #### number of time winner has won on surface / number of play on surface
     try:
-        prop_victory_surface_winner = sub_data[(sub_data[:,1] == x[1])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(w_index)&(sub_data[:,3] == x[3])].shape[0]
+        prop_victory_surface_winner = sub_data[(sub_data[:,1] == x[1])&(sub_data[:,3] == x[3]), -1].sum()/sub_data[(w_index)&(sub_data[:,3] == x[3]), -1].sum()
     except Exception:
         prop_victory_surface_winner = -1
         pass
     
+    #### number of time loser has won on surface / number of play on surface
     try:
-        prop_victory_surface_loser  = sub_data[(sub_data[:,2] == x[2])&(sub_data[:,3] == x[3])].shape[0]/sub_data[(l_index)&(sub_data[:,3] == x[3])].shape[0]
+        prop_victory_surface_loser  = sub_data[(sub_data[:,1] == x[2])&(sub_data[:,3] == x[3]), -1].sum()/sub_data[(l_index)&(sub_data[:,3] == x[3]), -1].sum()
     except Exception:
         prop_victory_surface_loser = -1
         pass
@@ -118,19 +120,19 @@ def get_player_stat(x, sub_data):
     
     ### 39 = N_set  6 = best_of 
     try:
-        prop_last_set_gagne_w =  sub_data[(sub_data[:,1] == x[1])&(sub_data[:,39] == x[6])].shape[0] / sub_data[(w_index)&(sub_data[:,39] == x[6])].shape[0]
+        prop_last_set_gagne_w =  sub_data[(sub_data[:,1] == x[1])&(sub_data[:,39] == x[6]), -1].sum() / sub_data[(w_index)&(sub_data[:,39] == x[6]), -1].sum()
     except Exception:
         prop_last_set_gagne_w = -1
         pass
     
     try:
-        prop_last_set_gagne_l =  sub_data[(sub_data[:,1] == x[2])&(sub_data[:,39] == x[6])].shape[0] / sub_data[(l_index)&(sub_data[:,39] == x[6])].shape[0] 
+        prop_last_set_gagne_l =  sub_data[(sub_data[:,1] == x[2])&(sub_data[:,39] == x[6]), -1].sum() / sub_data[(l_index)&(sub_data[:,39] == x[6]), -1].sum() 
     except Exception:
         prop_last_set_gagne_l = -1
         pass
         
-    nbr_same_level_trns_w = sub_data[(w_index)&(sub_data[:,42] == x[4])&(x[5]>=sub_data[:,43])].shape[0]
-    nbr_same_level_trns_l = sub_data[(l_index)&(sub_data[:,42] == x[4])&(x[5]>=sub_data[:,43])].shape[0]  
+    nbr_same_level_trns_w = sub_data[(w_index)&(sub_data[:,42] == x[4])&(x[5]>=sub_data[:,43]), -1].sum()
+    nbr_same_level_trns_l = sub_data[(l_index)&(sub_data[:,42] == x[4])&(x[5]>=sub_data[:,43]), -1].sum() 
 
     return (best_rank_winner, best_rank_loser, prop_victory_surface_winner, prop_victory_surface_loser,
             nbr_same_level_trns_w, nbr_same_level_trns_l, prop_last_set_gagne_w, prop_last_set_gagne_l)
@@ -318,7 +320,7 @@ def create_stats(data, liste_params, verbose=1):
     
     #### get differrence of fatigue between players
     t0 = time.time()
-    liste_params[0]["ref_days"]= (pd.to_datetime(liste_params[0]["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days
+    liste_params[0]["ref_days"] = list((pd.to_datetime(liste_params[0]["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days)
     data["ref_days"]= (pd.to_datetime(data["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days
     data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(liste_params[0][["ref_days", "winner_id", "loser_id", "total_games"]]))
     del data["ref_days"]

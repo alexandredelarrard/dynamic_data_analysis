@@ -11,9 +11,8 @@ from sklearn import linear_model
 from sklearn.metrics import roc_auc_score, accuracy_score, log_loss
 from sklearn.preprocessing import StandardScaler
 import os
-
-import warnings
-warnings.filterwarnings("ignore")
+from sklearn.externals import joblib
+from datetime import datetime
 
 
 def modelling_logistic(data, date_test_start, date_test_end):
@@ -22,15 +21,16 @@ def modelling_logistic(data, date_test_start, date_test_end):
     avg_auc = 0
     avg_acc = 0
     avg_log_loss = 0
+    print("\n")
     
     for i, tourney in enumerate(test_tot.sort_values("Date")["tourney_name"].unique()):
         test = test_tot.loc[test_tot["tourney_name"]== tourney]
         date_ref = test["Date"].min()
         
         if i == 0:
-            predictions_overall = test[["target", "id_round", "tourney_name", "Date"]]
+            predictions_overall = test
         else:
-            predictions_overall = pd.concat([predictions_overall, test[["target", "id_round", "tourney_name", "Date"]]], axis=0).reset_index(drop=True)
+            predictions_overall = pd.concat([predictions_overall, test], axis=0).reset_index(drop=True)
         
         if i >0:
             train= pd.concat([train, addi_train], axis=0)
@@ -66,11 +66,17 @@ def modelling_logistic(data, date_test_start, date_test_end):
     var_imp.plot(kind="bar", figsize = (15,10), rot = 85)
     
     print("_"*40)
-    print("[AUC avg: <15] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
+    print("[AUC avg] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
+    
+    joblib.dump(clf, r"C:\Users\User\Documents\tennis\models\match_proba_prediction\logistic\logistic_{0}.sav".format(datetime.now().strftime("%Y-%m-%d")))
+    
     return clf, var_imp, predictions_overall
 
 
 def split_train_test(data, date_test_start, date_test_end):
+    
+    date_test_start = pd.to_datetime(date_test_start, format = "%Y-%m-%d")
+    date_test_end   = pd.to_datetime(date_test_end, format = "%Y-%m-%d")
     
     train = data.loc[(data["Date"] < date_test_start)]
     test =  data.loc[(data["Date"] >= date_test_start) & (data["Date"]< date_test_end)]

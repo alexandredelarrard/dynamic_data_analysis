@@ -11,9 +11,8 @@ from sklearn.metrics import roc_auc_score, accuracy_score, log_loss
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, plot_importance
 import os
-
-import warnings
-warnings.filterwarnings("ignore")
+from sklearn.externals import joblib
+from datetime import datetime
 
 from pylab import rcParams
 rcParams['figure.figsize'] = (8, 12)
@@ -24,15 +23,16 @@ def modelling_xgboost(data, date_test_start, date_test_end):
     avg_auc = 0
     avg_acc = 0
     avg_log_loss = 0
+    print("\n")
+    
     for i, tourney in enumerate(test_tot.sort_values("Date")["tourney_name"].unique()):
         test = test_tot.loc[test_tot["tourney_name"]== tourney]
         date_ref = test["Date"].min()
-        
          
         if i == 0:
-            predictions_overall = test[["target", "id_round", "tourney_name", "Date"]]
+            predictions_overall = test
         else:
-            predictions_overall = pd.concat([predictions_overall, test[["target", "id_round", "tourney_name", "Date"]]], axis=0).reset_index(drop=True)
+            predictions_overall = pd.concat([predictions_overall, test], axis=0).reset_index(drop=True)
         
         
         if i >0:
@@ -51,6 +51,7 @@ def modelling_xgboost(data, date_test_start, date_test_end):
                     reg_alpha = 1,
                     reg_lambda = 1,
                     gamma =0,
+                    n_jobs= 8
                  )
         
         eval_set=[(x_train, y_train), (x_test, y_test)]
@@ -82,11 +83,17 @@ def modelling_xgboost(data, date_test_start, date_test_end):
         
     predictions_overall["preds"] = predictions[0].tolist()
     print("_"*40)
-    print("[AUC avg: <15] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
+    print("[AUC avg] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
+
+    joblib.dump(clf, r"C:\Users\User\Documents\tennis\models\match_proba_prediction\xgb\xgb_{0}.sav".format(datetime.now().strftime("%Y-%m-%d")))
+    
     return clf, var_imp, predictions_overall
 
 
 def split_train_test(data, date_test_start, date_test_end):
+    
+    date_test_start = pd.to_datetime(date_test_start, format = "%Y-%m-%d")
+    date_test_end   = pd.to_datetime(date_test_end, format = "%Y-%m-%d")
     
     train = data.loc[(data["Date"] < date_test_start)]
     test =  data.loc[(data["Date"] >= date_test_start) & (data["Date"]< date_test_end)]

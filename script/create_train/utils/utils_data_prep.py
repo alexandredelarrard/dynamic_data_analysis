@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Created on Sat Jun 16 09:00:49 2018
 
@@ -165,7 +165,7 @@ def feature_round(x):
     if x[0] in ["Round of 128", "R128", "R96"]:
         return 128/x[1]
     
-    if x[0] in ["Q-1st", "Q-2nd"]:
+    if x[0] in ["Q-1st", "Q-2nd", "Q-F"]:
         return 1.5
     
     return np.nan

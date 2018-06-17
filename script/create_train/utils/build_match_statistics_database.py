@@ -136,7 +136,7 @@ def match_stats_main(data_atp, redo = False):
     
     sub_data["winner_name"] = sub_data["winner_name"].apply(lambda x : x.lower().replace("-"," "))
     sub_data["loser_name"] = sub_data["loser_name"].apply(lambda x : x.lower().replace("-"," "))
-    merged_with_missing = pd.merge(sub_data.drop(columns,axis=1), missing_stats[columns + ['winner_name', 'loser_name', 'tourney_id']], on = ['tourney_id', 'winner_name', 'loser_name'] ,how= "left")
+    merged_with_missing = pd.merge(sub_data.drop(columns,axis=1), missing_stats[columns + ['winner_name', 'loser_name', 'tourney_id']], on = ['tourney_id', 'winner_name', 'loser_name'], how= "left")
     
     data_atp.loc[index][columns] = merged_with_missing[columns]
     

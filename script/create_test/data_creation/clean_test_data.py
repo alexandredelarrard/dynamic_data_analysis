@@ -39,8 +39,8 @@ def clean(matches, url):
     clean["tourney_id"] = clean["tourney_year"].astype(str) + "-" + clean["tourney_id_wo_year"]
     clean["surface"] = matches["surface"]
     clean["prize"] = matches["prize"]
-    clean["winner_name"] = matches["player1"].apply(lambda x : x.lower().replace("-"," ").strip())
-    clean["loser_name"] = matches["player2"].apply(lambda x : x.lower().replace("-"," ").strip())
+    clean["winner_name"] = matches["8"].apply(lambda x : x.lower().replace("-"," ").strip())
+    clean["loser_name"] = matches["9"].apply(lambda x : x.lower().replace("-"," ").strip())
     
     # =============================================================================
     #     ### add indoor flag
@@ -127,14 +127,8 @@ def clean(matches, url):
 
 def add_elo(clean_matches, latest_data):
     
-    latest_data["Date"] = pd.to_datetime(latest_data["Date"], format = "%Y-%m-%d")
-    latest_data["tourney_date"] = pd.to_datetime(latest_data["tourney_date"], format = "%Y-%m-%d")
-    latest_data["DOB_w"] = pd.to_datetime(latest_data["DOB_w"], format = "%Y-%m-%d")
-    latest_data["DOB_l"] = pd.to_datetime(latest_data["DOB_l"], format = "%Y-%m-%d")
-    
-    matches_elo, dico_players_nbr = fill_latest_elo(latest_data, clean_matches)
-    
-    return matches_elo, latest_data
+    matches_elo, dico_players_nbr = fill_latest_elo(latest_data, clean_matches) 
+    return matches_elo
 
     
 def calculate_stats(clean_matches_elo, latest_data):

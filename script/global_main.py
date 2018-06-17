@@ -7,27 +7,49 @@ Created on Fri May 11 14:50:01 2018
 
 import os
 import warnings
+from datetime import datetime, timedelta
 warnings.filterwarnings("ignore")
 
 from create_train.main_create_train import main_create_train
-from create_models.main_modelling import main_modelling
+from create_test.main_create_test import main_create_test
+from create_models.main_modelling import main_modelling, main_prediction
 #from create_finance.main_finance import main_finance
 
 os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 
-if __name__ == "__main__":
+
+def global_main(params): 
     
-    #### create the dataset
-    params= {"rebuild" : False,
-              "update": True}    
+    main_create_train(params)
+
+    ### create test dataset after updating everything in train
+    boolean_update = False if params["rebuild"] == True and params["update"] == True else params["update"]
+    main_create_test(boolean_update = boolean_update)
     
-    full_data = main_create_train(params)
-    
-    #### model from the dataset
+    #### model from the dataset updated from test creation
+    now = datetime.now()
     params = {
-            "date_test_start" : "2017-01-01", 
-            "date_test_end":"2017-12-31"
+            "date_test_start" :  now - timedelta(days = 250), 
+            "date_test_end"   : now.strftime("%Y-%m-%d")
              }
+    clf, var_imp, predictions_overall_xgb, predictions_overall_lg = main_modelling(params)
     
-    clf, var_imp, modelling_data = main_modelling(params)
+    #### predict the futur data
+    predictions_futures = main_prediction()
+    
+    return predictions_futures, var_imp, predictions_overall_xgb, predictions_overall_lg
+
+
+if __name__ == "__main__":
+
+    params= {"rebuild" : True,
+             "update": True}   
+    clf, var_imp, predictions_overall_xgb, predictions_overall_lg = global_main(params)
+    
+    
+    
+
+    
+    
+    
     
