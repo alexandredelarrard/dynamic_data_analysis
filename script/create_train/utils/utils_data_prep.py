@@ -139,8 +139,13 @@ def calculate_time(x):
     
     return time
 
+
 def feature_round(x):
     
+    if  x[0] in ["1st Rd", "2nd Rd", "3rd Rd", "4th Rd"]:
+        number = int(x[0][0])
+        x[0] = "R" + str(x[1]/(2**(number-1)))
+        
     if x[0] in ["Finals", "F"]:
         return 2/x[1]
     
@@ -156,7 +161,7 @@ def feature_round(x):
     if x[0] in ["Round of 16", "R16"]:
         return 16/x[1]
     
-    if x[0] in ["Round of 32", "R32"]:
+    if x[0] in ["Round of 32", "R32", "R28"]:
         return 32/x[1]
     
     if x[0] in ["Round of 64", "R64"]:

@@ -42,8 +42,8 @@ def global_main(params):
 
 if __name__ == "__main__":
 
-    params= {"rebuild" : True,
-             "update": True}   
+    params= {"rebuild" : False,
+             "update": False}   
     clf, var_imp, predictions_overall_xgb, predictions_overall_lg = global_main(params)
     
     

@@ -33,7 +33,7 @@ def clean(matches, url):
     clean["best_of"] = np.where(clean["masters"] == "grandslam", 5, 3)
     clean["Date"] =  pd.to_datetime(matches["Date"], format= "%A, %B %d, %Y")
     clean["tourney_year"] = clean["Date"].dt.year
-    clean["round"] = matches["round"]
+    clean["round"] = matches["round"].apply(lambda x: x.strip())
     clean["tourney_id_wo_year"] =  matches["url"].apply(lambda x : x.split("/")[-2])
     clean["tourney_id_wo_year"] = "_" + clean["tourney_id_wo_year"]
     clean["tourney_id"] = clean["tourney_year"].astype(str) + "-" + clean["tourney_id_wo_year"]

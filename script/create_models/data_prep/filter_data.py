@@ -18,7 +18,7 @@ def data_prep_for_modelling(full_data):
     """
     
     shape0 = full_data.shape[0]
-    full_data = full_data.loc[~pd.isnull(full_data["diff_aces"])&(full_data["Common_matches"]>=1)&(full_data["Date"].dt.year>= 1990)]
+    full_data = full_data.loc[~pd.isnull(full_data["diff_aces"])&(full_data["Common_matches"]>=5)&(full_data["Date"].dt.year>= 1990)]
     full_data = full_data.loc[~pd.isnull(full_data["l_2nd_srv_ret_won"])]
     full_data = full_data.loc[~pd.isnull(full_data["w_2nd_srv_ret_won"])]
     full_data = full_data.loc[~pd.isnull(full_data["diff_overall_skill"])]
@@ -31,6 +31,10 @@ def data_prep_for_modelling(full_data):
     full_data["total_tie_break_w"] =  full_data["total_tie_break_w"].fillna(-1)
     full_data["diff_serv2_ret1"]   =  full_data["diff_serv2_ret1"].fillna(-1)
     full_data["diff_skill_ret"]    =  full_data["diff_skill_ret"].fillna(-1)
+    full_data["prop_victory_surface_w"]   =  full_data["prop_victory_surface_w"].fillna(-1)
+    full_data["prop_victory_surface_l"]    =  full_data["prop_victory_surface_l"].fillna(-1)
+    full_data["prop_last_set_gagne_l"]   =  full_data["prop_last_set_gagne_l"].fillna(-1)
+    full_data["prop_last_set_gagne_w"]    =  full_data["prop_last_set_gagne_w"].fillna(-1)
     
     # =============================================================================
     #     ### filter interesting columns
