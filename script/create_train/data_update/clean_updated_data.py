@@ -13,10 +13,10 @@ from datetime import timedelta
 import glob
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
-from create_data.data_creation.create_variables import prep_data
-from create_data.data_creation.extract_players import import_players
-from create_data.utils.date_creation import deduce_match_date
-from create_data.utils.utils_data_prep import dates,currency_prize,homogenize_prizes,extract_rank_and_match,calculate_time,status,correct_score
+from create_train.data_creation.create_variables import prep_data
+from create_train.data_creation.extract_players import import_players
+from create_train.utils.date_creation import deduce_match_date
+from create_train.utils.utils_data_prep import dates,currency_prize,homogenize_prizes,extract_rank_and_match,calculate_time,status,correct_score
 
 def liste1_extract(x):
     
@@ -51,8 +51,8 @@ def clean_extract(latest):
     clean["indoor_flag"] = ex["1"].apply(lambda x : x.split("\r")[0])
     
     clean["surface"] = ex["1"].apply(lambda x :x.split("\n")[1])
-    clean["winner_name"] = ex["8"].apply(lambda x : x.lower().replace("-"," ").lstrip().rstrip())
-    clean["loser_name"] = ex["9"].apply(lambda x : x.lower().replace("-"," ").lstrip().rstrip())
+    clean["winner_name"] = ex["8"].apply(lambda x : x.lower().replace("-"," ").strip())
+    clean["loser_name"] = ex["9"].apply(lambda x : x.lower().replace("-"," ").strip())
     clean["status"] = ex["10"].apply(lambda x: status(x))
     
     clean["score"]     =  ex["10"].apply(lambda x: correct_score(x))
@@ -159,7 +159,7 @@ def clean_extract(latest):
     # =============================================================================
     files_rank = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
     files_df = pd.DataFrame(np.transpose([files_rank, [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_rank]]), columns = ["file", "Date"])
-    files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"], format = "%Y-%m-%d") - timedelta(days=30)]
+    files_rank = files_df.loc[files_df["Date"] >= pd.to_datetime(latest["Date"], format = "%Y-%m-%d") - timedelta(days=45)]
     
     for i, f in enumerate(files_rank["file"].tolist()):
         if i ==0:
@@ -182,7 +182,6 @@ def clean_extract(latest):
     clean2 = clean2.sort_values(["Date", "tourney_id"]).reset_index(drop=True)
     
     return clean2
-
 
 if __name__ == "__main__":
     latest = {"Date":"2018-02-05"}

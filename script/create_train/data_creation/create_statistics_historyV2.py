@@ -209,9 +209,8 @@ def get_stats(x, sub_data):
              ((loser_w_data[:,36]*loser_w_data[:,-1]/loser_w_data[:,39]).sum() + (loser_l_data[:,37]*loser_l_data[:,-1]/loser_l_data[:,39]).sum())/weight_loser,
              
              ### proportion victory 1 vs 2 
-             (sub_data[(sub_data[:,1] == x[1]) & (sub_data[:,2] == x[2])].shape[0] - 
-              sub_data[(sub_data[:,1] == x[2]) & (sub_data[:,2] == x[1])].shape[0]) / sub_data[((sub_data[:,1] == x[1])&(sub_data[:,2] == x[2])) | ((sub_data[:,1] == x[2])&(sub_data[:,2] == x[1]))].shape[0], 
-             
+             (sub_data[(sub_data[:,1] == x[1]) & (sub_data[:,2] == x[2])].shape[0] - sub_data[(sub_data[:,1] == x[2]) & (sub_data[:,2] == x[1])].shape[0]), 
+                 
               ### proportion victory common adversories
              (sub_data[(sub_data[:,1] == x[1])].shape[0] - 
               sub_data[(sub_data[:,1] == x[2])].shape[0])/ sub_data.shape[0],
@@ -306,10 +305,11 @@ def global_stats(data):
     return data
 
 
-def create_stats(data, liste_params):
+def create_stats(data, liste_params, verbose=1):
     
     mvs = pd.isnull(data).sum()
-    print(mvs)
+    if verbose == 1:
+        print(mvs)
 
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
@@ -323,13 +323,14 @@ def create_stats(data, liste_params):
     data["diff_fatigue_games"] = np.apply_along_axis(fatigue_games, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(liste_params[0][["ref_days", "winner_id", "loser_id", "total_games"]]))
     del data["ref_days"]
     liste_params[0] = liste_params[0].drop(["total_games", "ref_days"],axis=1)
-
-    print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))
+    if verbose == 1:
+        print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))
     
     data = global_stats(data)
     data["target"] = 1
     data = data.reset_index(drop=True)
-    print(" Created target and global_stats variables ")
+    if verbose == 1:
+        print(" Created target and global_stats variables ")
     
     #############################  calculate all necessary stats   ##########################################
     t0 = time.time()
@@ -347,7 +348,8 @@ def create_stats(data, liste_params):
     stats = pd.DataFrame(counts, columns = stats_cols)
     data = pd.concat([data, stats], axis = 1)
 
-    print("exec stats {0:.2f}".format(time.time()-t0))
+    if verbose == 1:
+        print("exec stats {0:.2f}".format(time.time()-t0))
     
     ############################# create reverse data ##########################################
     ###### target

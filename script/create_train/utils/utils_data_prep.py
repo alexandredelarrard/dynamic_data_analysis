@@ -141,7 +141,7 @@ def calculate_time(x):
 
 def feature_round(x):
     
-    if x[0] in ["Finals", "SF"]:
+    if x[0] in ["Finals", "F"]:
         return 2/x[1]
     
     if x[0] in ["Semi-Finals", "SF"]:
@@ -150,7 +150,7 @@ def feature_round(x):
     if x[0] in ["Quarter-Finals", "QF"]:
         return 8/x[1]
     
-    if x[0] in ["Round Robin", "RR"]:
+    if x[0] in ["Round Robin", "RR", "BR"]:
         return x[1]/x[1]
     
     if x[0] in ["Round of 16", "R16"]:
@@ -162,7 +162,7 @@ def feature_round(x):
     if x[0] in ["Round of 64", "R64"]:
         return 64/x[1]
     
-    if x[0] in ["Round of 128", "R128"]:
+    if x[0] in ["Round of 128", "R128", "R96"]:
         return 128/x[1]
     
     if x[0] in ["Q-1st", "Q-2nd"]:

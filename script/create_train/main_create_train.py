@@ -23,7 +23,7 @@ def main_create_train(params):
 
 if __name__ == "__main__":
     params = {"rebuild" : False,
-              "update"  : False}
+              "update"  : True}
     
     full_data = main_create_train(rebuild=True)
     

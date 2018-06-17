@@ -43,7 +43,6 @@ def make_players():
     players.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv", index= False)
     
     
-
 def import_players():
     players = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv", encoding = "latin1")
     players = players[["Players_ID", "Player_Name", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand"]]

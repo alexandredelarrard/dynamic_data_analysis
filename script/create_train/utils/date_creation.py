@@ -4,11 +4,8 @@ Created on Wed May 30 11:30:49 2018
 
 @author: User
 """
-import pandas as pd
-import numpy as np
-from dateutil import relativedelta
-from datetime import timedelta
 
+from datetime import timedelta
 
 def deduce_match_date(x):
     """
