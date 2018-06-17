@@ -152,7 +152,8 @@ def clean_extract(latest):
     # =============================================================================
     #     #### data prep/ creation of variables
     # =============================================================================
-    clean2 = prep_data(clean.loc[clean["status"] == "Completed"])
+    print( "--- status of matches is : {0}".format(clean["status"].value_counts()))
+    clean2 = prep_data(clean.loc[clean["status"] == "Completed"], verbose=1)
     
     # =============================================================================
     #     #### add rank data into it

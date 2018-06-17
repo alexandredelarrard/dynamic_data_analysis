@@ -62,7 +62,7 @@ def clean_new_matches(historical_data):
     print("Calculate elo for new match {0}".format(time.time() - t0))
     
     # =============================================================================
-    #     ### calculate the statistics on it
+    #     ### calculate the statistics on it / suppress before all observation on same crawled tourney id
     # =============================================================================
     cols_stat, correlation_surface, correlation_time = correlation_subset_data(extra, redo = False)
     latest_data = latest_data.loc[~latest_data["tourney_id"].isin(list(extra["tourney_id"].unique()))]
@@ -82,9 +82,16 @@ def clean_new_matches(historical_data):
                 i =1
             else:
                 extraction_total = pd.concat([extraction_total, addi], axis =0)
-            
+                
     extraction_total = extraction_total.reset_index(drop=False)
+    
+    if os.path.isfile(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d"))):
+        current_extra_day = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d")))
+        current_extra_day = current_extra_day.loc[~current_extra_day["tourney_id"].isin(list(extraction_total["tourney_id"].unique()))]
+        extraction_total = pd.concat([current_extra_day, extraction_total],axis=0).reset_index(drop=True).drop_duplicates()
+        
     extraction_total.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d")), index = False)
+    os.remove(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_brute.csv")
     
     return extraction_total
 

@@ -81,11 +81,16 @@ def prep_data(data, verbose=0):
             
     ##### flag wrong stats as missing stats for suppression in the creation variable part 
     ratio = np.where((dataset["l_svpt"]/dataset["total_games"] <= 2) | (dataset["l_svpt"]/dataset["total_games"]>=6), 1 ,0)
-    dataset["missing_stats"] = np.where((pd.isnull(dataset["w_ace"]))|(dataset["w_SvGms"] == 0)|(dataset["l_SvGms"] == 0)|(ratio==1), 1, 0)
+    dataset["missing_stats"] = np.where((pd.isnull(dataset["w_ace"]))|(dataset["w_svpt"] == 0)|(dataset["l_svpt"] == 0)
+                                            | (dataset["l_1stIn"] == 0)|(dataset["w_1stIn"] == 0) | (ratio==1), 1, 0)
 
+    if verbose == 1:
+        print(" Suppress {0}".format( dataset.loc[dataset["missing_stats"] ==1][["tourney_name", "Date", "winner_name", "loser_name", "score"]]))
+        
     forme = dataset.shape[0]
     dataset = dataset.loc[dataset["missing_stats"] !=1]
     print(" Suppressed missing or wrong stats : {0} rows suppressed".format(dataset.shape[0] - forme))
+    
          
     ### create_basic_features
     dataset = create_basic_features(dataset)
@@ -167,7 +172,6 @@ def prep_data(data, verbose=0):
             
         dataset.loc[index, "minutes"] = dataset.loc[index, "minutes"] /5.0
     
-    if verbose ==1:
         dataset["missing"] = np.where(index, 1,0)
         sns.lmplot(x = "minutes", y = "total_games", data = dataset, hue = "missing")
         del dataset["missing"]

@@ -8,23 +8,30 @@ Created on Sat Jun 16 14:20:34 2018
 import os
 import sys
 
-os.chdir(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
+#os.chdir(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_test.data_creation.clean_test_data import clean, add_elo, calculate_stats
 from create_train.data_update.main_create_update import create_update
 
 sys.path.append(r"C:\Users\User\Documents\tennis\crawling")
 from crawling_futur_match import extract_futur_data
+from crawling_atp_players import updated_players
 
 def main_create_test():
     
     url = "http://www.atpworldtour.com/en/scores/current/"
     
-    #### check train is up to date
-    latest_data = create_update(boolean_update = True)
-       
     ### extract new_data
+    print("[0] extract new_data as test data")
     new_data = extract_futur_data(url)
+    
+    ### check_all_players of new_data are there 
+    print("[1] update database of players base on new crawling")
+    updated_players(new_data)
+    
+    #### check train is up to date
+    print("[2] check all dataset are up to date")
+    latest_data = create_update(boolean_update = True)
     
     ### clean extraction 
     print("[3] clean this information")
