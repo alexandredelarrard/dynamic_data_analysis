@@ -19,16 +19,22 @@ def data_prep_for_modelling(full_data):
     
     shape0 = full_data.shape[0]
     full_data = full_data.loc[~pd.isnull(full_data["diff_aces"])&(full_data["Common_matches"]>=5)&(full_data["Date"].dt.year>= 1990)]
-    full_data = full_data.loc[~pd.isnull(full_data["l_2nd_srv_ret_won"])]
-    full_data = full_data.loc[~pd.isnull(full_data["w_2nd_srv_ret_won"])]
+    
+    print("Number of matches under 5 common adversaries played is {0}".format(full_data.loc[full_data["Common_matches"]<5].shape[0]))
+    
+    try:
+        full_data = full_data.loc[~pd.isnull(full_data["l_2nd_srv_ret_won"])]
+        full_data = full_data.loc[~pd.isnull(full_data["w_2nd_srv_ret_won"])]
+        full_data["total_tie_break_l"] =  full_data["total_tie_break_l"].fillna(-1)
+        full_data["total_tie_break_w"] =  full_data["total_tie_break_w"].fillna(-1)
+    except Exception:
+        pass
     full_data = full_data.loc[~pd.isnull(full_data["diff_overall_skill"])]
     print("[0] Suppressed missing values : {} suppressed".format(full_data.shape[0] - shape0))
     
     # =============================================================================
     #     ###fill na to -1 or delete observations
     # =============================================================================
-    full_data["total_tie_break_l"] =  full_data["total_tie_break_l"].fillna(-1)
-    full_data["total_tie_break_w"] =  full_data["total_tie_break_w"].fillna(-1)
     full_data["diff_serv2_ret1"]   =  full_data["diff_serv2_ret1"].fillna(-1)
     full_data["diff_skill_ret"]    =  full_data["diff_skill_ret"].fillna(-1)
     full_data["prop_victory_surface_w"]   =  full_data["prop_victory_surface_w"].fillna(-1)

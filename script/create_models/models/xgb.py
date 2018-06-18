@@ -6,12 +6,10 @@ Created on Wed May  9 23:00:16 2018
 """
 import pandas as pd
 import numpy as np
-from sklearn import metrics, ensemble, linear_model, svm
 from sklearn.metrics import roc_auc_score, accuracy_score, log_loss
-from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, plot_importance
 import os
-from sklearn.externals import joblib
+import pickle as pkl
 from datetime import datetime
 
 from pylab import rcParams
@@ -24,6 +22,18 @@ def modelling_xgboost(data, date_test_start, date_test_end):
     avg_acc = 0
     avg_log_loss = 0
     print("\n")
+    
+    params = {"n_estimators":1000,
+             "max_depth":6,
+             "objective":"binary:logistic",
+             "learning_rate":0.045, 
+             "subsample":0.9,
+             "colsample_bytree":0.8,
+             "min_child_weight":2,
+             "n_jobs":8,
+             "reg_alpha": 1,
+             "reg_lambda": 1,
+            }
     
     for i, tourney in enumerate(test_tot.sort_values("Date")["tourney_name"].unique()):
         test = test_tot.loc[test_tot["tourney_name"]== tourney]
@@ -40,20 +50,8 @@ def modelling_xgboost(data, date_test_start, date_test_end):
     
         x_train, y_train, x_test, y_test = train.drop(["target", "Date", "tourney_name"],axis=1), train["target"], test.drop(["target", "Date", "tourney_name"],axis=1), test["target"]
         
-        clf = XGBClassifier(    
-                    n_estimators=500,
-                    max_depth=7,
-                    objective="binary:logistic",
-                    learning_rate=0.07, 
-                    subsample=0.9,
-                    colsample_bytree=0.8,
-                    min_child_weight=4,
-                    reg_alpha = 1,
-                    reg_lambda = 1,
-                    gamma =0,
-                    n_jobs= 8
-                 )
-        
+        clf = XGBClassifier(**params)
+
         eval_set=[(x_train, y_train), (x_test, y_test)]
         clf.fit(x_train, y_train, 
                            eval_set=eval_set,
@@ -79,13 +77,21 @@ def modelling_xgboost(data, date_test_start, date_test_end):
         var_imp = pd.DataFrame(np.array(clf.feature_importances_), columns = ["importance"], index= x_train.columns).sort_values("importance")
         addi_train = test
         
+    if test_tot.shape[0]>0:
         plot_importance(clf)
-        
-    predictions_overall["preds"] = predictions[0].tolist()
-    print("_"*40)
-    print("[AUC avg] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
+        predictions_overall["preds"] = predictions[0].tolist()
+        print("_"*40)
+        print("[AUC avg] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
 
-    joblib.dump(clf, r"C:\Users\User\Documents\tennis\models\match_proba_prediction\xgb\xgb_{0}.sav".format(datetime.now().strftime("%Y-%m-%d")))
+    else:
+         predictions_overall = ""
+         var_imp = ""
+    
+    ### train model on all data 
+    print("\n fitting the overall dataset for real prediction")
+    clf = XGBClassifier(**params)
+    clf.fit(data.drop(["target", "Date", "tourney_name"], axis=1), data["target"])
+    pkl.dump(clf, open(r"C:\Users\User\Documents\tennis\models\match_proba_prediction\xgb\xgb_{0}.pkl".format(datetime.now().strftime("%Y-%m-%d")), "wb"))
     
     return clf, var_imp, predictions_overall
 

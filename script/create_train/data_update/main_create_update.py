@@ -41,9 +41,9 @@ def import_data():
 
 def create_update(boolean_update):
     
-    latest_data = import_data()
-        
     if boolean_update:
+        latest_data = import_data()
+        
         #### check all ranks and tourney are downloaded
         print("[2-0] check tourney")
         updated_tourney()
@@ -64,9 +64,6 @@ def create_update(boolean_update):
         #### check all players into data
         print("[2-4] aggregate new data")
         clean_new_matches(latest_data)
-    
-    return latest_data
-
 
 if __name__ =="__main__":
     os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"

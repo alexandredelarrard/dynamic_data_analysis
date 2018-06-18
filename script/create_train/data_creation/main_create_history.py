@@ -53,18 +53,10 @@ def create_history(rebuild):
         data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv", index= False)
        
     if not rebuild: 
-        try:
-            data_total = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv")
-            data_total["Date"] = pd.to_datetime(data_total["Date"], format = "%Y-%m-%d")
+        if not os.path.isfile(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv"):
+            print(" You need to create the historical data. Switch to rebuild = True. It will take few hours to run so take a nap")
+            create_history(rebuild=True)
             
-            ### create a report on the original dataset
-            print(data_total.shape)
-            
-        except Exception:
-            print(" You need to create the historical data with rebuild = True before assessing it")
-            pass
-            
-
 if __name__ == "__main__":
     full_data = create_history(rebuild=True)
     

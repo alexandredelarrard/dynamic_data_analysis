@@ -13,14 +13,13 @@ warnings.filterwarnings("ignore")
 from create_train.data_creation.main_create_history import create_history
 from create_train.data_update.main_create_update import create_update
 
+
 def main_create_train(params):
 
     create_history(params["rebuild"])
-    total_history_updated = create_update(params["update"])
+    create_update(params["update"])
 
-    return total_history_updated
     
-
 if __name__ == "__main__":
     params = {"rebuild" : False,
               "update"  : True}

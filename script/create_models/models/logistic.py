@@ -11,7 +11,7 @@ from sklearn import linear_model
 from sklearn.metrics import roc_auc_score, accuracy_score, log_loss
 from sklearn.preprocessing import StandardScaler
 import os
-from sklearn.externals import joblib
+import pickle as pkl
 from datetime import datetime
 
 
@@ -34,7 +34,7 @@ def modelling_logistic(data, date_test_start, date_test_end):
         
         if i >0:
             train= pd.concat([train, addi_train], axis=0)
-    
+        
         x_train, y_train, x_test, y_test = train.drop(["target", "Date", "tourney_name"],axis=1), train["target"], test.drop(["target", "Date", "tourney_name"],axis=1), test["target"]
         
         clf = linear_model.LogisticRegression(C=1)
@@ -61,14 +61,21 @@ def modelling_logistic(data, date_test_start, date_test_end):
         var_imp.sort_values(by = "coefs")
         addi_train = test
     
-    predictions_overall["preds"] = predictions[0].tolist()
+    if test_tot.shape[0]>0:
+        var_imp.plot(kind="bar", figsize = (15,10), rot = 85)
+        predictions_overall["preds"] = predictions[0].tolist()
+        print("_"*40)
+        print("[AUC avg] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
     
-    var_imp.plot(kind="bar", figsize = (15,10), rot = 85)
+    else:
+         predictions_overall = pd.DataFrame([])
+         var_imp = ""
     
-    print("_"*40)
-    print("[AUC avg] {0} / [Accuracy avg] {1:.3f} / [logloss] {2:.3f} / [Match Nbr total] {3} ".format(avg_auc/len(test_tot), avg_acc/len(test_tot), avg_log_loss/len(test_tot), len(test_tot)))
-    
-    joblib.dump(clf, r"C:\Users\User\Documents\tennis\models\match_proba_prediction\logistic\logistic_{0}.sav".format(datetime.now().strftime("%Y-%m-%d")))
+    #### export model
+    print("\n fitting the overall dataset for real prediction")
+    clf = linear_model.LogisticRegression(C=1)
+    clf.fit(data.drop(["target", "Date", "tourney_name"], axis=1), data["target"])
+    pkl.dump(clf, open(r"C:\Users\User\Documents\tennis\models\match_proba_prediction\logistic\logistic_{0}.pkl".format(datetime.now().strftime("%Y-%m-%d")), "wb"))
     
     return clf, var_imp, predictions_overall
 

@@ -9,8 +9,7 @@ import pandas as pd
 import os
 import sys
 import time
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 import tqdm
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
@@ -85,12 +84,12 @@ def clean_new_matches(historical_data):
                 
     extraction_total = extraction_total.reset_index(drop=True)
     
-    if os.path.isfile(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d"))):
-        current_extra_day = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d")))
+    if os.path.isfile(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.now().strftime("%Y-%m-%d"))):
+        current_extra_day = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.now().strftime("%Y-%m-%d")))
         current_extra_day = current_extra_day.loc[~current_extra_day["tourney_id"].isin(list(extraction_total["tourney_id"].unique()))]
         extraction_total = pd.concat([current_extra_day, extraction_total],axis=0).reset_index(drop=True).drop_duplicates()
         
-    extraction_total.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.datetime.now().strftime("%Y-%m-%d")), index = False)
+    extraction_total.to_csv(os.environ["DATA_PATH"] + "/clean_datasets/overall/stable/all_extractions/extraction_clean_{0}.csv".format(datetime.now().strftime("%Y-%m-%d")), index = False)
     os.remove(os.environ["DATA_PATH"] + "/clean_datasets/overall/updated/extracted/extraction_brute.csv")
     
     return extraction_total

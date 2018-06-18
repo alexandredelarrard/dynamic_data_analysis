@@ -142,9 +142,9 @@ def calculate_time(x):
 
 def feature_round(x):
     
-    if  x[0] in ["1st Rd", "2nd Rd", "3rd Rd", "4th Rd"]:
+    if  x[0].strip() in ["1st Rd", "2nd Rd", "3rd Rd", "4th Rd"]:
         number = int(x[0][0])
-        x[0] = "R" + str(x[1]/(2**(number-1)))
+        x[0] = "R" + str(int(x[1]/(2**(number-1))))
         
     if x[0] in ["Finals", "F"]:
         return 2/x[1]

@@ -23,14 +23,13 @@ def global_main(params):
     main_create_train(params)
 
     ### create test dataset after updating everything in train
-    boolean_update = False if params["rebuild"] == True and params["update"] == True else params["update"]
-    main_create_test(boolean_update = boolean_update)
+    main_create_test(crawl_test = params["make_test"])
     
     #### model from the dataset updated from test creation
     now = datetime.now()
     params = {
-            "date_test_start" :  now - timedelta(days = 250), 
-            "date_test_end"   : now.strftime("%Y-%m-%d")
+              "date_test_start" :  now - timedelta(days = 0), 
+              "date_test_end"   : now.strftime("%Y-%m-%d")
              }
     clf, var_imp, predictions_overall_xgb, predictions_overall_lg = main_modelling(params)
     
@@ -39,17 +38,13 @@ def global_main(params):
     
     return predictions_futures, var_imp, predictions_overall_xgb, predictions_overall_lg
 
-
 if __name__ == "__main__":
 
     params= {"rebuild" : False,
-             "update": False}   
-    clf, var_imp, predictions_overall_xgb, predictions_overall_lg = global_main(params)
+             "update": False,
+             "make_test" : False}   
     
-    
-    
-
-    
+    predictions_futures, var_imp, predictions_overall_xgb, predictions_overall_lg = global_main(params)
     
     
     
