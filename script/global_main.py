@@ -38,11 +38,12 @@ def global_main(params):
     
     return predictions_futures, var_imp, predictions_overall_xgb, predictions_overall_lg
 
+
 if __name__ == "__main__":
 
-    params= {"rebuild" : False,
-             "update": False,
-             "make_test" : False}   
+    params= {"rebuild" : True,
+             "update": True,
+             "make_test" : True}   
     
     predictions_futures, var_imp, predictions_overall_xgb, predictions_overall_lg = global_main(params)
     

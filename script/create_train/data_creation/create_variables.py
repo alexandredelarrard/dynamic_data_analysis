@@ -36,6 +36,10 @@ def create_basic_features(dataset):
     dataset["winner_hand"] = np.where(dataset["winner_hand"] == "Right-Handed", 1, 0).astype(int)   
     dataset["loser_hand"] = np.where(dataset["loser_hand"] == "Right-Handed", 1, 0).astype(int)
     
+    ### dummify hand player
+    dataset["Weak_hand_w"] = np.where(dataset["Weak_hand_w"] == "Two-Handed Backhand", 1, 0).astype(int)   
+    dataset["Weak_hand_l"] = np.where(dataset["Weak_hand_l"] == "Two-Handed Backhand", 1, 0).astype(int)
+    
     #### date into days
     dataset["Date"] = pd.to_datetime(dataset["Date"], format = "%Y-%m-%d")
     

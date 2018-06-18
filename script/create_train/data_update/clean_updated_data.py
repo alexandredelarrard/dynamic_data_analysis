@@ -14,7 +14,7 @@ import glob
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_train.data_creation.create_variables import prep_data
-from create_train.data_creation.extract_players import import_players
+from create_train.data_creation.extract_players import import_players, merge_atp_players
 from create_train.utils.date_creation import deduce_match_date
 from create_train.utils.utils_data_prep import dates,currency_prize,homogenize_prizes,extract_rank_and_match,calculate_time,status,correct_score
 

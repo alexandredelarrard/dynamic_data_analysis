@@ -7,6 +7,7 @@ Created on Mon Mar 26 21:39:18 2018
 
 import pandas as pd
 import os
+import numpy as np
 
 from create_train.utils.utils_data_prep import dates
 
@@ -45,8 +46,11 @@ def make_players():
     
 def import_players():
     players = pd.read_csv(os.environ["DATA_PATH"] + "/clean_datasets/players/players_desc.csv", encoding = "latin1")
-    players = players[["Players_ID", "Player_Name", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand"]]
+    players = players[["Players_ID", "Player_Name", "DOB", "Turned pro", "Weight", "Height", "Nationality", "Birth place", "Strong_hand", "Weak_hand"]]
     
+    ### Weak_hand
+    players["Weak_hand"] = np.where(pd.isnull(players["Weak_hand"]), "Two-Handed Backhand", players["Weak_hand"])
+   
     return players.reset_index(drop=True)
     
 
@@ -83,7 +87,7 @@ def merge_atp_players(data_merge):
     data_merged["DOB_l"] = pd.to_datetime(data_merged["DOB_l"], format = "%Y-%m-%d")
     
     data_merged_missing_added = fillin_missing_values(data_merged)
-    data_merged_missing_added = data_merged_missing_added.sort_values(["tourney_id", "Date"])
+    data_merged_missing_added = data_merged_missing_added.sort_values(["Date", "tourney_id"])
     
     return data_merged_missing_added
     

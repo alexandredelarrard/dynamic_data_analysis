@@ -5,7 +5,6 @@ Created on Fri Mar  9 10:16:28 2018
 @author: JARD
 """
 import os
-import pandas as pd
 
 os.chdir(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_train.data_creation.extract_data_atp import import_data_atp
