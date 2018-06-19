@@ -15,7 +15,7 @@ from create_train.data_creation.create_variables import prep_data
 def create_history(rebuild):
 
     if rebuild:
-        redo = True  #### will re extract to complete missing values and correlation matrix
+        redo = False  #### will re extract to complete missing values and correlation matrix
         
         try:
             os.remove(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv")
