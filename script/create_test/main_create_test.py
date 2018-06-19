@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 import pandas as pd
 
-#os.chdir(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
+os.chdir(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_test.data_creation.clean_test_data import clean, add_elo, calculate_stats
 from create_train.data_update.main_create_update import create_update

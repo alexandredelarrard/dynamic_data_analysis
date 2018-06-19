@@ -64,7 +64,6 @@ def clean_stat(extract):
     clean["round"] = clean["round"].map(dico_round)
     clean["tourney_name"] = list(list(zip(*list_info1))[5])
     
-
     # =============================================================================
     #     #### take care of stats
     # =============================================================================
@@ -111,7 +110,8 @@ def match_stats_main(data_atp, redo = False):
     # =============================================================================
     #     ##### crawl missing stats and add them to missing ones
     # =============================================================================
-    sub_data = data_atp.loc[(pd.isnull(data_atp["w_ace"]))|(data_atp["w_SvGms"] == 0)|(data_atp["l_SvGms"] == 0)].copy()
+    sub_data = data_atp.loc[((pd.isnull(data_atp["w_ace"]))|(data_atp["w_svpt"] == 0)|(data_atp["l_svpt"] == 0)
+                                            | (data_atp["l_1stIn"] == 0)|(data_atp["w_1stIn"] == 0))&(data_atp["Date"].dt.year >=2000)].copy()
     
     if redo:
         print("[Crawl wrong/missing stats] data wrong has shape {0}".format(sub_data.shape))
@@ -120,11 +120,11 @@ def match_stats_main(data_atp, redo = False):
         latest = {"Date":sub_data["Date"].min(), "liste_tourney" :  list(set(liste))}
         extract_additionnal_data(latest)
         
-        new_data = pd.read_csv(os.environ["DATA_PATh"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv")
+        new_data = pd.read_csv(os.environ["DATA_PATH"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv")
         
         ### Create stats needed for total data 
         missing_stats = clean_stat(new_data)
-        missing_stats.to_csv(os.environ["DATA_PATh"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv", index= False)
+        missing_stats.to_csv(os.environ["DATA_PATH"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv", index= False)
     else:
         missing_stats = pd.read_csv(os.environ["DATA_PATh"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv")
      

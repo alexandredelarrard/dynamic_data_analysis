@@ -28,8 +28,6 @@ def import_data_atp(path, redo=False):
         else:
             data = pd.concat([data, pd.read_csv(file, encoding = "latin1")], axis=0)
             
-    data = data.sort_values(["tourney_date", "tourney_id", "match_num"])
-    
     # =============================================================================
     #     ### correct tourney_id not merging or too old for atp
     # =============================================================================
@@ -38,8 +36,11 @@ def import_data_atp(path, redo=False):
                          np.where(data["tourney_id"] == '2018-0451', '2018-451',
                          np.where(data["tourney_id"] == '2018-0375', '2018-375',
                          np.where(data["tourney_id"] == '2018-0891', '2018-891',
-                         np.where(data["tourney_id"] == '2018-M001', '2018-338',
-                         data["tourney_id"]))))))
+                         np.where(data["tourney_id"] == '2018-M001', '2018-338',     
+                         np.where(data["tourney_id"] == '2017-M001', '2017-338',
+                         np.where(data["tourney_id"] == '2017-0605', '2017-605',
+                         np.where(data["tourney_id"] == '2016-0315', '2016-315',
+                         data["tourney_id"])))))))))
     
     # =============================================================================
     #     #### merge with tourney database 
@@ -127,7 +128,7 @@ def fill_in_missing_values(total_data, redo):
     # =============================================================================
     t0 = time.time()
     total_data_wrank = deduce_rank_from_atp(total_data)
-    total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
+#    total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
     print("[{0}s] 3) fill missing rank based on atp crawling ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     
     # =============================================================================

@@ -15,7 +15,8 @@ from create_train.data_creation.create_variables import prep_data
 def create_history(rebuild):
 
     if rebuild:
-          
+        redo = True  #### will re extract to complete missing values and correlation matrix
+        
         try:
             os.remove(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv")
         except Exception:
@@ -26,7 +27,7 @@ def create_history(rebuild):
         # =============================================================================
         
         path = os.environ["DATA_PATH"]  + "/brute_info/historical/brute_info_atp/"
-        data_atp = import_data_atp(path, redo = False) ### redo the stats match with crawled matches from atp
+        data_atp = import_data_atp(path, redo = redo) ### redo the stats match with crawled matches from atp
        
         # =============================================================================
         #         ### add elo system ranking # // 20 min 
@@ -48,7 +49,7 @@ def create_history(rebuild):
         #         ### create counting past historical data // 250 min 
         # =============================================================================
         
-        data_total = create_statistics(data2, redo= False)
+        data_total = create_statistics(data2, redo= redo)
         data_total.to_csv(os.environ["DATA_PATH"]  + "/clean_datasets/overall/stable/hictorical_origin/total_dataset_modelling.csv", index= False)
        
     if not rebuild: 

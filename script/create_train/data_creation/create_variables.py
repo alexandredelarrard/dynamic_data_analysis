@@ -65,6 +65,12 @@ def create_basic_features(dataset):
     dataset["w_imc"] = dataset["Weight_w"] / (dataset["winner_ht"]/100)**2
     dataset["l_imc"] = dataset["Weight_l"] / (dataset["loser_ht"]/100)**2
     
+    ### entry  and seed missing values
+    dataset["winner_seed"] = dataset["winner_seed"].fillna("")
+    dataset["winner_entry"] = dataset["winner_entry"].fillna("")
+    dataset["loser_seed"]  = dataset["loser_seed"].fillna("")
+    dataset["loser_entry"] = dataset["loser_entry"].fillna("")
+    
     return dataset
     
 
@@ -83,6 +89,10 @@ def prep_data(data, verbose=0):
         for j, w_l in enumerate(["w", "l"]):
             dataset[w_l + "_S%i"%i] = dataset["S%i"%i].apply(lambda x : games_extract(x, j)).fillna(-1).astype(int)
             
+    ### create variable on set won l/w
+    dataset["1_Set_won"] = np.where(dataset["w_S1"] > dataset["l_S1"], 1 , 0)
+    dataset["2_Set_won"] = np.where(dataset["w_S2"] > dataset["l_S2"], 1 , 0)
+             
     ##### flag wrong stats as missing stats for suppression in the creation variable part 
     ratio = np.where((dataset["l_svpt"]/dataset["total_games"] <= 2) | (dataset["l_svpt"]/dataset["total_games"]>=6), 1 ,0)
     dataset["missing_stats"] = np.where((pd.isnull(dataset["w_ace"]))|(dataset["w_svpt"] == 0)|(dataset["l_svpt"] == 0)

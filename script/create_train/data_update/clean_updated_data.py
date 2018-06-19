@@ -57,6 +57,10 @@ def clean_extract(latest):
     
     clean["score"]     =  ex["10"].apply(lambda x: correct_score(x))
     clean["match_num"] =  ex["11"]
+    clean["winner_seed"] = ex["12"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
+    clean["loser_seed"]  = ex["13"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
+    clean["winner_entry"] = ex["12"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
+    clean["loser_entry"]  = ex["13"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
     
     list_info1 = ex["7"].apply(lambda x : liste1_extract(x))
     clean["draw_size"] = list(list(zip(*list_info1))[0])
@@ -114,7 +118,7 @@ def clean_extract(latest):
     clean["loser_age"]  = clean[["Date", "DOB_l"]].apply(lambda x : dates(x), axis=1)
     
     #### stats
-    ex_stats = ex.iloc[:,12:]
+    ex_stats = ex.iloc[:,14:]
     ex_stats.columns= [str(x) for x in range(ex_stats.shape[1])]
     ex_stats = ex_stats.rename(columns = {"0":"url", "2": "sr_player1", "4": "sr_player2", 
                         "5": "aces_player1", "7" :"aces_player2", "8":"df_player1", "10":"df_player2", 

@@ -8,6 +8,7 @@ Created on Wed Apr  4 13:38:19 2018
 import pandas as pd
 import numpy as np
 import time
+import dask.dataframe as dd
 
 from create_train.utils.weight_past_matches import get_correlations
 
@@ -145,7 +146,7 @@ def get_stats(x, sub_data):
                       'w_svpt','w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced','l_ace', 'l_df', 'l_svpt',
                       'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced','w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won',
                       'w_total_ret_won', 'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted','l_total_srv_won', 'l_total_ret_won', 'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set",
-                      'l_total_pts_won', 'w_total_pts_won', 'tourney_id', "round", 'weight'
+                      'l_total_pts_won', 'w_total_pts_won', 'tourney_id', "round", "1_Set_won", "2_Set_won", 'weight'
                       
      x : "Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of'
     """
@@ -235,34 +236,37 @@ def get_stats(x, sub_data):
              
              ### diff average time per set
              ((winner_w_data[:,4]*winner_w_data[:,-1]).sum()  + (winner_l_data[:,4]*winner_l_data[:,-1]).sum())/((sub_data[(sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1]), 39].sum())*weight_winner) -\
-             ((loser_w_data[:,4]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,4]*loser_l_data[:,-1]).sum())/((sub_data[(sub_data[:,1] == x[2]) | (sub_data[:,2] == x[2]), 39].sum())*weight_loser)
+             ((loser_w_data[:,4]*loser_w_data[:,-1]).sum()  + (loser_l_data[:,4]*loser_l_data[:,-1]).sum())/((sub_data[(sub_data[:,1] == x[2]) | (sub_data[:,2] == x[2]), 39].sum())*weight_loser),
               
-             #    prop_1er_set_gagne_surface_w = 
-             #    prop_1er_set_gagne_surface_l =   
+             ### diff prop 1set won 
+             (winner_w_data[(winner_w_data[:,44] == 1),-1].sum() + winner_l_data[(winner_l_data[:,44] == 1), -1].sum())/weight_winner -\
+             (loser_w_data[(loser_w_data[:,44] == 1),-1].sum()  + loser_l_data[(loser_l_data[:,44] == 1),-1].sum())/weight_loser, 
              
-             #    prop_2eme_set_gagne_surface_w = 
-             #    prop_2eme_set_gagne_surface_l =   
+             ### diff prop 2set won
+             (winner_w_data[(winner_w_data[:,45] == 1),-1].sum() + winner_l_data[(winner_l_data[:,45] == 1), -1].sum())/weight_winner -\
+             (loser_w_data[(loser_w_data[:,45] == 1),-1].sum()  + loser_l_data[(loser_l_data[:,45]==1),-1].sum())/weight_loser
              
              )
     
     return count
 
 
+
 def since_start_of_year(x, data):
     """
     - x : "Date", "winner_id", "loser_id", "winner_rank_points", "loser_rank_points"
-    - data: "Date", "winner_id", "loser_id", "tourney_id_wo_year", "winner_rank_points", "loser_rank_points"
+    - data: "Date", "winner_id", "loser_id", "winner_rank_points", "loser_rank_points"
     """
+
+    sub_data = data.loc[np.where((data["Date"].dt.year == x[0].year)&(data["Date"] < x[0]))]
+    winner_index = (sub_data["winner_id"] == x[1]) | (sub_data["loser_id"] == x[1])
+    loser_index = (sub_data["winner_id"] == x[2]) | (sub_data["loser_id"] == x[2])
     
-    index =np.where(data[:,0].astype('datetime64[Y]').astype(int) == x[0].astype('datetime64[Y]').astype(int))
-    sub_data = data[(index) & (data[:,0] < x[0])]
+    diff_nbr_matches = sub_data.loc[winner_index].shape[0] - sub_data.loc[loser_index].shape[0]
+    diff_nbr_tourney = len(sub_data.loc[winner_index, "winner_rank_points"].unique()) - len(sub_data.loc[loser_index, "loser_rank_points"].unique()) 
     
-    diff_nbr_matches = sub_data[(sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1])] - sub_data[(sub_data[:,1] == x[2]) | (sub_data[:,2] == x[2])]
-    diff_nbr_tourney = len(set(sub_data[(sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1]), 3])) - len(set(sub_data[(sub_data[:,1] == x[2]) | (sub_data[:,2] == x[2]), 3])) 
-    delta_pts_w = (x[3] - sub_data[(sub_data[:,1] == x[1]) | (sub_data[:,2] == x[1]), 4][0])/x[3]
-    delta_pts_l = (x[4] - sub_data[(sub_data[:,1] == x[2]) | (sub_data[:,2] == x[2]), 5][0])/x[4]
-    
-    return (diff_nbr_matches, diff_nbr_tourney, delta_pts_w, delta_pts_l)
+    return [(diff_nbr_matches, diff_nbr_tourney)] 
+
 
 
 def fatigue_games(x, data):
@@ -299,12 +303,15 @@ def correlation_subset_data(data, redo):
     ############################# calculation of statistics ########################################## 
     ### we use tourney date instead of date because wont have last statistics of tourney match, atp crawl them and give them later
     cols_stat = ['Date', 'winner_id', 'loser_id', "surface", 'minutes', 'best_of', "winner_rank", 'loser_rank', 
-                       'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
-                       'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced',
-                       'w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 
-                       'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted', 'l_total_srv_won', 'l_total_ret_won',
-                       'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
-                       'tourney_id_wo_year', "round", "total_games"]
+                   'w_ace', 'w_df', 'w_svpt', 'w_1stIn', 'w_1stWon', 'w_2ndWon', 'w_SvGms', 'w_bpSaved', 'w_bpFaced',
+                   'l_ace', 'l_df', 'l_svpt', 'l_1stIn', 'l_1stWon', 'l_2ndWon', 'l_SvGms', 'l_bpSaved', 'l_bpFaced',
+                   'w_1st_srv_ret_won','w_2nd_srv_ret_won', 'w_bp_converted', 'w_total_srv_won', 'w_total_ret_won', 
+                   'l_1st_srv_ret_won', 'l_2nd_srv_ret_won', 'l_bp_converted', 'l_total_srv_won', 'l_total_ret_won',
+                   'w_tie-breaks_won', 'l_tie-breaks_won', 'Nbr_tie-breaks', "N_set", 'l_total_pts_won', 'w_total_pts_won',
+                   'tourney_id_wo_year', "round", "1_Set_won", "2_Set_won",
+                   
+                   #### columns that will be dropped after stats calc in first step
+                   "total_games", 'winner_rank_points', 'loser_rank_points']
     
     return cols_stat, correlation_surface, correlation_time
 
@@ -340,7 +347,9 @@ def create_stats(data, liste_params, verbose=1):
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
     data["prob_elo"] = 1 / (1 + 10 ** ((data["elo2"] - data["elo1"]) / 400))
     
-    #### get difference of fatigue between players
+    # =============================================================================
+    #     #### get difference of fatigue between players games/ minutes
+    # =============================================================================
     t0 = time.time()
     liste_params[0]["ref_days"] = list((pd.to_datetime(liste_params[0]["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days)
     data["ref_days"]= (pd.to_datetime(data["Date"], format = "%Y-%m-%d")- pd.to_datetime("1901-01-01")).dt.days
@@ -352,12 +361,16 @@ def create_stats(data, liste_params, verbose=1):
     if verbose == 1:
         print("[{0:.2f}] Created diff fatigue games variables".format(time.time() - t0))
         
-    #### get difference since start of the year
-    start_year = np.apply_along_axis(since_start_of_year, 1, np.array(data[["Date", "winner_id", "loser_id", "winner_rank_points", "loser_rank_points"]]), np.array(liste_params[0][["Date", "winner_id", "loser_id", "tourney_id_wo_year", "winner_rank_points", "loser_rank_points"]]))
-    start_year = start_year.reshape(start_year.shape[0], start_year.shape[2])
-    stats_cols = ["diff_nbr_matches_start_yr", "diff_nbr_tourney_start_yr", "delta_pts_w_start_yr", "delta_pts_l_start_yr"]
-    stats = pd.DataFrame(start_year, columns = stats_cols)
-    data = pd.concat([data, stats], axis = 1)
+    # =============================================================================
+    #     #### get difference since start of the year
+    # =============================================================================
+    t0 = time.time()
+    ddata = dd.from_pandas(data[["Date", "winner_id", "loser_id", "winner_rank_points", "loser_rank_points"]], npartitions=8)
+    start_year = ddata.map_partitions(lambda df: df.apply((lambda row: since_start_of_year(row, liste_params[0][["Date", "winner_id", "loser_id", "tourney_id_wo_year", "winner_rank_points", "loser_rank_points"]])), axis=1)).compute(scheduler="processes")["Date"]
+    start_year = np.transpose(np.array(list(zip(*start_year))))
+    data["diff_nbr_matches_start_yr"] = start_year[:,0]
+    data["diff_nbr_tourney_start_yr"] = start_year[:,1]
+    liste_params[0] = liste_params[0].drop(['winner_rank_points', 'loser_rank_points'], axis=1)
     if verbose == 1:
         print("[{0:.2f}] Created diff since start of year variables".format(time.time() - t0))
        
@@ -367,17 +380,20 @@ def create_stats(data, liste_params, verbose=1):
     if verbose == 1:
         print(" Created target and global_stats variables ")
     
-    #############################  calculate all necessary stats   ##########################################
+    # =============================================================================
+    #     #############################  calculate all necessary stats   ##############
+    # =============================================================================
     t0 = time.time()
     liste_params[0] = np.array(liste_params[0])
-    counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of']]), liste_params)
-    counts = counts.reshape(counts.shape[0], counts.shape[2])
+    ddata = dd.from_pandas(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of']], npartitions=8)
+    counts = ddata.map_partitions(lambda df: df.apply((lambda row: weighted_statistics(row, liste_params)), axis=1)).compute(scheduler="processes")["Date"]
+    counts = np.transpose(np.array(list(zip(*counts))))
     
     ###### put the right name to the right column
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
                  "diff_victories_12", "diff_victories_common_matches", "diff_pts_common_matches", "diff_mean_rank_adversaries", "diff_weights",
-                 "diff_time_set",
+                 "diff_time_set","diff_win_set_1","diff_win_set_2",
                  "bst_rk_w", "bst_rk_l", "prop_victory_surface_w", "prop_victory_surface_l",  "nbr_reach_level_tourney_w", 
                  "nbr_reach_level_tourney_l", "prop_last_set_gagne_w", "prop_last_set_gagne_l"]
     

@@ -42,6 +42,11 @@ def clean(matches, url):
     clean["winner_name"] = matches["8"].apply(lambda x : x.lower().replace("-"," ").strip())
     clean["loser_name"] = matches["9"].apply(lambda x : x.lower().replace("-"," ").strip())
     
+    clean["winner_seed"] = matches["seed_1"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
+    clean["loser_seed"]  = matches["seed_2"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
+    clean["winner_entry"] = matches["seed_1"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
+    clean["loser_entry"]  = matches["seed_2"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
+    
     # =============================================================================
     #     ### add indoor flag
     # =============================================================================
