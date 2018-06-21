@@ -9,6 +9,9 @@ import numpy as np
 from dateutil import relativedelta
 from datetime import timedelta
 import re
+import os
+import glob
+import tqdm
 
 def set_extract(x, taille):
     if len(x)>=taille:    
@@ -206,3 +209,34 @@ def extract_rank_and_match(x, rk_data):
         loser = [1800, 0]
         
     return [(winner[0],winner[1],loser[0],loser[1])]
+
+
+def import_rank_data(data):
+    
+    ## split import in 6
+    
+    files_df = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
+    files_rank = pd.DataFrame(np.transpose([files_df, [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_df]]), columns = ["file", "Date"])
+    files_rank = files_rank.loc[(files_rank["Date"]< data["Date"].max())&(files_rank["Date"] >= (data["Date"].min()- timedelta(days= 35)))]
+    
+    a,b,c,d,e,f = np.array_split(files_rank, 6)
+    overall = pd.DataFrame([], columns = ["Player_name","player_rank","player_points"])
+    for bdd in [a,b,c,d,e,f]:
+        i =0
+        for f in tqdm.tqdm(bdd["file"].tolist()):
+            if i ==0:
+                rk_data = pd.read_csv(f).drop(["player_age","played_tournois"],axis=1)
+                rk_data["Date"] = bdd.iloc[i,1]
+            else:
+                new_data = pd.read_csv(f).drop(["player_age","played_tournois"],axis=1)
+                new_data["Date"] = bdd.iloc[i,1]
+                rk_data = pd.concat([rk_data, new_data], axis =0)
+            i+=1
+                
+        rk_data= rk_data.reset_index(drop=True)
+        rk_data["player_rank"] = rk_data["player_rank"].apply(lambda x: int(x.replace("T","")))
+    
+        overall = pd.concat([overall, rk_data], axis =0)
+    overall= overall.reset_index(drop=True)
+    
+    return overall

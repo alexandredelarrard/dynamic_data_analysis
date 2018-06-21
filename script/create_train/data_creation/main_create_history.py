@@ -46,7 +46,7 @@ def create_history(rebuild):
         
         # =============================================================================
         #         #data2 = pd.read_csv(os.environ["DATA_PATH"]  + "/clean_datasets/historical/matches_elo_variables_V1.csv")
-        #         ### create counting past historical data // 250 min 
+        #         ### create counting past historical data // 90 min 
         # =============================================================================
         
         data_total = create_statistics(data2, redo= redo)
