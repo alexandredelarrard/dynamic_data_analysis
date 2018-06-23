@@ -20,6 +20,7 @@ from create_train.data_creation.create_elo_rankingV2 import fill_latest_elo, cal
 sys.path.append(r"C:\Users\User\Documents\tennis")
 from crawling.crawling_additionnal_data import extract_additionnal_data
 
+
 def update_stable(historical_data):
    
     latest_data = historical_data.loc[historical_data["target"] == 1].copy()

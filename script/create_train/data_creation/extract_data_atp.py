@@ -15,7 +15,7 @@ from create_train.data_creation.extract_players import  merge_atp_players
 from create_train.data_creation.missing_rank  import deduce_rank_from_atp
 from create_train.data_creation.merge_tourney  import merge_tourney
 from create_train.utils.date_creation import deduce_match_date
-
+from create_train.utils.utils_stats_creation import return_after_injury
 
 def import_data_atp(path, redo=False):
     
@@ -93,24 +93,17 @@ def import_data_atp(path, redo=False):
     index = data["score"].apply(lambda x : "W/O" in str(x) or "W/O " in str(x) or " W/O" in str(x))
     data.loc[index, "status"] = "Walkover"
     
-    # =============================================================================
-    #     #### create variable nbr days since retired / walkover
-    # =============================================================================
-#    t0 = time.time()
-#    data["ref_days"]= (data["Date"]- pd.to_datetime("01/01/1901")).dt.days
-#    data["diff_days_since_stop"] = np.apply_along_axis(walkover_retired, 1, np.array(data[["ref_days", "winner_id", "loser_id"]]), np.array(data[["ref_days", "winner_id", "loser_id", "status"]]))
-#    del data["ref_days"]
-#    print(" --- calculate return after walkover or retired : {0} ".format(time.time() - t0))
-
-    ### suppress not completed match
-    data = data.loc[~data["status"].isin(["Retired", "Walkover", "Def"])]
-    
     #### fill in missing scores
     data.loc[(data["tourney_id"] == "2007-533")&(pd.isnull(data["score"])), "score"] = "6-1 4-6 7-5"
     data.loc[(data["tourney_id"] == "1997-319")&(pd.isnull(data["score"])), "score"] = "6-4 6-4 6-4"
     
     data.loc[data["winner_name"] == "joshua goodall", "winner_name"] = "josh goodall"
     data.loc[data["loser_name"] == "joshua goodall", "loser_name"] = "josh goodall"
+    
+    # =============================================================================
+    #     #### create variable nbr matches since retired / walkover
+    # =============================================================================
+    data = return_after_injury(data, data)
     data = data.reset_index(drop=True)
     print("\n [{0}s] 2) Import ATP dataset ".format(time.time() - t0))
 
@@ -128,7 +121,6 @@ def fill_in_missing_values(total_data, redo):
     # =============================================================================
     t0 = time.time()
     total_data_wrank = deduce_rank_from_atp(total_data)
-#    total_data_wrank = total_data_wrank.drop(["winner_seed", "winner_entry", "loser_seed", "loser_entry"],axis=1)
     print("[{0}s] 3) fill missing rank based on atp crawling ({1}/{2})".format(time.time() - t0, mvs["loser_rank"] + mvs["winner_rank"], total_data.shape[0]))
     
     # =============================================================================
@@ -149,28 +141,3 @@ def fill_in_missing_values(total_data, redo):
         
     return total_data_wrank_stats_tourney_players
 
-
-def walkover_retired(x, data):
-    """
-    columns : ["ref_days", "winner_id", "loser_id", "status"]
-    """
-
-    index = np.where((data[:,0] < x[0])&(np.isin(data[:,3], ["Retired", "Walkover", "Def"])))
-    data_sub = data[index]
-    
-    index_l = np.where(data_sub[:,2] == x[2])
-    index_w = np.where(data_sub[:,2] == x[1])
-    
-    if len(index_l[0])>0:
-        ref_day = np.max(data_sub[index_l, 0])
-        l = min(x[0] - ref_day, 90)
-    else:
-        l=0
-          
-    if len(index_w[0])>0:   
-        ref_day = np.max(data_sub[index_w, 0])
-        w = min(x[0] - ref_day, 90)
-    else:
-        w=0
-        
-    return w - l

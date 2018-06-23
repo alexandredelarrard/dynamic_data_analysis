@@ -11,12 +11,14 @@ import sys
 import os
 from datetime import timedelta
 import glob
+import re
 
 sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_train.data_creation.create_variables import prep_data
-from create_train.data_creation.extract_players import import_players, merge_atp_players
+from create_train.data_creation.extract_players import import_players
 from create_train.utils.date_creation import deduce_match_date
-from create_train.utils.utils_data_prep import dates,currency_prize,homogenize_prizes,extract_rank_and_match,calculate_time,status,correct_score
+from create_train.utils.utils_data_prep import dates,currency_prize,homogenize_prizes,calculate_time,status,correct_score
+from create_train.utils.utils_stats_creation import extract_rank_and_match, return_after_injury
 
 def liste1_extract(x):
     
@@ -45,6 +47,7 @@ def clean_extract(latest):
     ex.columns = [str(x) for x in ex.columns]
     clean = pd.DataFrame([])
     
+    stats_index_start = 14
     # =============================================================================
     #     ### extraction of clean info
     # =============================================================================
@@ -57,10 +60,10 @@ def clean_extract(latest):
     
     clean["score"]     =  ex["10"].apply(lambda x: correct_score(x))
     clean["match_num"] =  ex["11"]
-    clean["winner_seed"] = ex["12"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
-    clean["loser_seed"]  = ex["13"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
-    clean["winner_entry"] = ex["12"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
-    clean["loser_entry"]  = ex["13"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
+    clean["winner_seed"] = ex["12"].fillna("").apply(lambda x: re.sub('[^0-9]', "", x))
+    clean["loser_seed"]  = ex["13"].fillna("").apply(lambda x: re.sub('[^0-9]', "", x))
+    clean["winner_entry"] = ex["12"].fillna("").apply(lambda x: re.sub("(^|\W)\d+", "",x).replace("(", "").replace(")",""))
+    clean["loser_entry"]  = ex["13"].fillna("").apply(lambda x: re.sub("(^|\W)\d+", "",x).replace("(", "").replace(")",""))
     
     list_info1 = ex["7"].apply(lambda x : liste1_extract(x))
     clean["draw_size"] = list(list(zip(*list_info1))[0])
@@ -71,7 +74,7 @@ def clean_extract(latest):
     clean["tourney_city"] = list(list(zip(*list_info1))[4])
     clean["tourney_name"] = list(list(zip(*list_info1))[5])
     clean["masters"] = list(list(zip(*list_info1))[6])
-    clean["round"] = ex["64"].str.replace(" H2H", "")
+    clean["round"] = ex["%i"%(52+stats_index_start)].str.replace(" H2H", "")
     clean["round"] = clean["round"].map(dico_round)
     clean["tourney_id"] = clean["tourney_date"].dt.year.astype(str) + "-" + ex["6"].astype(str) 
     clean["Date"] = clean[["tourney_date", "tourney_end_date", "match_num", "draw_size", "round"]].apply(lambda x: deduce_match_date(x), axis=1)
@@ -118,7 +121,7 @@ def clean_extract(latest):
     clean["loser_age"]  = clean[["Date", "DOB_l"]].apply(lambda x : dates(x), axis=1)
     
     #### stats
-    ex_stats = ex.iloc[:,14:]
+    ex_stats = ex.iloc[:,stats_index_start:]
     ex_stats.columns= [str(x) for x in range(ex_stats.shape[1])]
     ex_stats = ex_stats.rename(columns = {"0":"url", "2": "sr_player1", "4": "sr_player2", 
                         "5": "aces_player1", "7" :"aces_player2", "8":"df_player1", "10":"df_player2", 
@@ -157,7 +160,11 @@ def clean_extract(latest):
     #     #### data prep/ creation of variables
     # =============================================================================
     print( "--- status of matches is : {0}".format(clean["status"].value_counts()))
-    clean2 = prep_data(clean.loc[clean["status"] == "Completed"], verbose=1)
+    
+    data = import_data()
+    
+    clean = return_after_injury(clean, data)
+    clean2 = prep_data(clean, verbose=1)
     
     # =============================================================================
     #     #### add rank data into it

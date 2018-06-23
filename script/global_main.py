@@ -17,7 +17,6 @@ from create_models.main_modelling import main_modelling, main_prediction
 
 os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
 
-
 def global_main(params): 
     
     main_create_train(params)
@@ -28,7 +27,7 @@ def global_main(params):
     #### model from the dataset updated from test creation
     now = datetime.now()
     params = {
-              "date_test_start" :  now - timedelta(days = 0), 
+              "date_test_start" :  now - timedelta(days = 300),
               "date_test_end"   : now.strftime("%Y-%m-%d")
              }
     clf, var_imp, predictions_overall_xgb, predictions_overall_lg = main_modelling(params)
@@ -41,7 +40,7 @@ def global_main(params):
 
 if __name__ == "__main__":
 
-    params= {"rebuild" : True,
+    params= {"rebuild" : False,
              "update": True,
              "make_test" : True}   
     

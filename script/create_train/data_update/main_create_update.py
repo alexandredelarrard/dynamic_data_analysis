@@ -64,6 +64,7 @@ def create_update(boolean_update):
         #### check all players into data
         print("[2-4] aggregate new data")
         clean_new_matches(latest_data)
+        
 
 if __name__ =="__main__":
     os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"

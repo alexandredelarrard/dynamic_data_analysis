@@ -10,10 +10,13 @@ import pandas as pd
 import os
 from datetime import datetime
 import pickle as pkl
+import warnings
+warnings.filterwarnings("ignore")
 
-sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
+#sys.path.append(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
+os.chdir(r"C:\Users\User\Documents\tennis\dynamic_data_analysis\script")
 from create_models.data_prep.filter_data import data_prep_for_modelling
-from create_models.models.xgb import modelling_xgboost
+from create_models.models.xgb import modelling_xgboost, modelling_xgboost_tuning
 from create_models.models.logistic import modelling_logistic
 from create_train.data_update.main_create_update import import_data
 
@@ -47,26 +50,57 @@ def main_prediction():
 
     return preds
     
+def make_params():
+     liste_params = []
+     
+     for lr in [1,1.03,1.07,1.1,1.15,1.2,1.3,1.5]:
+         liste_params.append({"n_estimators":2000,
+                                 "max_depth":6,
+                                 "objective":"binary:logistic",
+                                 "learning_rate":0.045, 
+                                 "subsample":0.9,
+                                 "colsample_bytree":0.85,
+                                 "min_child_weight":2,
+                                 "n_jobs":8,
+                                 "reg_alpha": lr,
+                                 "reg_lambda": 1,
+                                })
+    
+     return liste_params
+     
+     
 
 def main_modelling(params):
     
     data = import_data()
     
+#    liste_params = make_params()
+    
     ### data prep
-    modelling_data = data_prep_for_modelling(data)
+    
+    modelling_data = data_prep_for_modelling(data, start_year=1992)# 2006: 80.11, 1992: 79.8
     
     ### modelling logistic
-    clf, var_imp, predictions_overall_lg = modelling_logistic(modelling_data, params["date_test_start"], params["date_test_end"])
+#    clf, var_imp, predictions_overall_lg = modelling_logistic(modelling_data, params["date_test_start"], params["date_test_end"])
     
     ### modelling _ xgb
-    clf, var_imp, predictions_overall_xgb = modelling_xgboost(modelling_data, params["date_test_start"], params["date_test_end"])
+#    for par in liste_params:
+#        print(par)
+    clf, var_imp, predictions_overall_xgb = modelling_xgboost_tuning(modelling_data, params["date_test_start"], params["date_test_end"])
 
-    return clf, var_imp, predictions_overall_xgb, predictions_overall_lg
+    return clf, var_imp, predictions_overall_xgb#, predictions_overall_lg
+
 
 if __name__ == "__main__":
     os.environ["DATA_PATH"] = r"C:\Users\User\Documents\tennis\data"
     params = {
-            "date_test_start" : "2017-05-01", 
-            "date_test_end"   : "2018-06-13"
+            "date_test_start" : "2017-01-01", 
+            "date_test_end"   : "2017-12-31"
              }
-    clf, var_imp, predictions_overall_xgb, predictions_overall_lg = main_modelling(params)
+    
+    clf, var_imp, predictions_overall_xgb = main_modelling(params) #, predictions_overall_lg
+    
+    #### 82.8% acc
+#    predictions_overall_xgb = predictions_overall_xgb.loc[~pd.isnull(predictions_overall_xgb["preds"])]
+#    predictions_overall_xgb["residuals"] = abs(predictions_overall_xgb["preds"] - predictions_overall_xgb["target"])
+    

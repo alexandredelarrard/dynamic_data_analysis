@@ -10,13 +10,14 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 import glob
+import re
 
 from create_train.data_creation.create_variables import create_basic_features
 from create_train.data_creation.extract_players import import_players
 from create_train.data_creation.create_statistics_historyV2 import create_stats, correlation_subset_data
 from create_train.data_creation.create_elo_rankingV2 import fill_latest_elo
-from create_train.utils.utils_data_prep import dates, currency_prize,homogenize_prizes,extract_rank_and_match,liste1_extract
-
+from create_train.utils.utils_data_prep import dates,currency_prize,homogenize_prizes,liste1_extract
+from create_train.utils.utils_stats_creation import extract_rank_and_match
 
 def clean(matches, url):
     
@@ -42,10 +43,10 @@ def clean(matches, url):
     clean["winner_name"] = matches["8"].apply(lambda x : x.lower().replace("-"," ").strip())
     clean["loser_name"] = matches["9"].apply(lambda x : x.lower().replace("-"," ").strip())
     
-    clean["winner_seed"] = matches["seed_1"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
-    clean["loser_seed"]  = matches["seed_2"].apply(lambda x: int(x.replace("(", "").replace(")","")) if x.replace("(", "").replace(")","").isdigit() else "")
-    clean["winner_entry"] = matches["seed_1"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
-    clean["loser_entry"]  = matches["seed_2"].apply(lambda x: x.replace("(", "").replace(")","") if not x.replace("(", "").replace(")","").isdigit() else "")
+    clean["winner_seed"] = matches["seed_1"].fillna("").apply(lambda x: re.sub('[^0-9]', "", x))
+    clean["loser_seed"]  = matches["seed_2"].fillna("").apply(lambda x: re.sub('[^0-9]', "", x))
+    clean["winner_entry"] = matches["seed_1"].fillna("").apply(lambda x: re.sub("(^|\W)\d+", "",x).replace("(", "").replace(")",""))
+    clean["loser_entry"]  = matches["seed_2"].fillna("").apply(lambda x: re.sub("(^|\W)\d+", "",x).replace("(", "").replace(")",""))
     
     # =============================================================================
     #     ### add indoor flag

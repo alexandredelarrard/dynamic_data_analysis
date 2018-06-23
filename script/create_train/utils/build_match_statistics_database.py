@@ -127,7 +127,9 @@ def match_stats_main(data_atp, redo = False):
         missing_stats.to_csv(os.environ["DATA_PATH"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv", index= False)
     else:
         missing_stats = pd.read_csv(os.environ["DATA_PATh"] + "/brute_info/historical/correct_missing_values/missing_match_stats.csv")
-     
+        missing_stats["winner_name"] = missing_stats["winner_name"].apply(lambda x : x.lower().replace("-"," "))
+        missing_stats["loser_name"] = missing_stats["loser_name"].apply(lambda x : x.lower().replace("-"," "))
+        
     index= sub_data.index    
     columns = ['w_ace', 'l_ace', 'w_df', 'l_df', 'w_svpt',
                'l_svpt', 'w_1stIn', 'l_1stIn', 'w_1stWon', 'l_1stWon', 'w_2ndWon',
@@ -137,12 +139,15 @@ def match_stats_main(data_atp, redo = False):
     sub_data["winner_name"] = sub_data["winner_name"].apply(lambda x : x.lower().replace("-"," "))
     sub_data["loser_name"] = sub_data["loser_name"].apply(lambda x : x.lower().replace("-"," "))
     merged_with_missing = pd.merge(sub_data.drop(columns,axis=1), missing_stats[columns + ['winner_name', 'loser_name', 'tourney_id']], on = ['tourney_id', 'winner_name', 'loser_name'], how= "left")
-    
-    data_atp.loc[index][columns] = merged_with_missing[columns]
+    merged_with_missing.index = index
+    for col in columns:
+        data_atp.loc[index, col] = merged_with_missing[col]
     
     return data_atp
     
 if __name__ == "__main__":
+    data_atp = pd.read_csv(r"C:\Users\User\Documents\tennis\data\clean_datasets\historical\matches_elo_V1.csv")
+    data_atp["Date"] = pd.to_datetime(data_atp["Date"], format = "%Y-%m-%d")
     missing_stats = match_stats_main(data_atp, redo = True)
     
     

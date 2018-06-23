@@ -7,9 +7,8 @@ Created on Mon Apr  2 13:34:54 2018
 
 import pandas as pd
 import numpy as np
-import glob
-import os
-#import dask.dataframe as dd
+
+from create_train.utils.utils_data_prep import import_rank_data
 
 def match_rank_missing(x, rk_data):
     """
@@ -22,12 +21,12 @@ def match_rank_missing(x, rk_data):
     sub_data_l = data[data[:,0] == x[2].lower().replace("-"," "),:]
     
     if sub_data_w.shape[0] >0:
-        rk_w, rk_pts_w = int(sub_data_w[-1][1].replace("T","")), sub_data_w[-1][2]
+        rk_w, rk_pts_w = sub_data_w[-1][1], sub_data_w[-1][2]
     else:
         rk_w, rk_pts_w = -1, -1
         
     if sub_data_l.shape[0] >0:
-        rk_l, rk_pts_l = int(sub_data_l[-1][1].replace("T","")), sub_data_l[-1][2]
+        rk_l, rk_pts_l = sub_data_l[-1][1], sub_data_l[-1][2]
     else:
         rk_l, rk_pts_l = -1, -1
         
@@ -38,21 +37,8 @@ def deduce_rank_from_atp(total_data):
     data = total_data.copy()
     missing_data_rank = data.loc[(pd.isnull(data["winner_rank"]))|(pd.isnull(data["loser_rank"]))].copy()
     
-    files_rank = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
-    files_df = pd.DataFrame(np.transpose([files_rank, [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_rank]]), columns = ["file", "Date"])
-    
-    for i, f in enumerate(files_df["file"].tolist()):
-        if i ==0:
-            rk_data = pd.read_csv(f)
-            rk_data["Date"] = files_df.iloc[i,1]
-            rk_data = np.array(rk_data)
-            
-        else:
-            new_data = pd.read_csv(f)
-            new_data["Date"] = files_df.iloc[i,1]
-            rk_data = np.concatenate((rk_data, np.array(new_data)), axis =0)
-            
-    rk_data = np.concatenate((rk_data[:,:3], rk_data[:,5:]), axis=1)
+    rk_data = import_rank_data(data)
+    rk_data = np.array(rk_data[["Player_name", "player_rank", "player_points", "Date"]])
             
     rk_pts_missing = np.apply_along_axis(match_rank_missing, 1, np.array(missing_data_rank[["Date", "winner_name", "loser_name"]]), rk_data) 
     rk_pts_missing = rk_pts_missing.reshape(rk_pts_missing.shape[0], rk_pts_missing.shape[2])

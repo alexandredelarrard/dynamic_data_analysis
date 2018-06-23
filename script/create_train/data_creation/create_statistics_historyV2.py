@@ -11,8 +11,8 @@ import time
 import dask.dataframe as dd
 from dask.multiprocessing import get
 
-#from create_train.utils.weight_past_matches import get_correlations, 
-#from create_train.utils.utils_data_prep import import_rank_data
+from create_train.utils.weight_past_matches import get_correlations
+from create_train.utils.utils_data_prep import import_rank_data
       
 def common_opponents(x, data):
     
@@ -372,11 +372,14 @@ def delta_rk(x, rank_files):
 
 def create_stats(data, liste_params, verbose=1):
     
+    
     mvs = pd.isnull(data).sum()
     if verbose == 1:
         print(mvs)
 
     data = data.reset_index(drop=True)
+    data = data.copy()
+    
     data["Date"] = pd.to_datetime(data["Date"], format = "%Y-%m-%d")
     data["DOB_w"] = pd.to_datetime(data["DOB_w"], format = "%Y-%m-%d")
     data["DOB_l"] = pd.to_datetime(data["DOB_l"], format = "%Y-%m-%d")
@@ -404,12 +407,10 @@ def create_stats(data, liste_params, verbose=1):
     
     test = np.apply_along_axis(delta_rk, 1, np.array(data[["ref_days", "winner_name", "loser_name", "winner_rank_points", 'loser_rank_points', "winner_rank", 'loser_rank']]), 
                                              np.array(rk_data[["ref_days", "Player_name", "player_rank", "player_points"]]))
-    
-    ddata = dd.from_pandas(data[["ref_days", "winner_name", "loser_name", "winner_rank_points", 'loser_rank_points', "winner_rank", 'loser_rank']], npartitions=8)
-    counts = ddata.map_partitions(lambda df: df.apply((lambda row: delta_rk(row, rk_data)), axis=1)).compute(get=get)#.compute(scheduler="processes")
-    counts = np.transpose(np.array(list(zip(*counts))))
-    stats = pd.DataFrame(counts, columns = ["delta_rank_1m_w", "delta_rank_1m_l", "delta_rank_pts_1m_w", "delta_rank_pts_1m_l"])
+    test = test.reshape(test.shape[0], test.shape[2])
+    stats = pd.DataFrame(test, columns = ["delta_rank_1m_w", "delta_rank_1m_l", "delta_rank_pts_1m_w", "delta_rank_pts_1m_l"])
     data = pd.concat([data, stats], axis = 1)
+
     del data["ref_days"]
     liste_params[0]              = liste_params[0].drop(["winner_rank_points", 'loser_rank_points'], axis=1)
     if verbose == 1:
@@ -430,10 +431,15 @@ def create_stats(data, liste_params, verbose=1):
     # =============================================================================
     t0 = time.time()
     liste_params[0] = np.array(liste_params[0])
-    ddata = dd.from_pandas(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of']], npartitions=8)
-    counts = ddata.map_partitions(lambda df: df.apply((lambda row: weighted_statistics(row, liste_params)), axis=1)).compute(get=get)["Date"]#.compute(scheduler="processes")
-    counts = np.transpose(np.array(list(zip(*counts))))
     
+    if verbose == 1:
+        ddata = dd.from_pandas(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of']], npartitions=8)
+        counts = ddata.map_partitions(lambda df: df.apply((lambda row: weighted_statistics(row, liste_params)), axis=1)).compute(get=get)["Date"]#.compute(scheduler="processes")
+        counts = np.transpose(np.array(list(zip(*counts))))
+    else:
+       counts = np.apply_along_axis(weighted_statistics, 1, np.array(data[["Date", "winner_id", "loser_id", "surface", "tourney_id_wo_year", "round", 'best_of']]), np.array(liste_params))
+       counts = counts.reshape(counts.shape[0], counts.shape[2])
+       
     ###### put the right name to the right column
     stats_cols = ["Common_matches", "diff_aces", "diff_df", "diff_1st_serv_in", "diff_1st_serv_won", "diff_2nd_serv_won",
                  "diff_skill_serv", "diff_skill_ret", "diff_overall_skill", "diff_serv1_ret2", "diff_serv2_ret1", "diff_bp", "diff_tie_break",
@@ -467,10 +473,12 @@ def create_stats(data, liste_params, verbose=1):
         data2.rename(columns={col : col.replace("winner_","loser_"), col.replace("winner_","loser_") : col}, inplace = True)
     
     data2.rename(columns={"elo1" : "elo2", "elo2" : "elo1"}, inplace = True)
+    data2.rename(columns={"diff_serv1_ret2" : "diff_serv2_ret1", "diff_serv2_ret1" : "diff_serv1_ret2"}, inplace = True) 
     data2["prob_elo"] = 1 / (1 + 10 ** ((data2["elo2"] - data2["elo1"]) / 400))
-            
-    for col in [x for x in data2.columns if "diff_" == x[:5]]:
-        data2[col] = -1*data2[col]
+     
+    for col in [x for x in data2.columns if "diff_" == x[:5]] :
+        if col not in ["diff_serv1_ret2", "diff_serv2_ret1"]:
+            data2[col] = -1*data2[col]
         
     total_data = pd.concat([data, data2], axis= 0)
     

@@ -57,6 +57,7 @@ def create_history(rebuild):
             print(" You need to create the historical data. Switch to rebuild = True. It will take few hours to run so take a nap")
             create_history(rebuild=True)
             
+            
 if __name__ == "__main__":
     full_data = create_history(rebuild=True)
     

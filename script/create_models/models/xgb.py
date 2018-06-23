@@ -15,6 +15,7 @@ from datetime import datetime
 from pylab import rcParams
 rcParams['figure.figsize'] = (8, 12)
 
+
 def modelling_xgboost(data, date_test_start, date_test_end):
      
     train, test_tot = split_train_test(data, date_test_start, date_test_end)
@@ -23,16 +24,17 @@ def modelling_xgboost(data, date_test_start, date_test_end):
     avg_log_loss = 0
     print("\n")
     
-    params = {"n_estimators":1000,
+    params = {"n_estimators":2000,
              "max_depth":6,
              "objective":"binary:logistic",
              "learning_rate":0.045, 
              "subsample":0.9,
-             "colsample_bytree":0.8,
+             "colsample_bytree":0.85,
              "min_child_weight":2,
              "n_jobs":8,
-             "reg_alpha": 1,
+             "reg_alpha": 1.07,
              "reg_lambda": 1,
+             "gamma":0
             }
     
     for i, tourney in enumerate(test_tot.sort_values("Date")["tourney_name"].unique()):
@@ -56,7 +58,7 @@ def modelling_xgboost(data, date_test_start, date_test_end):
         clf.fit(x_train, y_train, 
                            eval_set=eval_set,
                            eval_metric="logloss",
-                           early_stopping_rounds=35,
+                           early_stopping_rounds=40,
                            verbose=False
                          )
             
@@ -93,6 +95,59 @@ def modelling_xgboost(data, date_test_start, date_test_end):
     clf.fit(data.drop(["target", "Date", "tourney_name"], axis=1), data["target"])
     pkl.dump(clf, open(r"C:\Users\User\Documents\tennis\models\match_proba_prediction\xgb\xgb_{0}.pkl".format(datetime.now().strftime("%Y-%m-%d")), "wb"))
     
+    return clf, var_imp, predictions_overall
+
+
+def modelling_xgboost_tuning(data, date_test_start, date_test_end, params= False):
+    
+    train, test_tot = split_train_test(data, date_test_start, date_test_end)
+    avg_auc = 0
+    avg_acc = 0
+    avg_log_loss = 0
+    print("\n")
+    
+    if not params:
+        params = {"n_estimators":2000,
+             "max_depth":6,
+             "objective":"binary:logistic",
+             "learning_rate":0.045, 
+             "subsample":0.9,
+             "colsample_bytree":0.85,
+             "min_child_weight":2,
+             "n_jobs":8,
+             "reg_alpha": 1.05,
+             "reg_lambda": 1,
+            }
+    
+    
+    test = test_tot
+    predictions_overall = test
+    x_train, y_train, x_test, y_test = train.drop(["target", "Date", "tourney_name"],axis=1), train["target"], test.drop(["target", "Date", "tourney_name"],axis=1), test["target"]
+    
+    clf = XGBClassifier(**params)
+
+    eval_set=[(x_train, y_train), (x_test, y_test)]
+    clf.fit(x_train, y_train, 
+                       eval_set=eval_set,
+                       eval_metric="logloss",
+                       early_stopping_rounds=40,
+                       verbose=False
+                     )
+        
+    preds=  clf.predict_proba(x_test)[:,1]
+
+    auc = roc_auc_score(y_test,preds)
+    accuracy = accuracy_score(y_test, clf.predict(x_test))
+    print("[AUC] {1:.3f} / [Accuracy] {2:.3f} / [logloss] {3:.3f} /  [Match Nbr] {4}".format(0, auc, accuracy, log_loss(y_test, preds), len(x_test)))
+    
+    avg_auc += auc*len(x_test) 
+    avg_acc += accuracy*len(x_test) 
+    avg_log_loss +=log_loss(y_test, preds)*len(x_test)
+    var_imp = pd.DataFrame(np.array(clf.feature_importances_), columns = ["importance"], index= x_train.columns).sort_values("importance")
+        
+    plot_importance(clf)
+    predictions_overall["preds"] = preds
+  
     return clf, var_imp, predictions_overall
 
 

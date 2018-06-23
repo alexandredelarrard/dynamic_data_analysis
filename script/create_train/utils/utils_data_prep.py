@@ -185,36 +185,10 @@ def dates(x):
     reste = (diff.months *30 + diff.days) / 365
     return years + reste
 
-def extract_rank_and_match(x, rk_data):
-    """
-    match rank with player name loser and winner based on closest date into the past
-    """
-    
-    dates = pd.to_datetime(rk_data.sort_values("Date")["Date"].unique())
-    date = dates[dates <= x["Date"]][-1]
-    rank_sub_df = rk_data.loc[rk_data["Date"] == date]
-    
-    try:
-        winner = rank_sub_df.loc[rank_sub_df["Player_name"] == x["winner_name"]][["player_rank", "player_points"]].values[0]
-    except Exception:
-        print(x)
-        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]])
-        winner = [1800, 0]    
-        
-    try:
-        loser =  rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]].values[0]
-    except Exception:
-        print(x)
-        print(rank_sub_df.loc[rank_sub_df["Player_name"] == x["loser_name"]][["player_rank", "player_points"]])
-        loser = [1800, 0]
-        
-    return [(winner[0],winner[1],loser[0],loser[1])]
-
 
 def import_rank_data(data):
     
     ## split import in 6
-    
     files_df = glob.glob(os.environ["DATA_PATH"] + "/brute_info/atp_ranking/*.csv")
     files_rank = pd.DataFrame(np.transpose([files_df, [pd.to_datetime(os.path.splitext(os.path.basename(x))[0], format = "%Y-%m-%d") for x in files_df]]), columns = ["file", "Date"])
     files_rank = files_rank.loc[(files_rank["Date"]< data["Date"].max())&(files_rank["Date"] >= (data["Date"].min()- timedelta(days= 35)))]
