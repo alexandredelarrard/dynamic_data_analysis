@@ -34,10 +34,21 @@ def perform_pca(X, k):
     return pca.transform(X)
 
 
-def automatic_dataprep(args, new_data, Y_label):
+def automatic_dataprep(new_data, Y_label):
     
-    if "Insurer" not in new_data.columns:
-        new_data["Insurer"] = "Allianz"
+    """
+    this function aims at doing the EDA in an automatic way based on the ouput variable
+    Aim at saving time depending on cases to study
+        0) Structure of the dataset
+        1) Study the output variable
+        2) Missing values observation
+        3) Outliers detections
+        4) Modalities description
+        5) Time dependant variable analysis
+        2) Get the most significance variables vs output
+    """
+    
+    
     
     # =============================================================================
     #     ##### take care of the target to be sure it is real

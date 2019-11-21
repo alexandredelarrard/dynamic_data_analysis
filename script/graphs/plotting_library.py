@@ -183,6 +183,66 @@ def error_per_premium_decile(preds, args):
     plt.ylabel("AUD error")
     plt.savefig("/".join([args["path"], args["date"], "02 results", args["cover"], "images", "error_dollar_insurer.png"]), bbox_inches='tight', pad_inches=0)
 
+
+def mape_error_by_feature(preds, args, feature):
+    
+    if "Insurer" not in preds.columns:
+        preds["Insurer"] = "Allianz"
+    
+    preds["absolute_error"] = abs(preds["true"] - preds["pred"])
+    preds["MAPE(%)"] = abs(preds["true"] - preds["pred"])*100/preds["true"]
+    agg = preds.groupby(["Insurer", feature]).mean()
+    agg["count"] = preds[["Insurer", feature, "true"]].groupby(["Insurer", feature]).size()
+    
+    agg2 = preds.groupby(["Insurer"]).mean()
+    agg2["volume_tested"] = preds.groupby(["Insurer"]).size()
+   
+    ### percentage error per insurer and state
+    fig, ax = plt.subplots(1, 1)
+    fig = agg["count"].unstack(level=0).plot(
+        kind='bar',
+        stacked=True,
+        alpha= 0.4,
+        ax=ax
+    )
+    
+    table(ax, np.round(agg2[["true", "pred", "volume_tested", "MAPE(%)"]], 2), loc='top', colWidths=[0.15, 0.15, 0.15, 0.15])
+    fig.set_ylabel("volume of tested premium", fontsize=17)
+    fig.set_xlabel("state",fontsize=17)
+    
+    fig2 = agg["MAPE(%)"].unstack(level=0).plot(
+        linewidth=2.0,
+        mark_right=False,
+        ax=ax,
+        secondary_y=True, marker = "o"
+    )
+    fig2.set_ylabel("MAPE(%)", fontsize=17)
+    plt.savefig("/".join([args["path"], args["date"], "02 results", args["cover"], "images", "error_percent_insurer_feature.png"]), bbox_inches='tight', pad_inches=0)
+    
+    ### aud error per insurer and state
+    fig, ax = plt.subplots(1, 1)
+    fig = agg["count"].unstack(level=0).plot(
+        kind='bar',
+        stacked=True,
+        alpha= 0.4,
+        ax=ax
+    )
+    
+    table(ax, np.round(agg2[["true", "pred", "volume_tested", "absolute_error"]], 2), loc='top', colWidths=[0.15, 0.15, 0.15, 0.15])
+    fig.set_ylabel("volume of tested premium", fontsize=17)
+    fig.set_xlabel("state",fontsize=17)
+    fig2 = agg["absolute_error"].unstack(level=0).plot(
+        linewidth=2.0,
+        mark_right=False,
+        ax=ax,
+        secondary_y=True, marker = "o"
+    )
+    fig2.set_ylabel("absolute average error in AU$", fontsize=17)
+    plt.savefig("/".join([args["path"], args["date"], "02 results", args["cover"], "images", "error_dollar_insurer_feature.png"]), bbox_inches='tight', pad_inches=0)
+    
+    return agg, preds
+
+
 # =============================================================================
 # partial dependency plots
 # =============================================================================
